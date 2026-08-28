@@ -1,6 +1,14 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.32 - 28 sierpnia 2026
+-------------------------
+
+Wydanie testowe - dziennik z 0.1.31 pokazał, że automatyczne sprawdzanie
+działa poprawnie, po prostu wcześniejsze testy sprawdzały wersję, która
+akurat już była aktualna. To wydanie służy do sprawdzenia mechanizmu na
+kimś, kto nie zaktualizował się jeszcze ręcznie. Bez zmian w przeglądarce.
+
 0.1.31 - 28 sierpnia 2026
 -------------------------
 
