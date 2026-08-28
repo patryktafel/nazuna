@@ -41,6 +41,11 @@ i zainstalować ją jednym kliknięciem. Metadane aktualizacji pochodzą z
 osobnego, publicznego repozytorium (nazuna-updates), które nie zawiera
 kodu źródłowego - tylko gotowe wydania.
 
+Trzeci dopisek z 28 sierpnia: podbita biblioteka adm-zip (rozpakowuje
+rozszerzenia i silnik przeglądarki) do wersji 0.6.0 - poprzednia miała
+znaną lukę, przez którą specjalnie spreparowany plik zip mógł wymusić
+przydzielenie 4 GB pamięci. Bez zmian w działaniu, tylko łatka.
+
 0.1.20 - 27 sierpnia 2026
 -------------------------
 
