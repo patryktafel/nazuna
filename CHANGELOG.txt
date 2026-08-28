@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.25 - 28 sierpnia 2026
+-------------------------
+
+Poprawki karty powiadomienia z 0.1.24
+
+Karta z informacją o aktualizacji miała na sztywno wpisaną pozycję - przy
+widocznym pasku zakładek albo otwartym polu szukania mogła się na nie
+nakładać. Teraz sama liczy, ile miejsca zajmuje reszta paska, i ustawia się
+zawsze tuż pod nim. Dodatkowo: jeśli pobieranie się nie powiedzie, karta
+pokaże teraz komunikat o błędzie zamiast zostać na zawsze zamrożona na
+"Pobieranie...". Otwarcie menu albo innego okienka chowa też kartę, żeby się
+z nimi nie zderzała.
+
 0.1.24 - 28 sierpnia 2026
 -------------------------
 
