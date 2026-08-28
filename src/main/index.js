@@ -125,9 +125,18 @@ if (!gotLock) {
     // Aktualizacje (tylko spakowana wersja dla Windows - patrz updater.js).
     // Ciche sprawdzenie kilkanascie sekund po starcie, zeby nie obciazac
     // rozruchu - w razie czego karta nazuna://about i tak pozwoli sprawdzic
-    // recznie w kazdej chwili.
+    // recznie w kazdej chwili. Drugie sprawdzenie kilka minut pozniej to
+    // siatka bezpieczenstwa: swiezo opublikowane wydanie czasem potrzebuje
+    // chwili zeby sie rozeszlo po sieci dostawczej GitHuba, wiec pierwsza
+    // proba tuz po starcie moze jeszcze nic nie znalezc. Do tego regularne
+    // sprawdzanie co kilka godzin - inaczej okno otwarte cale dnie nigdy
+    // samo by sie nie dowiedzialo o nowej wersji.
     updater.init((stan) => W.broadcastAll('update:status', stan));
-    if (updater.dostepny()) setTimeout(() => { updater.sprawdz().catch(() => {}); }, 15000);
+    if (updater.dostepny()) {
+      setTimeout(() => { updater.sprawdz().catch(() => {}); }, 15 * 1000);
+      setTimeout(() => { updater.sprawdz().catch(() => {}); }, 5 * 60 * 1000);
+      setInterval(() => { updater.sprawdz().catch(() => {}); }, 6 * 60 * 60 * 1000);
+    }
 
     // Listy filtrow wczytuja sie rownolegle z otwieraniem okna, zeby start byl
     // szybszy. Sa gotowe zanim pierwsza strona zdazy wyslac zapytania.

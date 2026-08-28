@@ -1,6 +1,17 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.29 - 28 sierpnia 2026
+-------------------------
+
+Bezpieczniejsze automatyczne sprawdzanie aktualizacji
+
+Automatyczne sprawdzenie po starcie dzieje się teraz nie raz, tylko trzy: od
+razu po chwili, jeszcze raz kilka minut później na wszelki wypadek (świeżo
+opublikowane wydanie czasem potrzebuje chwili, zanim rozejdzie się po sieci
+GitHuba), a potem regularnie co kilka godzin - dzięki temu program otwarty
+cały dzień też sam się dowie o nowej wersji, nie tylko przy restarcie.
+
 0.1.28 - 28 sierpnia 2026
 -------------------------
 
