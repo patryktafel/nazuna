@@ -1,0 +1,37 @@
+name: Buduj i publikuj wydanie
+
+# Odpala sie tylko wtedy, gdy ktos wypcha znacznik w postaci "v0.1.25" -
+# czyli dokladnie wtedy, gdy naprawde chcemy wypuscic nowa wersje. Zwykle
+# commity (bez znacznika) nic nie budujA ani nie publikuja.
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    # NSIS (instalator dla Windows) trzeba budowac na prawdziwym Windowsie -
+    # electron-builder wywoluje przy tym signtool.exe, ktorego nie ma na
+    # Linuksie ani Macu. windows-latest ma go wbudowanego.
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Pobierz kod
+        uses: actions/checkout@v4
+
+      - name: Ustaw Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Zainstaluj zaleznosci
+        run: npm ci --no-audit --no-fund
+
+      # Ta sama komenda co w wydaj.bat: buduje liste blokera, pobiera silnik
+      # z obsluga DRM, sklada instalator i publikuje go na nazuna-updates.
+      # RELEASE_TOKEN to sekret repozytorium (Settings -> Secrets and
+      # variables -> Actions) z dostepem do zapisu w nazuna-updates.
+      - name: Zbuduj i opublikuj instalator
+        run: npm run dist:publish
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}

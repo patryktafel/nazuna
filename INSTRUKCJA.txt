@@ -29,22 +29,32 @@ Gdy skończy, sam otworzy folder dist z gotowym instalatorem
 nie wysyła, nie publikuje żadnego wydania.
 
 
-Gdy chcesz wypuścić nową wersję: wydaj.bat
--------------------------------------------
+Gdy chcesz wypuścić nową wersję: dzieje się samo
+--------------------------------------------------
 
-wydaj.bat robi dokładnie to samo co zbuduj.bat, a na koniec dodatkowo
-publikuje gotowy instalator jako nowe wydanie na GitHubie (w repozytorium
-nazuna-updates), skąd zainstalowane u ludzi kopie Nazuny same je znajdą i
-zaproponują aktualizację.
+Wypuszczanie nowej wersji nie wymaga już niczego na tym komputerze.
+Wystarczy podbić numer w package.json i wypchnąć na GitHuba znacznik w
+postaci "v0.1.25" (z aktualnym numerem wersji) - GitHub Actions sam buduje
+instalator na
+swoim serwerze z Windowsem i publikuje go na nazuna-updates, dokładnie tak
+samo jak robił to wcześniej wydaj.bat, tylko bez klikania czegokolwiek u
+Ciebie. Definicja tego automatu leży w .github/workflows/release.yml.
 
-Zanim pierwszy raz go użyjesz, musi obok niego leżeć plik github-token.txt
-z tokenem GitHub (ten sam rodzaj co przy konfigurowaniu repozytoriów). Plik
-zostaje tylko na tym komputerze - jest w .gitignore, nigdy nie trafia do
-repozytorium.
+Jednorazowo, zanim to zadziała pierwszy raz, w ustawieniach repozytorium
+nazuna na GitHubie (Settings -> Secrets and variables -> Actions -> New
+repository secret) musi być dodany sekret o nazwie RELEASE_TOKEN z tym
+samym tokenem, który wcześniej posłużył do skonfigurowania repozytoriów.
 
-Używaj go tylko wtedy, gdy naprawdę chcesz wypuścić nową wersję - każde jego
-uruchomienie z inną liczbą w polu "version" w package.json tworzy publiczne
-wydanie widoczne dla każdego, kto ma zainstalowaną Nazunę.
+wydaj.bat wciąż tu jest i wciąż działa tak samo jak dotąd - jako zapasowa
+droga na wypadek, gdyby GitHub Actions akurat nie działał, albo gdy ktoś
+wolałby zbudować i opublikować wydanie ręcznie, na własnym komputerze.
+Zanim go użyjesz, musi obok niego leżeć plik github-token.txt z tokenem
+GitHub (ten sam rodzaj co przy konfigurowaniu repozytoriów) - jest w
+.gitignore, nigdy nie trafia do repozytorium.
+
+Każde wydanie, ręczne czy automatyczne, z inną liczbą w polu "version" w
+package.json tworzy publiczne wydanie widoczne dla każdego, kto ma
+zainstalowaną Nazunę.
 
 
 Gdy coś pójdzie nie tak
@@ -57,17 +67,18 @@ go, wtedy zobaczę co się stało.
 Co gdzie leży
 -------------
 
-  src\                   kod przeglądarki
-  build\                 ikona i grafiki instalatora
-  resources\             listy filtrów blokera reklam
-  tools\                 skrypty pomocnicze używane przy budowaniu
-  dist\                  tu pojawia się gotowy instalator (powstaje sam)
-  zbuduj.bat             zwykły build testowy, niczego nie publikuje
-  wydaj.bat              build + publikacja nowego wydania na GitHubie
-  github-token.txt       token do wydaj.bat (nie ma go w repozytorium)
-  package.json           numer wersji ustawia się tutaj, w polu "version"
-  CHANGELOG.txt          co się zmieniało w kolejnych wersjach
-  README.txt             instrukcja obsługi samej przeglądarki
+  src\                          kod przeglądarki
+  build\                        ikona i grafiki instalatora
+  resources\                    listy filtrów blokera reklam
+  tools\                        skrypty pomocnicze używane przy budowaniu
+  dist\                         tu pojawia się gotowy instalator (powstaje sam)
+  .github\workflows\release.yml  automatyczne budowanie i publikowanie wydań
+  zbuduj.bat                    zwykły build testowy, niczego nie publikuje
+  wydaj.bat                     zapasowa, ręczna droga budowania i publikacji
+  github-token.txt              token do wydaj.bat (nie ma go w repozytorium)
+  package.json                  numer wersji ustawia się tutaj, w polu "version"
+  CHANGELOG.txt                 co się zmieniało w kolejnych wersjach
+  README.txt                    instrukcja obsługi samej przeglądarki
 
 
 Skąd się bierze aktualizacja u kogoś, kto ma już Nazunę
@@ -78,6 +89,7 @@ tylko my dwoje. Osobne, publiczne repozytorium nazuna-updates nie zawiera
 kodu, tylko gotowe wydania (instalator + plik z metadanymi), bo z niego
 korzysta mechanizm automatycznych aktualizacji wbudowany w przeglądarkę.
 
-Krótko: podbijasz numer wersji w package.json, uruchamiasz wydaj.bat, a
-wszystkie zainstalowane kopie Nazuny same znajdą nowe wydanie przy najbliższym
-uruchomieniu (albo po kliknięciu "Sprawdź aktualizacje" w O programie).
+Krótko: podbijamy numer wersji w package.json i wypychamy znacznik z tym
+numerem na GitHuba, a wszystkie zainstalowane kopie Nazuny same znajdą nowe
+wydanie przy najbliższym uruchomieniu (albo po kliknięciu "Sprawdź
+aktualizacje" w O programie).
