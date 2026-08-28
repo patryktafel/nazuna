@@ -1,6 +1,6 @@
 'use strict';
-/* Minimal CRX2/CRX3 reader: pulls the zip payload out and recovers the public
-   key so the unpacked extension keeps the same ID it has in the Chrome store. */
+/* Prosty czytnik CRX2/CRX3: wyciaga paczke zip i odzyskuje klucz publiczny,
+   zeby rozpakowane rozszerzenie mialo to samo ID co w sklepie Chrome. */
 const crypto = require('crypto');
 
 function readVarint(buf, pos) {
@@ -112,7 +112,7 @@ function firstPublicKey(header) {
   return null;
 }
 
-/** Chrome derives the extension ID from the first 16 bytes of sha256(publicKey). */
+/** Chrome wyprowadza ID rozszerzenia z pierwszych 16 bajtow sha256(kluczPubliczny). */
 function idFromPublicKey(publicKey) {
   const digest = crypto.createHash('sha256').update(publicKey).digest();
   let id = '';

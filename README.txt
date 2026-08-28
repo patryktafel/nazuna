@@ -1,23 +1,25 @@
-Nazuna 0.1.5
-============
+Nazuna
+======
 
-Przenośna przeglądarka internetowa. Jeden plik, bez instalacji, bez uprawnień
-administratora.
+Przeglądarka internetowa na silniku Chromium.
 
 
 Jak uruchomić
 -------------
 
-Kliknij dwukrotnie Nazuna.exe. Przy pierwszym uruchomieniu Windows może pokazać
+Na Windows uruchom instalator (Nazuna-WERSJA-Instalator.exe). Zapyta o folder
+docelowy i o to, czy zrobić skróty na pulpicie i w menu Start, a potem doda
+Nazunę do listy programów w Panelu sterowania, skąd normalnie się ją
+odinstalowuje. Przy pierwszym uruchomieniu instalatora Windows może pokazać
 okno "Windows chronił ten komputer" (SmartScreen), bo plik nie ma podpisu
-wydawcy. Kliknij "Więcej informacji", potem "Uruchom mimo to". Później już
-się nie pojawi.
+wydawcy. Kliknij "Więcej informacji", potem "Uruchom mimo to".
 
-Plik rozpakowuje się przy starcie do folderu tymczasowego i stamtąd startuje.
-Jeśli w firmie działa polityka blokująca uruchamianie programów z folderu
-tymczasowego (AppLocker albo WDAC), pojedynczy .exe się nie uruchomi. Wtedy
-użyj wersji z archiwum Nazuna-0.1.5-x64.zip: rozpakuj gdziekolwiek w swoim
-profilu i uruchom Nazuna.exe z rozpakowanego folderu.
+Jest też wersja przenośna (jeden plik .exe, bez instalacji), ale nie powstaje
+domyślnie - trzeba ją zbudować osobno, komendą "npm run dist:portable" (patrz
+INSTRUKCJA.txt). Przydaje się tam, gdzie w ogóle nie da się niczego
+zainstalować (pendrive, komputer bez uprawnień administratora, polityka
+firmowa blokująca instalatory). Wersja przenośna nie aktualizuje się sama -
+patrz sekcja "Bezpieczeństwo" niżej.
 
 
 Gdzie trzymane są dane
@@ -84,10 +86,13 @@ wykonywalne nigdy nie zapisują się bez okna zapisu.
 Są dwie rzeczy, których Nazuna nie potrafi, a Chrome tak, i warto o nich
 wiedzieć.
 
-Po pierwsze, nie aktualizuje się sama. Chrome co kilka tygodni łata luki
-pozwalające przejąć komputer przez samo wejście na stronę. Żeby Nazuna dostała
-te łatki, trzeba ją przebudować na nowszej wersji silnika. Im dłużej korzystasz
-z tej samej wersji, tym większe ryzyko.
+Po pierwsze, zainstalowana wersja (instalator) sama sprawdza w tle, czy jest
+nowsza wersja, i pozwala ją pobrać i zainstalować z karty O programie
+(nazuna://about) - ale to samo sprawdzanie dostępności nowej wersji, nie
+automatyczna łatka bezpieczeństwa silnika. Chrome łata luki w silniku co
+kilka tygodni; żeby Nazuna dostała te same łatki, ktoś musi ją przebudować na
+nowszym Electronie i wydać nową wersję. Wersja przenośna nie sprawdza
+aktualizacji w ogóle - trzeba pobierać nowe wydania ręcznie.
 
 Po drugie, nie ma ostrzeżeń przed stronami wyłudzającymi dane ani przed
 zainfekowanymi plikami. Wbudowany bloker zatrzymuje reklamy i skrypty śledzące,

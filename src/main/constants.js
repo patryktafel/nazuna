@@ -9,7 +9,7 @@ const ASSETS_DIR = path.join(__dirname, '..', 'assets');
 
 const APP_NAME = 'Nazuna';
 
-// Layout of the browser chrome, in CSS pixels.
+// Wymiary interfejsu przegladarki, w pikselach CSS.
 const LAYOUT = {
   tabStrip: 40,
   toolbar: 46,
@@ -17,8 +17,8 @@ const LAYOUT = {
   findBar: 44
 };
 
-// A clean Chrome user agent. Electron's default advertises "Electron/x.y" and
-// "Nazuna/0.1.5", which makes Google (and a few others) refuse to sign you in.
+// Czysty User-Agent Chrome'a. Domyslny Electrona zdradza "Electron/x.y" i
+// "Nazuna/0.1.5", przez co Google (i kilka innych stron) odmawia logowania.
 // Ustawiamy go tez jako app.userAgentFallback, zeby zaden kanal w programie nie
 // wysylal wersji z nazwa Electrona. Do wersji 0.1.5 wyciekala ona przy ikonach
 // stron pobieranych przez pasek zakladek.

@@ -5,7 +5,7 @@ title Budowanie Nazuny
 
 echo.
 echo   ============================================
-echo     Nazuna - budowanie pliku Nazuna.exe
+echo     Nazuna - budowanie instalatora
 echo   ============================================
 echo.
 
