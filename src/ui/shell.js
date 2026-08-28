@@ -83,6 +83,7 @@ function closePopover(silent) {
 
 function openPanel(name, node, anchorRect, opts = {}) {
   closePopover(true);
+  hideUpdateToast(false);
   node.classList.add('panel');
   el.layer.appendChild(node);
   popover = { name, el: node };
@@ -1134,6 +1135,10 @@ function showUpdateToast(html) {
   node.className = 'update-toast';
   node.innerHTML = html;
   $('#updateToastSlot').appendChild(node);
+  // Wysokosc paska na gorze jest zmienna (pasek zakladek, pasek szukania),
+  // wiec zamiast liczby na sztywno w CSS liczymy pozycje od rzeczywistej
+  // wysokosci el.chrome w chwili pokazania powiadomienia.
+  node.style.top = `${el.chrome.offsetHeight + 8}px`;
   return node;
 }
 
@@ -1166,6 +1171,12 @@ function renderUpdateToast(stan) {
       <div class="sub">Zainstaluje się przy najbliższym uruchomieniu programu, albo od razu, jeśli klikniesz niżej.</div>
       <div class="actions"><button class="go" data-act="install">Zainstaluj i uruchom ponownie</button></div>`);
     node.querySelector('[data-act="install"]').addEventListener('click', () => api.send('app.updateInstall'));
+    node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
+  } else if (stan.status === 'blad') {
+    const node = showUpdateToast(`
+      <div class="row">${iconSvg('alert')}<div class="title">Nie udało się pobrać aktualizacji</div>
+        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
+      <div class="sub">${escapeHtml(stan.komunikat || 'Spróbuj ponownie później, z poziomu O programie.')}</div>`);
     node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
   }
 }
