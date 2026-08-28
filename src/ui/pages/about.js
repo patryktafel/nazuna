@@ -9,11 +9,11 @@ function opisAktualizacji(stan) {
     case 'aktualna':
       return { tekst: 'Masz najnowszą wersję Nazuny.', tag: ['aktualna', 'ok'], przycisk: { id: 'updCheck', label: 'Sprawdź ponownie' } };
     case 'dostepna':
-      return { tekst: `Dostępna nowa wersja ${esc(stan.wersja || '')}.`, tag: ['dostępna', 'warn'], przycisk: { id: 'updDownload', label: 'Pobierz aktualizację' } };
+      return { tekst: `Dostępna nowa wersja ${esc(stan.wersja || '')} - Nazuna pobiera ją teraz sama, w tle.`, tag: ['dostępna', 'warn'], przycisk: null };
     case 'pobieranie':
       return { tekst: `Pobieranie aktualizacji… ${stan.procent ?? 0}%`, tag: ['pobieranie', 'warn'], przycisk: null };
     case 'pobrana':
-      return { tekst: `Aktualizacja ${esc(stan.wersja || '')} pobrana i gotowa do instalacji.`, tag: ['pobrana', 'ok'], przycisk: { id: 'updInstall', label: 'Zainstaluj i uruchom ponownie' } };
+      return { tekst: `Aktualizacja ${esc(stan.wersja || '')} pobrana. Zainstaluje się sama przy najbliższym zamknięciu Nazuny, albo od razu, jeśli klikniesz niżej.`, tag: ['pobrana', 'ok'], przycisk: { id: 'updInstall', label: 'Zainstaluj i uruchom ponownie' } };
     case 'blad':
       return { tekst: `Nie udało się sprawdzić aktualizacji${stan.komunikat ? `: ${esc(stan.komunikat)}` : '.'}`, tag: ['błąd', 'low'], przycisk: { id: 'updCheck', label: 'Spróbuj ponownie' } };
     default:

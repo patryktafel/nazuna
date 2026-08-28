@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.30 - 28 sierpnia 2026
+-------------------------
+
+Aktualizacje jak w Chrome i Firefoksie
+
+Do tej pory znalezioną aktualizację trzeba było samemu pobrać i zainstalować
+(klikając w karcie powiadomienia albo w O programie). Teraz dzieje się to
+samo, bez klikania: gdy Nazuna znajdzie nową wersję, od razu pobiera ją w
+tle, a instaluje przy najbliższym zamknięciu programu - dokładnie tak, jak
+robią to Chrome i Firefox. Kartę powiadomienia i przycisk w O programie
+zostawiliśmy, dla kogoś kto wolałby zainstalować od razu, ale nie trzeba
+już nic klikać, żeby aktualizacja w ogóle ruszyła.
+
 0.1.29 - 28 sierpnia 2026
 -------------------------
 

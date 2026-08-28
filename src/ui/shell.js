@@ -1145,21 +1145,16 @@ function showUpdateToast(html) {
 function renderUpdateToast(stan) {
   if (!stan) return;
   if (stan.status === 'dostepna') {
+    // Pobieranie rusza samo (patrz updater.js), wiec nie ma juz czego tu
+    // klikac - to czysto informacyjna karta, znika sama razem ze zmiana
+    // stanu na "pobieranie" chwile potem.
     if (updateToastDismissedWersja === stan.wersja) return;
     const node = showUpdateToast(`
       <div class="row">${iconSvg('download')}<div class="title">Dostępna nowa wersja ${escapeHtml(stan.wersja || '')}</div>
         <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
-      <div class="sub">Nazuna może pobrać ją teraz - instalacja zajmie chwilę przy następnym uruchomieniu.</div>
-      <div class="actions"><button class="go" data-act="download">Pobierz</button>
-        <button class="later" data-act="later">Później</button></div>`);
-    node.querySelector('[data-act="download"]').addEventListener('click', (e) => {
-      e.currentTarget.textContent = 'Pobieranie…';
-      e.currentTarget.disabled = true;
-      api.send('app.updateDownload');
-    });
+      <div class="sub">Nazuna pobiera ją teraz sama, w tle.</div>`);
     const odrzuc = () => { updateToastDismissedWersja = stan.wersja; hideUpdateToast(); };
     node.querySelector('[data-act="close"]').addEventListener('click', odrzuc);
-    node.querySelector('[data-act="later"]').addEventListener('click', odrzuc);
   } else if (stan.status === 'pobieranie') {
     showUpdateToast(`
       <div class="row">${iconSvg('download')}<div class="title">Pobieranie aktualizacji… ${stan.procent ?? 0}%</div></div>

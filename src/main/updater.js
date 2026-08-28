@@ -35,10 +35,13 @@ function init(onZmiana) {
     return;
   }
 
-  // Pytamy uzytkownika, zanim cokolwiek sciagniemy albo zainstalujemy - patrz
-  // przyciski "Pobierz" i "Zainstaluj i uruchom ponownie" w nazuna://about.
-  autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = false;
+  // Tak jak w Chrome czy Firefoksie: znaleziona aktualizacja pobiera sie sama,
+  // w tle, bez pytania, a instaluje sie sama przy najblizszym zamknieciu
+  // programu - bez wymuszania restartu w trakcie pracy. Karta w rogu okna i
+  // przycisk w nazuna://about zostaja, dla kogos kto wolałby zrobic to od
+  // razu, ale nie trzeba juz nic klikac, zeby aktualizacja w ogole ruszyla.
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on('checking-for-update', () => ustaw({ status: 'sprawdzanie', komunikat: null }));
   autoUpdater.on('update-available', (info) => ustaw({ status: 'dostepna', wersja: info.version, komunikat: null }));
