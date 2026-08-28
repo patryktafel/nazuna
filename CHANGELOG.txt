@@ -1,6 +1,13 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.23 - 28 sierpnia 2026
+-------------------------
+
+Wydanie testowe mechanizmu automatycznych aktualizacji z 0.1.22 - bez zmian
+w samej przeglądarce. Jeśli to czytasz w O programie po automatycznej
+aktualizacji z poprzedniej wersji, to znaczy, że mechanizm działa.
+
 0.1.22 - 28 sierpnia 2026
 -------------------------
 
