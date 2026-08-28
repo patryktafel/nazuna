@@ -1,6 +1,18 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.24 - 28 sierpnia 2026
+-------------------------
+
+Powiadomienie o aktualizacji
+
+Do tej pory dostępność nowej wersji było widać tylko w O programie - trzeba
+było tam samemu zajrzeć. Teraz, gdy ciche sprawdzenie w tle znajdzie nową
+wersję, w prawym górnym rogu okna wyskakuje karta z informacją i przyciskiem
+"Pobierz". Po pobraniu karta zmienia się w "Zainstaluj i uruchom ponownie".
+Kartę można odłożyć na później (x albo "Później") - dla tej samej wersji nie
+wróci sama, ale wciąż będzie czekać w O programie.
+
 0.1.23 - 28 sierpnia 2026
 -------------------------
 

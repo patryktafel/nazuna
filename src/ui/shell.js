@@ -1112,6 +1112,65 @@ api.on('fullscreen:hint', () => {
   }, 3400);
 });
 
+/* --------------------------------------------------------- aktualizacje */
+
+/* Nie jest popoverem: pojawia sie sama, bez klikniecia, wiec nie korzysta
+   z closePopover/forceClose - ma wlasny, prostszy cykl zycia. Pamietamy
+   tylko, ktora wersja zostala odrzucona (Pozniej/x), zeby to samo ciche
+   sprawdzenie w tle nie odpalalo tego samego powiadomienia w kolko. */
+let updateToastDismissedWersja = null;
+
+function hideUpdateToast(animowane = true) {
+  const node = document.querySelector('.update-toast');
+  if (!node) return;
+  if (!animowane) { node.remove(); return; }
+  node.classList.add('leaving');
+  setTimeout(() => node.remove(), 320);
+}
+
+function showUpdateToast(html) {
+  hideUpdateToast(false);
+  const node = document.createElement('div');
+  node.className = 'update-toast';
+  node.innerHTML = html;
+  $('#updateToastSlot').appendChild(node);
+  return node;
+}
+
+function renderUpdateToast(stan) {
+  if (!stan) return;
+  if (stan.status === 'dostepna') {
+    if (updateToastDismissedWersja === stan.wersja) return;
+    const node = showUpdateToast(`
+      <div class="row">${iconSvg('download')}<div class="title">Dostępna nowa wersja ${escapeHtml(stan.wersja || '')}</div>
+        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
+      <div class="sub">Nazuna może pobrać ją teraz - instalacja zajmie chwilę przy następnym uruchomieniu.</div>
+      <div class="actions"><button class="go" data-act="download">Pobierz</button>
+        <button class="later" data-act="later">Później</button></div>`);
+    node.querySelector('[data-act="download"]').addEventListener('click', (e) => {
+      e.currentTarget.textContent = 'Pobieranie…';
+      e.currentTarget.disabled = true;
+      api.send('app.updateDownload');
+    });
+    const odrzuc = () => { updateToastDismissedWersja = stan.wersja; hideUpdateToast(); };
+    node.querySelector('[data-act="close"]').addEventListener('click', odrzuc);
+    node.querySelector('[data-act="later"]').addEventListener('click', odrzuc);
+  } else if (stan.status === 'pobieranie') {
+    showUpdateToast(`
+      <div class="row">${iconSvg('download')}<div class="title">Pobieranie aktualizacji… ${stan.procent ?? 0}%</div></div>
+      <div class="sub">Nazuna zainstaluje ją sama, gdy pobieranie się skończy.</div>`);
+  } else if (stan.status === 'pobrana') {
+    const node = showUpdateToast(`
+      <div class="row">${iconSvg('download')}<div class="title">Wersja ${escapeHtml(stan.wersja || '')} jest gotowa do instalacji</div>
+        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
+      <div class="sub">Zainstaluje się przy najbliższym uruchomieniu programu, albo od razu, jeśli klikniesz niżej.</div>
+      <div class="actions"><button class="go" data-act="install">Zainstaluj i uruchom ponownie</button></div>`);
+    node.querySelector('[data-act="install"]').addEventListener('click', () => api.send('app.updateInstall'));
+    node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
+  }
+}
+api.on('update:status', renderUpdateToast);
+
 api.on('find:focus', () => setTimeout(() => { el.findInput.focus(); el.findInput.select(); }, 40));
 api.on('find:result', (r) => {
   el.findCount.textContent = r && r.matches ? `${r.active}/${r.matches}` : (el.findInput.value ? '0/0' : '');

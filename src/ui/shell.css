@@ -28,6 +28,39 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 }
 .fs-hint.leaving { opacity: 0; transition: opacity .4s var(--ease); }
 
+/* Powiadomienie o aktualizacji - karta w prawym gornym rogu, pod paskiem
+   narzedzi. Nie jest popoverem (patrz sekcja "popovers" nizej): pojawia sie
+   samo, bez klikniecia, wiec nie korzysta z #layer/#scrim ani z logiki
+   zamykania po kliknieciu poza nim. */
+.update-toast {
+  position: absolute; top: 92px; right: 14px; z-index: 55; width: 296px;
+  padding: 12px 14px; border-radius: var(--radius-lg);
+  background: var(--glass); border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-panel); backdrop-filter: blur(16px);
+  animation: pop .18s var(--ease);
+}
+.update-toast.leaving { opacity: 0; transition: opacity .3s var(--ease); }
+.update-toast .row { display: flex; align-items: flex-start; gap: 9px; }
+.update-toast .row .icon { width: 17px; height: 17px; color: var(--accent-strong); flex: none; margin-top: 2px; }
+.update-toast .title { font-size: 12.5px; font-weight: 600; color: var(--text); flex: 1; line-height: 1.4; }
+.update-toast .dismiss {
+  width: 20px; height: 20px; border-radius: 6px; flex: none;
+  display: flex; align-items: center; justify-content: center; color: var(--text-faint);
+}
+.update-toast .dismiss:hover { background: rgba(var(--tint), 0.09); color: var(--text); }
+.update-toast .dismiss .icon { width: 13px; height: 13px; margin: 0; }
+.update-toast .sub { font-size: 11.5px; color: var(--text-dim); margin: 3px 0 10px 26px; line-height: 1.45; }
+.update-toast .actions { display: flex; gap: 8px; margin-left: 26px; }
+.update-toast .actions button {
+  height: 27px; padding: 0 12px; border-radius: 7px; font-size: 11.5px; font-weight: 600;
+  transition: background .12s var(--ease), opacity .12s var(--ease);
+}
+.update-toast .actions .go { background: var(--accent); color: #fff; }
+.update-toast .actions .go:hover { background: var(--accent-strong); }
+.update-toast .actions .go[disabled] { opacity: .6; pointer-events: none; }
+.update-toast .actions .later { color: var(--text-dim); font-weight: 500; }
+.update-toast .actions .later:hover { background: rgba(var(--tint), 0.07); color: var(--text); }
+
 /* --------------------------------------------------------------- tab strip */
 
 .tabstrip {
