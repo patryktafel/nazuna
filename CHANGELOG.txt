@@ -1,6 +1,18 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.26 - 28 sierpnia 2026
+-------------------------
+
+Poprawka wyglądu karty powiadomienia
+
+Karta powiadomienia o aktualizacji potrafiła wyświetlić się ucięta - widać
+było tylko tytuł, bez opisu i przycisków "Pobierz"/"Później". Powodem było
+rozmycie tła pod kartą, które w niektórych układach Windows/Chromium nie
+nadążało z domalowaniem świeżo dodanego elementu. Usunięto samo rozmycie -
+karta ma teraz zwykłe, prawie nieprzezroczyste tło bez tego ryzyka, wygląda
+niemal identycznie.
+
 0.1.25 - 28 sierpnia 2026
 -------------------------
 

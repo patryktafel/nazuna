@@ -36,7 +36,7 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
   position: absolute; top: 92px; right: 14px; z-index: 55; width: 296px;
   padding: 12px 14px; border-radius: var(--radius-lg);
   background: var(--glass); border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-panel); backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-panel);
   animation: pop .18s var(--ease);
 }
 .update-toast.leaving { opacity: 0; transition: opacity .3s var(--ease); }
