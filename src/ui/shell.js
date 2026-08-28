@@ -1177,6 +1177,9 @@ function renderUpdateToast(stan) {
       <div class="row">${iconSvg('alert')}<div class="title">Nie udało się pobrać aktualizacji</div>
         <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
       <div class="sub">${escapeHtml(stan.komunikat || 'Spróbuj ponownie później, z poziomu O programie.')}</div>`);
+    // Odrozniamy blad kolorem - inaczej wyglada tak samo jak zwykla, spokojna
+    // informacja o dostepnej wersji, a to co innego.
+    node.classList.add('error');
     node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
   }
 }

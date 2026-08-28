@@ -1,6 +1,15 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.27 - 28 sierpnia 2026
+-------------------------
+
+Drobna poprawka karty powiadomienia
+
+Karta z informacją o błędzie pobierania aktualizacji wyglądała tak samo jak
+zwykłe, spokojne powiadomienia - teraz ma czerwoną ikonę i delikatnie
+czerwoną obwódkę, więc od razu widać, że to błąd, a nie zwykła informacja.
+
 0.1.26 - 28 sierpnia 2026
 -------------------------
 

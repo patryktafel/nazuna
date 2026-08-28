@@ -40,6 +40,8 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
   animation: pop .18s var(--ease);
 }
 .update-toast.leaving { opacity: 0; transition: opacity .3s var(--ease); }
+.update-toast.error { border-color: rgba(207, 52, 70, .35); }
+.update-toast.error .row .icon { color: var(--danger); }
 .update-toast .row { display: flex; align-items: flex-start; gap: 9px; }
 .update-toast .row .icon { width: 17px; height: 17px; color: var(--accent-strong); flex: none; margin-top: 2px; }
 .update-toast .title { font-size: 12.5px; font-weight: 600; color: var(--text); flex: 1; line-height: 1.4; }
