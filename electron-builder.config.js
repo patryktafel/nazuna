@@ -33,14 +33,18 @@ module.exports = {
      sprawdza nowe wersje. Kod zrodlowy zostaje osobno, w prywatnym repo
      nazuna. "private: false" mowi electron-updaterowi, zeby przy
      sprawdzaniu i pobieraniu aktualizacji nie szukal tokenu GitHub -
-     repo jest publiczne, wiec nie jest potrzebny. Samo budowanie (npm run
-     dist) nigdy nie publikuje samo z siebie - to robi osobny krok
-     "gh release create", dopiero na wyrazne zadanie. */
+     repo jest publiczne, wiec nie jest potrzebny. Samo budowanie
+     (npm run dist) nigdy nie publikuje samo z siebie - publikuje tylko
+     "npm run dist:publish" (czyli wydaj.bat), i to od razu jako gotowe
+     wydanie: domyslnie electron-builder tworzylby szkic (releaseType
+     "draft"), ktorego autoUpdater by nie widzial, wiec wymuszamy
+     "release". */
   publish: {
     provider: 'github',
     owner: 'patryktafel',
     repo: 'nazuna-updates',
-    private: false
+    private: false,
+    releaseType: 'release'
   },
   productName: 'Nazuna',
   asar: true,
