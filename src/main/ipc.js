@@ -355,7 +355,7 @@ const handlers = {
   },
   'app.updateAvailable': () => updater.dostepny(),
   'app.updateStatus': () => updater.stan(),
-  'app.updateCheck': async () => updater.sprawdz(),
+  'app.updateCheck': async () => updater.sprawdz('reczne'),
   'app.updateDownload': () => updater.pobierz(),
   'app.updateInstall': () => updater.zainstaluj(),
   'app.quit': () => app.quit()

@@ -1,6 +1,18 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.31 - 28 sierpnia 2026
+-------------------------
+
+Dziennik diagnostyczny dla aktualizacji
+
+Automatyczne sprawdzanie u jednej osoby uparcie nie działa, mimo kilku
+poprawek, a ręczne zawsze działa bez problemu - żeby w końcu zobaczyć co
+się naprawdę dzieje zamiast zgadywać, dodano dziennik zapisujący każdą
+próbę sprawdzenia (i cały wewnętrzny log mechanizmu aktualizacji) do pliku
+aktualizacje.log w folderze danych Nazuny (nazuna://about - Ta instalacja -
+Otwórz).
+
 0.1.30 - 28 sierpnia 2026
 -------------------------
 

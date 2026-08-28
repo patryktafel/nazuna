@@ -133,9 +133,9 @@ if (!gotLock) {
     // samo by sie nie dowiedzialo o nowej wersji.
     updater.init((stan) => W.broadcastAll('update:status', stan));
     if (updater.dostepny()) {
-      setTimeout(() => { updater.sprawdz().catch(() => {}); }, 15 * 1000);
-      setTimeout(() => { updater.sprawdz().catch(() => {}); }, 5 * 60 * 1000);
-      setInterval(() => { updater.sprawdz().catch(() => {}); }, 6 * 60 * 60 * 1000);
+      setTimeout(() => { updater.sprawdz('auto-15s').catch(() => {}); }, 15 * 1000);
+      setTimeout(() => { updater.sprawdz('auto-5min').catch(() => {}); }, 5 * 60 * 1000);
+      setInterval(() => { updater.sprawdz('auto-6h').catch(() => {}); }, 6 * 60 * 60 * 1000);
     }
 
     // Listy filtrow wczytuja sie rownolegle z otwieraniem okna, zeby start byl
