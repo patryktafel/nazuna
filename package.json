@@ -10,6 +10,7 @@
     "start": "electron .",
     "pobierz-silnik": "node tools/pobierz-electron-wv.js",
     "dist": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && electron-builder --config electron-builder.config.js --win nsis",
+    "dist:publish": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && electron-builder --config electron-builder.config.js --win nsis --publish always",
     "dist:portable": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && electron-builder --config electron-builder.config.js --win portable",
     "pobierz-silnik-mac": "node tools/pobierz-electron-wv.js --mac",
     "dist:mac": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js --mac && electron-builder --config electron-builder.config.js --mac dir",

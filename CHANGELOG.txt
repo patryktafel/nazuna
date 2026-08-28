@@ -33,6 +33,14 @@ logo Nazuny (tak jak przeglądarka), i tworzy w Panelu sterowania wpis do
 odinstalowania. Wersję przenośną (jeden plik .exe) da się zbudować dalej
 na żądanie - domyślnie już nie powstaje.
 
+Drugi dopisek z 28 sierpnia: kod przeniósł się na GitHuba (prywatne
+repozytorium) i doszły automatyczne aktualizacje dla zainstalowanej wersji
+dla Windows. Nazuna sama, po cichu, sprawdza w tle, czy jest nowsza wersja,
+a w O programie widać stan i można to zrobić ręcznie, pobrać aktualizację
+i zainstalować ją jednym kliknięciem. Metadane aktualizacji pochodzą z
+osobnego, publicznego repozytorium (nazuna-updates), które nie zawiera
+kodu źródłowego - tylko gotowe wydania.
+
 0.1.20 - 27 sierpnia 2026
 -------------------------
 
