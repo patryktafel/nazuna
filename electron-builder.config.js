@@ -72,11 +72,18 @@ module.exports = {
      a wyglad naglowka i panelu bocznego jest utrzymany w ciemnym,
      fioletowym motywie Nazuny (build/installerHeader.bmp, installerSidebar.bmp -
      wygenerowane z tego samego logo co ikona aplikacji). Wersje portable
-     buduje sie osobno, komenda "npm run dist:portable", tylko na zadanie. */
+     buduje sie osobno, komenda "npm run dist:portable", tylko na zadanie.
+     "differentialPackage: false" wylacza generowanie osobnego pliku .blockmap
+     (uzywanego tylko do pobierania samej roznicy miedzy wersjami) - bez niego
+     electron-updater po prostu pobiera caly nowy instalator, co dla Nazuny
+     nie robi wiekszej roznicy, a przy okazji omija bledy electron-buildera,
+     ktory przy publikowaniu na GitHuba probowal wyslac .exe i .blockmap
+     naraz i gubil sie, tworzac dwa wydania zamiast jednego. */
   nsis: {
     oneClick: false,
     allowElevation: true,
     allowToChangeInstallationDirectory: true,
+    differentialPackage: false,
     installerIcon: 'build/icon.ico',
     uninstallerIcon: 'build/icon.ico',
     installerHeader: 'build/installerHeader.bmp',
