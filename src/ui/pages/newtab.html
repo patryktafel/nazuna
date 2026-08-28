@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pl" data-accent="violet">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src nazuna:; img-src nazuna: data: https: http:; style-src nazuna: 'unsafe-inline'; script-src nazuna:">
+<title>Nowa karta</title>
+<link rel="stylesheet" href="nazuna://ui/theme.css">
+<link rel="stylesheet" href="nazuna://ui/pages.css">
+</head>
+<body class="newtab">
+  <div class="aurora"><i></i></div>
+  <div class="nt-wrap">
+    <div class="nt-logo">
+      <img src="nazuna://assets/mark.png" alt="">
+      <b>nazuna</b>
+    </div>
+    <form class="nt-search" id="form">
+      <span id="searchIcon"></span>
+      <input id="q" type="text" placeholder="Szukaj albo wpisz adres" spellcheck="false" autocomplete="off" autofocus>
+    </form>
+    <div class="tiles" id="tiles"></div>
+    <form class="nt-addform" id="addForm" hidden>
+      <input class="field" id="addUrl" type="text" placeholder="Adres strony, np. wykop.pl" spellcheck="false" autocomplete="off">
+      <input class="field" id="addLabel" type="text" placeholder="Nazwa (opcjonalnie)" spellcheck="false" autocomplete="off" maxlength="40">
+      <div class="nt-addform-err" id="addErr" hidden></div>
+      <div class="nt-addform-row">
+        <button type="button" class="btn ghost" id="addCancel">Anuluj</button>
+        <button type="submit" class="btn primary" id="addOk">Dodaj</button>
+      </div>
+    </form>
+  </div>
+  <div class="nt-foot">
+    <button class="btn ghost" data-go="nazuna://history">Historia</button>
+    <button class="btn ghost" data-go="nazuna://bookmarks">Zakładki</button>
+    <button class="btn ghost" data-go="nazuna://settings">Ustawienia</button>
+  </div>
+  <script src="nazuna://ui/icons.js"></script>
+  <script src="newtab.js"></script>
+</body>
+</html>

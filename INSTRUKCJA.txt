@@ -1,0 +1,60 @@
+Jak zbudować Nazunę u siebie
+============================
+
+Potrzebujesz jednej rzeczy: Node.js. Nic poza tym.
+
+
+Krok 1. Zainstaluj Node.js (tylko raz w życiu)
+----------------------------------------------
+
+Wejdź na https://nodejs.org i pobierz wersję oznaczoną LTS. Uruchom instalator
+i klikaj Dalej, niczego nie zmieniając. Zajmuje to jakieś dwie minuty.
+
+
+Krok 2. Kliknij dwukrotnie plik zbuduj.bat
+------------------------------------------
+
+Otworzy się czarne okno i samo zrobi wszystko:
+
+  1. pobierze potrzebne składniki
+  2. pobierze silnik przeglądarki z obsługą DRM (około 140 MB)
+  3. złoży gotowy plik Nazuna.exe
+
+Za pierwszym razem potrwa to od pięciu do piętnastu minut, bo pobiera się
+sporo rzeczy. Każde kolejne budowanie to już tylko kilka minut, bo pobrane
+składniki zostają na dysku.
+
+Gdy skończy, sam otworzy folder dist z gotowym plikiem Nazuna.exe.
+
+
+Gdy coś pójdzie nie tak
+-----------------------
+
+Okno nie zamknie się samo. Zrób zrzut ekranu razem z tekstem błędu i wyślij mi
+go, wtedy zobaczę co się stało.
+
+
+Co gdzie leży
+-------------
+
+  src\              kod przeglądarki
+  build\            ikona programu
+  resources\        listy filtrów blokera reklam
+  tools\            skrypty pomocnicze używane przy budowaniu
+  dist\             tu pojawi się gotowy Nazuna.exe (powstanie sam)
+  zbuduj.bat        to klikasz
+  CHANGELOG.txt     co się zmieniało w kolejnych wersjach
+  README.txt        instrukcja obsługi samej przeglądarki
+
+
+Po co to całe zamieszanie
+-------------------------
+
+Gotowy Nazuna.exe waży 90 MB, a jeden plik przesłany w rozmowie może mieć
+najwyżej 30 MB. Dlatego każdą wersję musiałem ciąć na pięć kawałków, sklejać
+u ciebie na dysku i zostawiać drugie tyle śmieci do posprzątania.
+
+Kod źródłowy waży kilka megabajtów i mieści się w całości. Od teraz przy każdej
+poprawce wysyłam ci mały plik, ty klikasz zbuduj.bat i masz aktualną wersję.
+Przy okazji powstaje ona na twoim Windowsie, a nie w moim linuksowym
+środowisku, więc jest bliżej tego, na czym faktycznie działa.

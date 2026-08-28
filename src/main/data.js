@@ -1,0 +1,229 @@
+'use strict';
+const path = require('path');
+const { app } = require('electron');
+const { Store } = require('./store');
+
+let settings, bookmarks, history, downloads, extensionsStore, siteStore;
+
+const DEFAULT_SETTINGS = {
+  searchEngine: 'google',
+  homepage: 'nazuna://newtab',
+  startup: 'newtab',            // newtab | restore | homepage
+  newTabBackground: 'aurora',
+  adblockEnabled: true,
+  adblockMode: 'safe',
+  showBookmarksBar: true,
+  showSuggestions: true,
+  askWhereToSave: false,
+  downloadDir: '',
+  doNotTrack: true,
+  passkeys: false,
+  blockThirdPartyCookies: true,
+  hardwareAcceleration: true,
+  extensionsEnabled: true,
+  defaultZoom: 1,
+  theme: 'dark',            // dark | light | system
+  accent: 'violet',
+  restoreSession: null
+};
+
+function init() {
+  const dir = app.getPath('userData');
+  settings = new Store(path.join(dir, 'settings.json'), DEFAULT_SETTINGS);
+  bookmarks = new Store(path.join(dir, 'bookmarks.json'), { items: [], nextId: 1 });
+  history = new Store(path.join(dir, 'history.json'), { items: [] });
+  downloads = new Store(path.join(dir, 'downloads.json'), { items: [] });
+  extensionsStore = new Store(path.join(dir, 'extensions.json'), { installed: [] });
+  siteStore = new Store(path.join(dir, 'sites.json'), { adblockOff: [], zoom: {}, permissions: {}, skroty: [], skrotyUkryte: [] });
+}
+
+/* ------------------------------------------------------------------ history */
+
+const HISTORY_CAP = 30000;
+
+function addHistory(url, title) {
+  if (!url || /^(nazuna|about|chrome-extension|devtools|data|blob):/i.test(url)) return;
+  const items = history.data.items;
+  const now = Date.now();
+  const last = items[0];
+  if (last && last.url === url && now - last.ts < 30000) {
+    last.title = title || last.title;
+    last.ts = now;
+    history.save();
+    return;
+  }
+  items.unshift({ url, title: title || url, ts: now });
+  if (items.length > HISTORY_CAP) items.length = HISTORY_CAP;
+  history.save();
+}
+
+function updateHistoryTitle(url, title) {
+  if (!title) return;
+  const hit = history.data.items.find((i) => i.url === url);
+  if (hit && hit.title !== title) { hit.title = title; history.save(); }
+}
+
+function searchHistory(query, limit = 300) {
+  const q = (query || '').trim().toLowerCase();
+  const out = [];
+  for (const item of history.data.items) {
+    if (!q || item.url.toLowerCase().includes(q) || (item.title || '').toLowerCase().includes(q)) {
+      out.push(item);
+      if (out.length >= limit) break;
+    }
+  }
+  return out;
+}
+
+function clearHistory(sinceMs) {
+  if (!sinceMs) history.data.items = [];
+  else {
+    const cut = Date.now() - sinceMs;
+    history.data.items = history.data.items.filter((i) => i.ts < cut);
+  }
+  history.flush();
+}
+
+function removeHistory(urls) {
+  const set = new Set(urls);
+  history.data.items = history.data.items.filter((i) => !set.has(i.url));
+  history.save();
+}
+
+/* ---------------------------------------------------------------- bookmarks */
+
+function bookmarkList() { return bookmarks.data.items; }
+
+function isBookmarked(url) { return bookmarks.data.items.some((b) => b.type === 'link' && b.url === url); }
+
+function addBookmark({ title, url, parent = 'bar' }) {
+  const existing = bookmarks.data.items.find((b) => b.type === 'link' && b.url === url);
+  if (existing) { existing.title = title || existing.title; bookmarks.save(); return existing; }
+  const item = { id: String(bookmarks.data.nextId++), type: 'link', title: title || url, url, parent, ts: Date.now() };
+  bookmarks.data.items.push(item);
+  bookmarks.save();
+  return item;
+}
+
+function addFolder(title, parent = 'bar') {
+  const item = { id: String(bookmarks.data.nextId++), type: 'folder', title: title || 'Nowy folder', parent, ts: Date.now() };
+  bookmarks.data.items.push(item);
+  bookmarks.save();
+  return item;
+}
+
+function updateBookmark(id, patch) {
+  const item = bookmarks.data.items.find((b) => b.id === id);
+  if (!item) return null;
+  Object.assign(item, patch);
+  bookmarks.save();
+  return item;
+}
+
+function removeBookmark(id) {
+  const drop = new Set([id]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const b of bookmarks.data.items) {
+      if (b.parent && drop.has(b.parent) && !drop.has(b.id)) { drop.add(b.id); changed = true; }
+    }
+  }
+  bookmarks.data.items = bookmarks.data.items.filter((b) => !drop.has(b.id));
+  bookmarks.save();
+}
+
+function removeBookmarkByUrl(url) {
+  const hit = bookmarks.data.items.find((b) => b.type === 'link' && b.url === url);
+  if (hit) removeBookmark(hit.id);
+}
+
+function moveBookmark(id, parent, beforeId) {
+  const items = bookmarks.data.items;
+  const idx = items.findIndex((b) => b.id === id);
+  if (idx < 0) return;
+  const [item] = items.splice(idx, 1);
+  item.parent = parent;
+  const at = beforeId ? items.findIndex((b) => b.id === beforeId) : -1;
+  if (at >= 0) items.splice(at, 0, item); else items.push(item);
+  bookmarks.save();
+}
+
+/* ------------------------------------------------------------------- sites */
+
+function adblockAllowed(hostname) {
+  return !siteStore.data.adblockOff.includes(hostname);
+}
+function setAdblockForSite(hostname, enabled) {
+  const list = siteStore.data.adblockOff;
+  const i = list.indexOf(hostname);
+  if (enabled && i >= 0) list.splice(i, 1);
+  if (!enabled && i < 0) list.push(hostname);
+  siteStore.save();
+}
+function siteZoom(hostname) { return siteStore.data.zoom[hostname]; }
+function setSiteZoom(hostname, factor) {
+  if (!hostname) return;
+  if (!factor || Math.abs(factor - 1) < 0.001) delete siteStore.data.zoom[hostname];
+  else siteStore.data.zoom[hostname] = factor;
+  siteStore.save();
+}
+function permissionFor(hostname, kind) {
+  return (siteStore.data.permissions[hostname] || {})[kind];
+}
+function setPermission(hostname, kind, value) {
+  const p = siteStore.data.permissions;
+  p[hostname] = p[hostname] || {};
+  p[hostname][kind] = value;
+  siteStore.save();
+}
+
+/* --------------------------------------------------------- kafelki nowej karty */
+
+/* Kafelki na nowej karcie to domyslnie najczesciej odwiedzane strony z historii.
+   "skroty" to te dopiete recznie przez uzytkownika (na koncu listy wlasnych
+   kafelkow, w kolejnosci dodawania). "skrotyUkryte" to hosty schowane przez
+   usuniecie kafelka - nie maja wracac same z siebie, dopoki ktos ich znowu
+   nie doda. */
+function skrotyStan() {
+  const s = siteStore.data;
+  if (!Array.isArray(s.skroty)) s.skroty = [];
+  if (!Array.isArray(s.skrotyUkryte)) s.skrotyUkryte = [];
+  return { przypiete: s.skroty, ukryte: s.skrotyUkryte };
+}
+
+function dodajSkrot({ origin, host, label }) {
+  const { przypiete, ukryte } = skrotyStan();
+  const czystaEtykieta = String(label || '').trim().slice(0, 40);
+  const i = przypiete.findIndex((s) => s.origin === origin);
+  if (i >= 0) przypiete[i] = { origin, host, label: czystaEtykieta || przypiete[i].label || '' };
+  else przypiete.push({ origin, host, label: czystaEtykieta });
+  const hi = ukryte.indexOf(host);
+  if (hi >= 0) ukryte.splice(hi, 1);
+  siteStore.save();
+  return skrotyStan();
+}
+
+function usunSkrot({ origin, host }) {
+  const { przypiete, ukryte } = skrotyStan();
+  const i = przypiete.findIndex((s) => s.origin === origin);
+  if (i >= 0) przypiete.splice(i, 1);
+  if (host && !ukryte.includes(host)) ukryte.push(host);
+  siteStore.save();
+  return skrotyStan();
+}
+
+module.exports = {
+  init,
+  get settings() { return settings; },
+  get bookmarksStore() { return bookmarks; },
+  get historyStore() { return history; },
+  get downloadsStore() { return downloads; },
+  get extensionsStore() { return extensionsStore; },
+  get siteStore() { return siteStore; },
+  addHistory, updateHistoryTitle, searchHistory, clearHistory, removeHistory,
+  bookmarkList, isBookmarked, addBookmark, addFolder, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
+  adblockAllowed, setAdblockForSite, siteZoom, setSiteZoom, permissionFor, setPermission,
+  skrotyStan, dodajSkrot, usunSkrot,
+  DEFAULT_SETTINGS
+};

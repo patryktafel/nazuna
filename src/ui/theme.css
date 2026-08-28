@@ -1,0 +1,179 @@
+/* Nazuna - motywy
+
+   Ciemny jest motywem wyjsciowym i zostaje dokladnie taki, jaki byl.
+   Jasny to osobna paleta dobrana pod bialy papier, a nie odwrocenie ciemnej:
+   odwracanie daje szare litery na bialym tle i meczy oczy.
+
+   Dwa tokeny robia wiekszosc roboty:
+   --tint  kolor rozjasnien pod kursorem i cienkich linii. W ciemnym bialy,
+           w jasnym prawie czarny, zeby najechanie bylo widoczne w obu.
+   --sink  kolor wglebien, czyli pol tekstowych osadzonych w pasku. W ciemnym
+           czarny, w jasnym bialy, bo w jasnym motywie pole ma byc jasniejsze
+           od paska, a nie ciemniejsze. */
+:root {
+  --bg:            #0d0e12;
+  --bg-raised:     #121419;
+  --chrome-top:    #171a21;
+  --chrome-bottom: #101218;
+  --surface:       #181b22;
+  --surface-2:     #1f222b;
+  --surface-3:     #262a35;
+  --border:        rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --text:          #e9ebf2;
+  --text-dim:      #a2a8bb;
+  --text-faint:    #6d7488;
+  --danger:        #ff6b7a;
+  --ok:            #56d9a3;
+  --warn:          #ffc46b;
+
+  --accent:        #8b7cff;
+  --accent-strong: #a396ff;
+  --accent-dim:    rgba(139, 124, 255, 0.16);
+  --accent-ring:   rgba(139, 124, 255, 0.30);
+  --on-accent:     #12121c;
+  --sel-text:      #ffffff;
+
+  --tint: 255, 255, 255;
+  --sink: 0, 0, 0;
+  --chrome-line:   rgba(0, 0, 0, 0.5);
+  --chrome-glow:   rgba(0, 0, 0, 0.9);
+  --shadow-float:  0 14px 40px rgba(0, 0, 0, .45);
+  --aurora-1:      rgba(139, 124, 255, .55);
+  --aurora-2:      rgba(79, 180, 255, .35);
+  --aurora-3:      rgba(255, 140, 200, .5);
+  --aurora-opacity: .5;
+  --aurora-opacity-3: .28;
+  --glass:      rgba(16, 17, 22, 0.92);
+  --glass-soft: rgba(20, 22, 29, 0.72);
+
+  --radius-sm: 7px;
+  --radius:    10px;
+  --radius-lg: 14px;
+
+  --shadow-panel: 0 18px 48px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --ease: cubic-bezier(0.22, 0.8, 0.26, 1);
+  --font: "Segoe UI Variable Text", "Segoe UI", Inter, -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root[data-accent="mint"]   { --accent: #4fd8ac; --accent-strong: #6ee6bf; --accent-dim: rgba(79,216,172,.16); --accent-ring: rgba(79,216,172,.3); }
+:root[data-accent="sky"]    { --accent: #5aa7ff; --accent-strong: #7cbaff; --accent-dim: rgba(90,167,255,.16); --accent-ring: rgba(90,167,255,.3); }
+:root[data-accent="rose"]   { --accent: #ff7aa2; --accent-strong: #ff97b6; --accent-dim: rgba(255,122,162,.16); --accent-ring: rgba(255,122,162,.3); }
+:root[data-accent="amber"]  { --accent: #ffb257; --accent-strong: #ffc47c; --accent-dim: rgba(255,178,87,.16); --accent-ring: rgba(255,178,87,.3); }
+
+/* ------------------------------------------------------------ motyw jasny */
+
+:root[data-motyw="jasny"] {
+  --bg:            #f5f6fa;
+  --bg-raised:     #ffffff;
+  --chrome-top:    #eceef5;
+  --chrome-bottom: #e3e6ef;
+  --surface:       #ffffff;
+  --surface-2:     #f3f5fa;
+  --surface-3:     #e8ebf3;
+  --border:        rgba(22, 26, 44, 0.11);
+  --border-strong: rgba(22, 26, 44, 0.20);
+  --text:          #1a1d27;
+  --text-dim:      #575d72;
+  --text-faint:    #868ca1;
+  --danger:        #cf3446;
+  --ok:            #128a63;
+  --warn:          #a86c07;
+
+  --accent:        #6a5aef;
+  --accent-strong: #5343d6;
+  --accent-dim:    rgba(106, 90, 239, 0.13);
+  --accent-ring:   rgba(106, 90, 239, 0.26);
+  --on-accent:     #ffffff;
+  --sel-text:      #1a1d27;
+
+  --tint: 22, 26, 44;
+  --sink: 255, 255, 255;
+  --chrome-line:   rgba(22, 26, 44, 0.10);
+  --chrome-glow:   rgba(22, 26, 44, 0.16);
+  --shadow-panel:  0 18px 44px rgba(24, 28, 45, 0.16), 0 2px 8px rgba(24, 28, 45, 0.10);
+  --shadow-float:  0 14px 40px rgba(24, 28, 45, .14);
+  --aurora-1:      rgba(139, 124, 255, .38);
+  --aurora-2:      rgba(79, 180, 255, .28);
+  --aurora-3:      rgba(255, 140, 200, .34);
+  --aurora-opacity: .35;
+  --aurora-opacity-3: .2;
+  --glass:      rgba(255, 255, 255, 0.94);
+  --glass-soft: rgba(255, 255, 255, 0.80);
+}
+
+:root[data-motyw="jasny"][data-accent="mint"]  { --accent: #12a077; --accent-strong: #0d8562; --accent-dim: rgba(18,160,119,.13); --accent-ring: rgba(18,160,119,.26); }
+:root[data-motyw="jasny"][data-accent="sky"]   { --accent: #1a7fe0; --accent-strong: #1568bb; --accent-dim: rgba(26,127,224,.13); --accent-ring: rgba(26,127,224,.26); }
+:root[data-motyw="jasny"][data-accent="rose"]  { --accent: #de3f77; --accent-strong: #bd2f61; --accent-dim: rgba(222,63,119,.13); --accent-ring: rgba(222,63,119,.26); }
+:root[data-motyw="jasny"][data-accent="amber"] { --accent: #b3720a; --accent-strong: #965f06; --accent-dim: rgba(179,114,10,.13); --accent-ring: rgba(179,114,10,.26); }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: default; }
+a { color: var(--accent-strong); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--tint), 0.22);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--tint), 0.38); background-clip: content-box; }
+::selection { background: var(--accent-dim); color: var(--sel-text); }
+
+.icon { width: 17px; height: 17px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.icon.filled { fill: currentColor; stroke: none; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 32px; padding: 0 14px; border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--border);
+  transition: background .14s var(--ease), border-color .14s var(--ease), transform .1s var(--ease);
+  cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--surface-3); border-color: var(--border-strong); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); border-color: transparent; color: #10101a; font-weight: 600; }
+.btn.primary:hover { background: var(--accent-strong); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--text-dim); }
+.btn.ghost:hover { background: rgba(var(--tint), .07); color: var(--text); }
+.btn.danger { color: var(--danger); }
+.btn.danger:hover { background: rgba(255, 107, 122, .12); border-color: rgba(255,107,122,.3); }
+.btn[disabled] { opacity: .4; pointer-events: none; }
+
+.field {
+  height: 34px; padding: 0 12px; border-radius: var(--radius-sm);
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); outline: none; width: 100%;
+  transition: border-color .14s var(--ease), box-shadow .14s var(--ease);
+}
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+.field::placeholder { color: var(--text-faint); }
+
+.switch { position: relative; width: 38px; height: 22px; flex: none; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.switch .track {
+  position: absolute; inset: 0; border-radius: 999px;
+  background: var(--surface-3); transition: background .16s var(--ease);
+}
+.switch .thumb {
+  position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+  background: #cfd3e0; transition: transform .18s var(--ease), background .16s var(--ease);
+}
+.switch input:checked ~ .track { background: var(--accent); }
+.switch input:checked ~ .thumb { transform: translateX(16px); background: #14141f; }

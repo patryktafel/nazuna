@@ -1,0 +1,84 @@
+; Nazuna - dodatkowa strona instalatora z wyborem skrótów.
+;
+; electron-builder zawsze tworzy skrót na pulpicie i w menu Start (macra
+; addStartMenuLink/addDesktopLink w jego szablonie). Nie ma gotowej opcji,
+; żeby zapytać o to w trakcie instalacji - trzeba dopisać własną stronę
+; (nsDialogs) i po instalacji skasować skrót, którego użytkownik nie chciał.
+;
+; Trzy haki, z których korzystamy, są udokumentowane przez electron-builder:
+;   customHeader             - na samym początku skryptu (zmienne, deklaracje)
+;   customPageAfterChangeDir - własna strona zaraz po wyborze folderu instalacji
+;   customInstall             - kod odpalany tuż po skopiowaniu plików i skrótów
+
+; Caly ten plik jest dolaczany bardzo wczesnie (przed wlasnymi !include
+; instalatora electron-buildera), wiec zanim ponizsze funkcje skorzystaja z
+; MUI_HEADER_TEXT i nsDialogs, sami musimy sciagnac MUI2 - i to poza jakimkolwiek
+; makrem, bo tresc makra przetwarza sie dopiero przy jego wywolaniu, a ponizsze
+; funkcje sa poza makrami i przetwarzaja sie od razu, w miejscu tego !include.
+; MUI2.nsh ma zabezpieczenie przed podwojnym dolaczeniem, wiec pozniejszy
+; wlasny !include "MUI2.nsh" instalatora nic tu nie zepsuje.
+!include "MUI2.nsh"
+
+; Z tego samego powodu (patrz wyzej) zmienne tez deklarujemy od razu, poza
+; makrem customHeader - funkcje ponizej odwoluja sie do nich zanim
+; !insertmacro customHeader w ogole sie wykona. Tylko w przebiegu instalatora -
+; w przebiegu deinstalatora (BUILD_UNINSTALLER) nikt by ich nie uzyl.
+!ifndef BUILD_UNINSTALLER
+Var Nazuna_SkrotyDialog
+Var Nazuna_ChkPulpit
+Var Nazuna_ChkStartMenu
+Var Nazuna_ChcPulpit
+Var Nazuna_ChcStartMenu
+!endif
+
+!macro customPageAfterChangeDir
+  Page custom Nazuna_SkrotyPageShow Nazuna_SkrotyPageLeave
+!macroend
+
+!macro customInstall
+  ${if} $Nazuna_ChcPulpit == 0
+    ${if} ${FileExists} "$newDesktopLink"
+      Delete "$newDesktopLink"
+    ${endif}
+  ${endif}
+  ${if} $Nazuna_ChcStartMenu == 0
+    ${if} ${FileExists} "$newStartMenuLink"
+      Delete "$newStartMenuLink"
+    ${endif}
+  ${endif}
+!macroend
+
+; electron-builder kompiluje ten skrypt dwa razy - raz zeby zbudowac sam
+; deinstalator (BUILD_UNINSTALLER), raz dla wlasciwego instalatora. Nasza
+; strona nalezy tylko do instalatora (customPageAfterChangeDir i tak dziala
+; tylko w tamtym przebiegu), a bez tego !ifndef NSIS ostrzega w przebiegu
+; deinstalatora, ze funkcje nie sa niczym uzyte - i przy warningsAsErrors to
+; przerywa cala kompilacje.
+!ifndef BUILD_UNINSTALLER
+
+Function Nazuna_SkrotyPageShow
+  !insertmacro MUI_HEADER_TEXT "Skróty" "Wybierz, gdzie Nazuna ma zostawić skróty do uruchamiania"
+
+  nsDialogs::Create 1018
+  Pop $Nazuna_SkrotyDialog
+  ${if} $Nazuna_SkrotyDialog == error
+    Abort
+  ${endif}
+
+  ${NSD_CreateCheckbox} 0 30u 100% 12u "Utwórz skrót na pulpicie"
+  Pop $Nazuna_ChkPulpit
+  ${NSD_SetState} $Nazuna_ChkPulpit ${BST_CHECKED}
+
+  ${NSD_CreateCheckbox} 0 52u 100% 12u "Utwórz skrót w menu Start"
+  Pop $Nazuna_ChkStartMenu
+  ${NSD_SetState} $Nazuna_ChkStartMenu ${BST_CHECKED}
+
+  nsDialogs::Show
+FunctionEnd
+
+Function Nazuna_SkrotyPageLeave
+  ${NSD_GetState} $Nazuna_ChkPulpit $Nazuna_ChcPulpit
+  ${NSD_GetState} $Nazuna_ChkStartMenu $Nazuna_ChcStartMenu
+FunctionEnd
+
+!endif

@@ -1,0 +1,18 @@
+# zaleznosci i pobrane silniki - odtwarzane przez npm install / npm run pobierz-silnik
+node_modules/
+electron-wv/
+electron-wv-mac/
+electron-wv-linux/
+
+# wyniki budowania
+dist/
+
+# lista adblocka - generowana przez tools/build-adblock.js
+resources/adblock.bin
+
+# robocze/tymczasowe
+build/nsis-work/
+*.log
+*.zip
+.DS_Store
+Thumbs.db

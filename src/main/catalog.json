@@ -1,0 +1,19 @@
+{
+  "note": "Rozszerzenia, które w przeglądarkach opartych na Chromium bez warstwy Google zwykle działają. Zgodność potrafi się zmieniać wraz z aktualizacjami rozszerzeń.",
+  "items": [
+    { "id": "eimadpbcbfnmbkopoojfekhnkhdbieeh", "name": "Dark Reader", "category": "Wygląd", "summary": "Ciemny motyw dla każdej strony, z regulacją kontrastu i sepii.", "confidence": "wysoka" },
+    { "id": "mnjggcdmjocbbbhaepdhchncahnbgone", "name": "SponsorBlock for YouTube", "category": "YouTube", "summary": "Przewija sponsorowane wstawki i intro w filmach.", "confidence": "wysoka" },
+    { "id": "gebbhagfogifgggkldgodflihgfeippi", "name": "Return YouTube Dislike", "category": "YouTube", "summary": "Przywraca licznik łapek w dół pod filmami.", "confidence": "wysoka" },
+    { "id": "ponfpcnoihfmfllpaingbgckeeldkhle", "name": "Enhancer for YouTube", "category": "YouTube", "summary": "Sterowanie prędkością, głośnością i wyglądem odtwarzacza.", "confidence": "srednia" },
+    { "id": "aapbdbdomjkkjkaonfhkkikfgjllcleb", "name": "Tłumacz Google", "category": "Narzędzia", "summary": "Tłumaczenie zaznaczonego tekstu i całych stron.", "confidence": "srednia" },
+    { "id": "lckanjgmijmafbedllaakclkaicjfmnk", "name": "ClearURLs", "category": "Prywatność", "summary": "Usuwa parametry śledzące z adresów stron.", "confidence": "wysoka" },
+    { "id": "pkehgijcmpdhfbdbbnkijodmdjhbjlgp", "name": "Privacy Badger", "category": "Prywatność", "summary": "Uczy się i blokuje niewidoczne skrypty śledzące.", "confidence": "srednia" },
+    { "id": "fihnjjcciajhdojfnbdddfaoknhalnja", "name": "I still don't care about cookies", "category": "Prywatność", "summary": "Automatycznie zamyka banery zgody na ciasteczka.", "confidence": "wysoka" },
+    { "id": "chklaanhfefbnpoihckbnefhakgolnmc", "name": "JSONVue", "category": "Dla programistów", "summary": "Czytelne formatowanie odpowiedzi JSON w karcie.", "confidence": "wysoka" },
+    { "id": "clngdbkpkpeebahjckkjfobafhncgmne", "name": "Stylus", "category": "Wygląd", "summary": "Własne style CSS dla wybranych stron.", "confidence": "srednia" },
+    { "id": "nffaoalbilbmmfgbnbgppjihopabppdk", "name": "Video Speed Controller", "category": "Multimedia", "summary": "Skróty klawiszowe do prędkości każdego odtwarzacza HTML5.", "confidence": "wysoka" },
+    { "id": "dbepggeogbaibhgnhhndojpepiihcmeb", "name": "Vimium", "category": "Narzędzia", "summary": "Nawigacja po stronach z klawiatury, w stylu Vima.", "confidence": "wysoka" },
+    { "id": "gppongmhjkpfnbhagpmjfkannfbllamg", "name": "Wappalyzer", "category": "Dla programistów", "summary": "Pokazuje, na czym zbudowana jest oglądana strona.", "confidence": "srednia" },
+    { "id": "ddkjiahejlhfcafbddmgiahcphecmpfh", "name": "uBlock Origin Lite", "category": "Prywatność", "summary": "Dodatkowe listy filtrów obok wbudowanego blokera.", "confidence": "niska" }
+  ]
+}
