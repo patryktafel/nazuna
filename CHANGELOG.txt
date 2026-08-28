@@ -1,6 +1,29 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.22 - 28 sierpnia 2026
+-------------------------
+
+Instalator, GitHub i automatyczne aktualizacje
+
+Windows dostaje teraz normalny instalator zamiast jednego pliku Nazuna.exe.
+Instalator pyta o folder docelowy i o to, czy zrobić skróty na pulpicie i w
+menu Start, ma ciemny, fioletowy wygląd z logo Nazuny (tak jak przeglądarka),
+i tworzy w Panelu sterowania wpis do odinstalowania. Wersję przenośną (jeden
+plik .exe) da się zbudować dalej na żądanie - domyślnie już nie powstaje.
+
+Kod przeniósł się na GitHuba, do prywatnego repozytorium. Osobne, publiczne
+repozytorium (nazuna-updates) nie zawiera kodu źródłowego - tylko gotowe
+wydania, z których ta wersja i wszystkie następne same sprawdzają, czy jest
+coś nowszego. Sprawdzanie dzieje się po cichu, w tle, chwilę po starcie, a
+w O programie widać stan i można to zrobić ręcznie, pobrać aktualizację i
+zainstalować ją jednym kliknięciem.
+
+Przy okazji: biblioteka adm-zip (rozpakowuje rozszerzenia i silnik
+przeglądarki) poszła w górę do wersji 0.6.0 - poprzednia miała znaną lukę,
+przez którą specjalnie spreparowany plik zip mógł wymusić przydzielenie
+4 GB pamięci. Bez zmian w działaniu, tylko łatka.
+
 0.1.21 - 27 sierpnia 2026
 -------------------------
 
@@ -25,26 +48,6 @@ który rozpoznawał i klikał banery.
 Banery zgody trzeba więc teraz zamykać samemu, tak jak w każdej innej
 przeglądarce. Blokowanie ciasteczek podmiotów trzecich (osobna funkcja,
 tarcza obok) działa bez zmian.
-
-Dopisek z 28 sierpnia: Windows dostaje teraz normalny instalator zamiast
-jednego pliku Nazuna.exe. Instalator pyta o folder docelowy i o to, czy
-zrobić skróty na pulpicie i w menu Start, ma ciemny, fioletowy wygląd z
-logo Nazuny (tak jak przeglądarka), i tworzy w Panelu sterowania wpis do
-odinstalowania. Wersję przenośną (jeden plik .exe) da się zbudować dalej
-na żądanie - domyślnie już nie powstaje.
-
-Drugi dopisek z 28 sierpnia: kod przeniósł się na GitHuba (prywatne
-repozytorium) i doszły automatyczne aktualizacje dla zainstalowanej wersji
-dla Windows. Nazuna sama, po cichu, sprawdza w tle, czy jest nowsza wersja,
-a w O programie widać stan i można to zrobić ręcznie, pobrać aktualizację
-i zainstalować ją jednym kliknięciem. Metadane aktualizacji pochodzą z
-osobnego, publicznego repozytorium (nazuna-updates), które nie zawiera
-kodu źródłowego - tylko gotowe wydania.
-
-Trzeci dopisek z 28 sierpnia: podbita biblioteka adm-zip (rozpakowuje
-rozszerzenia i silnik przeglądarki) do wersji 0.6.0 - poprzednia miała
-znaną lukę, przez którą specjalnie spreparowany plik zip mógł wymusić
-przydzielenie 4 GB pamięci. Bez zmian w działaniu, tylko łatka.
 
 0.1.20 - 27 sierpnia 2026
 -------------------------
