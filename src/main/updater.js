@@ -105,6 +105,55 @@ function zainstaluj() {
   autoUpdater.quitAndInstall(false, true);
 }
 
+/* Zamyka Nazune, instaluje po cichu (bez okienka instalatora) i sama
+   otwiera ja z powrotem - to samo co zainstaluj(), tylko bez widocznego
+   okna instalatora, do uzycia automatycznie, zanim uzytkownik cokolwiek
+   zobaczy. */
+function zainstalujCicho() {
+  if (!autoUpdater) return;
+  log('info', 'zainstalujCicho(): zamykam, instaluje po cichu i wracam');
+  autoUpdater.quitAndInstall(true, true);
+}
+
+/* Sprawdzenie tuz przy starcie, zanim pokaze sie okno - tak jak Chrome:
+   znajdzie nowa wersje, pobierze ja i zainstaluje, zanim uzytkownik w ogole
+   zobaczy przegladarke, a potem otworzy ja juz zaktualizowana. Zwraca true,
+   jesli aktualizacja zostala pobrana i wolajacy powinien wywolac
+   zainstalujCicho() i nie budowac juz okna w tym uruchomieniu (program i tak
+   zaraz sie zamknie i otworzy na nowo). Zwraca false w kazdym innym
+   przypadku (brak aktualizacji, blad, albo zwyczajnie zabrako czasu) -
+   wtedy program ma ruszyc normalnie, pobieranie leci dalej w tle i
+   zainstaluje sie przy nastepnej okazji (patrz autoInstallOnAppQuit). Limit
+   czasu jest tylko siatka bezpieczenstwa na wypadek zlego polaczenia -
+   nigdy nie chcemy, zeby przegladarka odmowila otwarcia sie przez sam
+   problem z siecia. */
+function sprawdzPrzedStartem(limitMs) {
+  return new Promise((resolve) => {
+    if (!autoUpdater) { resolve(false); return; }
+    let zakonczone = false;
+    const koniec = (zainstalowano) => {
+      if (zakonczone) return;
+      zakonczone = true;
+      clearTimeout(zegar);
+      autoUpdater.removeListener('update-downloaded', naPobrana);
+      autoUpdater.removeListener('update-not-available', naBrak);
+      autoUpdater.removeListener('error', naBlad);
+      resolve(zainstalowano);
+    };
+    const naPobrana = () => { log('info', 'sprawdzPrzedStartem: aktualizacja pobrana przed otwarciem okna'); koniec(true); };
+    const naBrak = () => koniec(false);
+    const naBlad = () => koniec(false);
+    autoUpdater.once('update-downloaded', naPobrana);
+    autoUpdater.once('update-not-available', naBrak);
+    autoUpdater.once('error', naBlad);
+    const zegar = setTimeout(() => {
+      log('warn', 'sprawdzPrzedStartem: limit czasu (', limitMs, 'ms) minal, otwieram bez czekania');
+      koniec(false);
+    }, limitMs);
+    sprawdz('start-przed-oknem').catch(() => koniec(false));
+  });
+}
+
 function stan() { return stanAktualizacji; }
 
-module.exports = { init, sprawdz, pobierz, zainstaluj, stan, dostepny };
+module.exports = { init, sprawdz, pobierz, zainstaluj, zainstalujCicho, sprawdzPrzedStartem, stan, dostepny };

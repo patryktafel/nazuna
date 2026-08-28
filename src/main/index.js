@@ -79,6 +79,26 @@ if (!gotLock) {
   });
 
   app.whenReady().then(async () => {
+    // Aktualizacje (tylko spakowana wersja dla Windows - patrz updater.js).
+    // Tak jak Chrome: sprawdzamy zanim pokaze sie cokolwiek. Jesli jest nowa
+    // wersja, pobieramy ja i instalujemy po cichu, zanim uzytkownik zobaczy
+    // przegladarke - a potem program sam otwiera sie juz zaktualizowany.
+    // Limit czasu (60s) to tylko siatka bezpieczenstwa: przy zlym polaczeniu
+    // przegladarka i tak ma sie otworzyc, aktualizacja doleci pozniej w tle.
+    updater.init((stan) => W.broadcastAll('update:status', stan));
+    if (updater.dostepny()) {
+      const zainstalowano = await updater.sprawdzPrzedStartem(60 * 1000);
+      if (zainstalowano) {
+        updater.zainstalujCicho();
+        return; // program zaraz sie zamknie i otworzy na nowo - nie budujemy juz okna
+      }
+      // Nic nie znaleziono (albo zabraklo czasu) - program rusza normalnie.
+      // Regularne sprawdzanie w tle co kilka godzin, dla okna otwartego
+      // caly dzien - inaczej samo nigdy by sie nie dowiedzialo o nowej
+      // wersji az do nastepnego pelnego restartu.
+      setInterval(() => { updater.sprawdz('auto-6h').catch(() => {}); }, 6 * 60 * 60 * 1000);
+    }
+
     downloads.setBroadcaster((channel, payload) => {
       for (const win of W.allWindows()) win.send(channel, payload);
     });
@@ -121,22 +141,6 @@ if (!gotLock) {
     // uruchomieniu. Nigdy nie blokujemy tym startu: gdy sie nie uda, przegladarka
     // dziala normalnie, tylko bez serwisow z DRM.
     widevine.start();
-
-    // Aktualizacje (tylko spakowana wersja dla Windows - patrz updater.js).
-    // Ciche sprawdzenie kilkanascie sekund po starcie, zeby nie obciazac
-    // rozruchu - w razie czego karta nazuna://about i tak pozwoli sprawdzic
-    // recznie w kazdej chwili. Drugie sprawdzenie kilka minut pozniej to
-    // siatka bezpieczenstwa: swiezo opublikowane wydanie czasem potrzebuje
-    // chwili zeby sie rozeszlo po sieci dostawczej GitHuba, wiec pierwsza
-    // proba tuz po starcie moze jeszcze nic nie znalezc. Do tego regularne
-    // sprawdzanie co kilka godzin - inaczej okno otwarte cale dnie nigdy
-    // samo by sie nie dowiedzialo o nowej wersji.
-    updater.init((stan) => W.broadcastAll('update:status', stan));
-    if (updater.dostepny()) {
-      setTimeout(() => { updater.sprawdz('auto-15s').catch(() => {}); }, 15 * 1000);
-      setTimeout(() => { updater.sprawdz('auto-5min').catch(() => {}); }, 5 * 60 * 1000);
-      setInterval(() => { updater.sprawdz('auto-6h').catch(() => {}); }, 6 * 60 * 60 * 1000);
-    }
 
     // Listy filtrow wczytuja sie rownolegle z otwieraniem okna, zeby start byl
     // szybszy. Sa gotowe zanim pierwsza strona zdazy wyslac zapytania.

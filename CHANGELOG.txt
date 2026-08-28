@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.33 - 28 sierpnia 2026
+-------------------------
+
+Aktualizacja przy starcie, tak jak w Chrome
+
+Do tej pory aktualizacja pobierała się w tle w trakcie pracy, a instalowała
+się przy zamknięciu programu. Teraz Nazuna sprawdza to od razu przy starcie,
+zanim cokolwiek się pokaże - jeśli jest nowa wersja, pobiera ją i instaluje
+po cichu, a dopiero potem otwiera się już zaktualizowana. Przy złym
+połączeniu nie blokuje tego dłużej niż minutę - wtedy program po prostu się
+otwiera, a aktualizacja doleci w tle jak dotychczas. Program nadal sprawdza
+też regularnie co kilka godzin, gdyby był otwarty bardzo długo.
+
 0.1.32 - 28 sierpnia 2026
 -------------------------
 
