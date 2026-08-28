@@ -1161,7 +1161,7 @@ try {
    nie tylko do samej ramki przegladarki: przelaczenie motywu ma byc widac od
    razu we wszystkich otwartych kartach, tak samo zmiana kafelkow nowej karty,
    gdy kilka okien ma otwarte "Nowa karta" naraz. */
-const DO_WLASNYCH_KART = new Set(['settings:changed', 'skroty:zmiana']);
+const DO_WLASNYCH_KART = new Set(['settings:changed', 'skroty:zmiana', 'update:status']);
 
 function broadcastAll(channel, payload) {
   for (const w of windows) {

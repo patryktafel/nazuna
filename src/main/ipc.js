@@ -9,6 +9,7 @@ const downloads = require('./downloads');
 const sessions = require('./session');
 const catalog = require('./catalog.json');
 const widevine = require('./widevine');
+const updater = require('./updater');
 const { SEARCH_ENGINES, APP_NAME, rozstrzygnijMotyw } = require('./constants');
 const W = require('./window');
 
@@ -352,6 +353,11 @@ const handlers = {
     win.reload();
     win.scheduleSync();
   },
+  'app.updateAvailable': () => updater.dostepny(),
+  'app.updateStatus': () => updater.stan(),
+  'app.updateCheck': async () => updater.sprawdz(),
+  'app.updateDownload': () => updater.pobierz(),
+  'app.updateInstall': () => updater.zainstaluj(),
   'app.quit': () => app.quit()
 };
 

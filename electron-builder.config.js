@@ -28,7 +28,20 @@ function electronDist() {
 
 module.exports = {
   appId: 'com.tafel.nazuna',
-  publish: null,          // nie publikujemy nigdzie, wiec bez metadanych aktualizacji
+  /* Wydania (instalator + latest.yml) laduja na publicznym repo
+     nazuna-updates - tylko stamtad electron-updater w main/updater.js
+     sprawdza nowe wersje. Kod zrodlowy zostaje osobno, w prywatnym repo
+     nazuna. "private: false" mowi electron-updaterowi, zeby przy
+     sprawdzaniu i pobieraniu aktualizacji nie szukal tokenu GitHub -
+     repo jest publiczne, wiec nie jest potrzebny. Samo budowanie (npm run
+     dist) nigdy nie publikuje samo z siebie - to robi osobny krok
+     "gh release create", dopiero na wyrazne zadanie. */
+  publish: {
+    provider: 'github',
+    owner: 'patryktafel',
+    repo: 'nazuna-updates',
+    private: false
+  },
   productName: 'Nazuna',
   asar: true,
   /* Sprawdzone pomiarem, zeby nikt nie probowal tego ponownie: przy tej

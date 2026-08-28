@@ -48,6 +48,7 @@ const downloads = require('./downloads');
 const sessions = require('./session');
 const ipc = require('./ipc');
 const widevine = require('./widevine');
+const updater = require('./updater');
 const W = require('./window');
 
 protocolHelper.registerSchemes();
@@ -120,6 +121,13 @@ if (!gotLock) {
     // uruchomieniu. Nigdy nie blokujemy tym startu: gdy sie nie uda, przegladarka
     // dziala normalnie, tylko bez serwisow z DRM.
     widevine.start();
+
+    // Aktualizacje (tylko spakowana wersja dla Windows - patrz updater.js).
+    // Ciche sprawdzenie kilkanascie sekund po starcie, zeby nie obciazac
+    // rozruchu - w razie czego karta nazuna://about i tak pozwoli sprawdzic
+    // recznie w kazdej chwili.
+    updater.init((stan) => W.broadcastAll('update:status', stan));
+    if (updater.dostepny()) setTimeout(() => { updater.sprawdz().catch(() => {}); }, 15000);
 
     // Listy filtrow wczytuja sie rownolegle z otwieraniem okna, zeby start byl
     // szybszy. Sa gotowe zanim pierwsza strona zdazy wyslac zapytania.

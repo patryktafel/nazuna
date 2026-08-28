@@ -1,5 +1,47 @@
 const page = document.getElementById('page');
 
+function opisAktualizacji(stan) {
+  switch ((stan || {}).status) {
+    case 'niedostepna':
+      return { tekst: 'Automatyczne aktualizacje działają tylko w zainstalowanej wersji dla Windows (nie w wersji przenośnej ani w tej kopii).', tag: ['brak', 'low'], przycisk: null };
+    case 'sprawdzanie':
+      return { tekst: 'Sprawdzanie dostępności nowej wersji…', tag: ['sprawdzanie', 'warn'], przycisk: null };
+    case 'aktualna':
+      return { tekst: 'Masz najnowszą wersję Nazuny.', tag: ['aktualna', 'ok'], przycisk: { id: 'updCheck', label: 'Sprawdź ponownie' } };
+    case 'dostepna':
+      return { tekst: `Dostępna nowa wersja ${esc(stan.wersja || '')}.`, tag: ['dostępna', 'warn'], przycisk: { id: 'updDownload', label: 'Pobierz aktualizację' } };
+    case 'pobieranie':
+      return { tekst: `Pobieranie aktualizacji… ${stan.procent ?? 0}%`, tag: ['pobieranie', 'warn'], przycisk: null };
+    case 'pobrana':
+      return { tekst: `Aktualizacja ${esc(stan.wersja || '')} pobrana i gotowa do instalacji.`, tag: ['pobrana', 'ok'], przycisk: { id: 'updInstall', label: 'Zainstaluj i uruchom ponownie' } };
+    case 'blad':
+      return { tekst: `Nie udało się sprawdzić aktualizacji${stan.komunikat ? `: ${esc(stan.komunikat)}` : '.'}`, tag: ['błąd', 'low'], przycisk: { id: 'updCheck', label: 'Spróbuj ponownie' } };
+    default:
+      return { tekst: 'Sprawdź, czy dostępna jest nowsza wersja Nazuny.', tag: ['nieznana', 'low'], przycisk: { id: 'updCheck', label: 'Sprawdź aktualizacje' } };
+  }
+}
+
+function rysujAktualizacje(stan) {
+  const el = document.getElementById('updateCard');
+  if (!el) return;
+  const o = opisAktualizacji(stan);
+  el.innerHTML = `
+    <div class="row"><div class="body"><div class="title">Stan</div><div class="sub">${o.tekst}</div></div>
+      <div class="ctl">
+        <span class="tag ${o.tag[1]}">${o.tag[0]}</span>
+        ${o.przycisk ? `<button class="btn" id="${o.przycisk.id}">${o.przycisk.label}</button>` : ''}
+      </div></div>`;
+  if (o.przycisk) {
+    document.getElementById(o.przycisk.id).addEventListener('click', () => {
+      if (o.przycisk.id === 'updCheck') api.invoke('app.updateCheck');
+      else if (o.przycisk.id === 'updDownload') api.send('app.updateDownload');
+      else if (o.przycisk.id === 'updInstall') api.send('app.updateInstall');
+    });
+  }
+}
+
+api.on('update:status', rysujAktualizacje);
+
 api.invoke('app.info').then((info) => {
   page.innerHTML = `
     <div style="text-align:center;padding:44px 0 30px">
@@ -37,6 +79,10 @@ api.invoke('app.info').then((info) => {
         <div class="ctl"><span class="tag ${info.adblockReady ? 'ok' : 'low'}">${info.adblockReady ? 'aktywny' : 'nieaktywny'}</span></div></div>
     </div>
     <div class="card">
+      <h2>Aktualizacje</h2>
+      <div id="updateCard"></div>
+    </div>
+    <div class="card">
       <h2>Czego nie potrafi</h2>
       <div class="hint">Serwisy zabezpieczone DRM (Netflix, HBO Max, Disney+, Spotify Web) wymagają modułu Widevine,
         którego ta wersja nie zawiera. YouTube, Gemini, Twitch i zwykle wideo działają normalnie.
@@ -44,4 +90,6 @@ api.invoke('app.info').then((info) => {
     </div>`;
   const btn = document.getElementById('open');
   if (btn) btn.addEventListener('click', () => api.send('app.openUserData'));
+
+  api.invoke('app.updateStatus').then(rysujAktualizacje);
 });
