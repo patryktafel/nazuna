@@ -1,6 +1,13 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.28 - 28 sierpnia 2026
+-------------------------
+
+Wydanie testowe - sprawdzenie, czy automatyczne powiadomienie o nowej
+wersji pojawia się samo po świeżym uruchomieniu programu. Bez zmian w
+samej przeglądarce.
+
 0.1.27 - 28 sierpnia 2026
 -------------------------
 
