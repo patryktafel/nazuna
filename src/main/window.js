@@ -924,6 +924,7 @@ class AppWindow {
       url: active ? active.displayUrl : '',
       host,
       secure: active ? /^https:/.test(active.displayUrl) : false,
+      insecure: active ? /^http:/i.test(active.displayUrl) : false,
       internal: active ? /^nazuna:/.test(active.displayUrl) : false,
       loading: active ? active.loading : false,
       canGoBack: active && !active.wc.isDestroyed() ? active.wc.navigationHistory.canGoBack() : false,

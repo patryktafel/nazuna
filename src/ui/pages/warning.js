@@ -2,10 +2,6 @@ const params = new URLSearchParams(location.search);
 const typ = params.get('typ') || 'malicious';
 const target = params.get('url') || '';
 
-/* Etap 2 dopisze tu wlasciwy powod (nazwa listy, na ktorej znalazl sie
-   adres), etap 3 - ewentualny wyjatek "nie pytaj wiecej dla tej strony".
-   Na razie tresc jest ogolna, ale wystarczajaca, zeby przetestowac sama
-   strone niezaleznie od tego, co ja pozniej wywola. */
 const TRESCI = {
   malicious: {
     ikona: 'alert',
@@ -15,7 +11,7 @@ const TRESCI = {
   insecure: {
     ikona: 'lock',
     tytul: 'Połączenie nie jest szyfrowane',
-    opis: 'Ta strona nie używa HTTPS, więc to, co na niej wpiszesz, może zobaczyć ktoś inny w tej samej sieci. Nie podawaj tu haseł ani danych karty, jeśli nie musisz.'
+    opis: 'Ta strona nie używa HTTPS, więc to, co na niej wpiszesz, może zobaczyć ktoś inny w tej samej sieci. Nie podawaj tu haseł ani danych karty, jeśli nie musisz. To ostrzeżenie pokaże się dla tej strony tylko raz - jeśli przejdziesz dalej, następnym razem Nazuna wpuści cię bez pytania.'
   }
 };
 
@@ -35,5 +31,5 @@ document.getElementById('err').innerHTML = `
 
 document.getElementById('safe').addEventListener('click', () => api.send('nav.go', { input: 'nazuna://newtab' }));
 document.getElementById('proceed').addEventListener('click', () => {
-  if (target) api.send('security.proceed', { url: target });
+  if (target) api.send('security.proceed', { url: target, typ });
 });

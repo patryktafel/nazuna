@@ -24,6 +24,7 @@ const el = {
   omnibox: $('#omnibox'),
   address: $('#address'),
   lock: $('#lock'),
+  lockLabel: $('#lockLabel'),
   star: $('#star'),
   shield: $('#shield'),
   zoomChip: $('#zoomChip'),
@@ -379,6 +380,7 @@ function renderToolbar() {
   el.omnibox.classList.toggle('secure', !!state.secure);
   el.omnibox.classList.toggle('internal', !!state.internal);
   setIcon(el.lock, state.internal ? 'flower' : state.secure ? 'lock' : 'globe');
+  el.lockLabel.hidden = !state.insecure;
 
   if (!addressDirty && document.activeElement !== el.address) {
     const raw = String(state.url || '');

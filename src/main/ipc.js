@@ -10,6 +10,7 @@ const sessions = require('./session');
 const catalog = require('./catalog.json');
 const widevine = require('./widevine');
 const updater = require('./updater');
+const security = require('./security');
 const { SEARCH_ENGINES, APP_NAME, rozstrzygnijMotyw } = require('./constants');
 const W = require('./window');
 
@@ -132,6 +133,7 @@ const handlers = {
   'security.proceed': (win, p) => {
     const tab = win.activeTab();
     if (!tab || !p.url) return;
+    security.zapamietajWyjatek(p.typ, p.url); // http - zapamietuje, zlosliwe domeny - nic nie robi
     tab.errorUrl = null;
     tab.warnUrl = null;
     tab.wc.loadURL(p.url).catch(() => {});

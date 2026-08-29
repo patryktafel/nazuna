@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
+const data = require('./data');
 
 /* --------------------------------------------------------------------
    Wspolny punkt bezpieczenstwa nawigacji. Kazda proba wejscia na strone -
@@ -11,8 +12,8 @@ const { app } = require('electron');
    z tych sciezek nie moze przypadkiem ominac sprawdzenia.
 
      etap 1 - mechanizm i strona ostrzegawcza (nazuna://warning) - gotowe
-     etap 2 - lista znanych zlosliwych domen (phishing, malware) - ponizej
-     etap 3 - ostrzezenie o polaczeniu bez szyfrowania (http) - jeszcze nie */
+     etap 2 - lista znanych zlosliwych domen (phishing, malware) - gotowe
+     etap 3 - ostrzezenie o polaczeniu bez szyfrowania (http) - ponizej */
 
 /* ---------------------------------------------------- lista zlosliwych hostow
    Zrodlo: URLhaus (abuse.ch), darmowa i publiczna lista hostow uzywanych do
@@ -86,11 +87,11 @@ function init() {
   setInterval(() => { odswiez().catch(() => {}); }, ODSWIEZAJ_CO);
 }
 
-function hostOf(url) {
+function rozbierz(url) {
   try {
     const u = new URL(url);
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
-    return u.hostname.toLowerCase();
+    return { http: u.protocol === 'http:', host: u.hostname.toLowerCase() };
   } catch (_) { return null; }
 }
 
@@ -100,12 +101,30 @@ function naLiscie(host) {
   return zleHosty.has(host) || zleHosty.has(`www.${bezWww}`) || zleHosty.has(bezWww);
 }
 
+/* ---------------------------------------------------------- ostrzezenie http
+   Zwykle http, bez szyfrowania. Tu, w odroznieniu od zlosliwych domen,
+   pytamy tylko raz na domene - po kliknieciu "przejdz mimo to" strona laduje
+   sie normalnie przy kolejnych wizytach (patrz zapamietajWyjatek nizej).
+   Osobna etykieta "Niezabezpieczona" w pasku adresu (shell.js) dziala
+   niezaleznie od tego wyjatku i pokazuje sie zawsze na http. */
+
 /* ------------------------------------------------------------------ sprawdz */
 
 function sprawdz(url) {
-  const host = hostOf(url);
-  if (naLiscie(host)) return { typ: 'malicious' };
+  const r = rozbierz(url);
+  if (!r) return null;
+  if (naLiscie(r.host)) return { typ: 'malicious' };
+  if (r.http && !data.httpZaakceptowany(r.host)) return { typ: 'insecure' };
   return null; // null = bezpieczne
+}
+
+/* Wolane, gdy uzytkownik kliknie "przejdz mimo to" na nazuna://warning
+   (patrz ipc.js, 'security.proceed'). Zlosliwych domen to nie dotyczy -
+   tam ostrzezenie ma wracac za kazdym razem. */
+function zapamietajWyjatek(typ, url) {
+  if (typ !== 'insecure') return;
+  const r = rozbierz(url);
+  if (r) data.zaakceptujHttp(r.host);
 }
 
 function adresOstrzezenia(typ, target) {
@@ -113,4 +132,4 @@ function adresOstrzezenia(typ, target) {
   return `nazuna://warning/?${params.toString()}`;
 }
 
-module.exports = { init, sprawdz, adresOstrzezenia };
+module.exports = { init, sprawdz, zapamietajWyjatek, adresOstrzezenia };

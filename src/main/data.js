@@ -34,7 +34,7 @@ function init() {
   history = new Store(path.join(dir, 'history.json'), { items: [] });
   downloads = new Store(path.join(dir, 'downloads.json'), { items: [] });
   extensionsStore = new Store(path.join(dir, 'extensions.json'), { installed: [] });
-  siteStore = new Store(path.join(dir, 'sites.json'), { adblockOff: [], zoom: {}, permissions: {}, skroty: [], skrotyUkryte: [] });
+  siteStore = new Store(path.join(dir, 'sites.json'), { adblockOff: [], zoom: {}, permissions: {}, skroty: [], skrotyUkryte: [], httpZaakceptowane: [] });
 }
 
 /* ------------------------------------------------------------------ history */
@@ -168,6 +168,19 @@ function setSiteZoom(hostname, factor) {
   else siteStore.data.zoom[hostname] = factor;
   siteStore.save();
 }
+/* Strony http, ktorym uzytkownik raz kazal "przejdz mimo to" na ostrzezeniu
+   o braku szyfrowania - dla nich nazuna://warning juz sie wiecej nie pokaze,
+   tak jak ustalilismy (pytamy raz, nie za kazdym razem). Ostrzezenia o
+   zlosliwych domenach tego NIE uzywaja - tam pytamy zawsze. */
+function httpZaakceptowany(hostname) {
+  return siteStore.data.httpZaakceptowane.includes(hostname);
+}
+function zaakceptujHttp(hostname) {
+  if (!hostname) return;
+  const list = siteStore.data.httpZaakceptowane;
+  if (!list.includes(hostname)) { list.push(hostname); siteStore.save(); }
+}
+
 function permissionFor(hostname, kind) {
   return (siteStore.data.permissions[hostname] || {})[kind];
 }
@@ -224,6 +237,7 @@ module.exports = {
   addHistory, updateHistoryTitle, searchHistory, clearHistory, removeHistory,
   bookmarkList, isBookmarked, addBookmark, addFolder, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
   adblockAllowed, setAdblockForSite, siteZoom, setSiteZoom, permissionFor, setPermission,
+  httpZaakceptowany, zaakceptujHttp,
   skrotyStan, dodajSkrot, usunSkrot,
   DEFAULT_SETTINGS
 };
