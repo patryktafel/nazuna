@@ -49,6 +49,7 @@ const sessions = require('./session');
 const ipc = require('./ipc');
 const widevine = require('./widevine');
 const updater = require('./updater');
+const security = require('./security');
 const W = require('./window');
 
 protocolHelper.registerSchemes();
@@ -123,6 +124,11 @@ if (!gotLock) {
        te zapytania szly w swiat z oryginalnym User-Agentem Electrona, bez DNT
        i bez blokera. Teraz przechodza tak samo jak reszta ruchu. */
     sessions.forPartition(null);
+
+    // Lista zlosliwych domen - wczytujemy cache z dysku (jesli jest) zanim
+    // powstanie pierwsza karta, zeby ochrona dzialala juz od pierwszej
+    // nawigacji. Swieza lista z sieci i tak dociagnie sie dopiero w tle.
+    security.init();
 
     const startUrls = process.argv.slice(1).filter((a) => /^https?:\/\//i.test(a));
     if (process.env.NAZUNA_START) startUrls.push(...process.env.NAZUNA_START.split('|'));
