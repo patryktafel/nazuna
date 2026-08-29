@@ -323,7 +323,7 @@ const handlers = {
   /* ----------------------------------------------------------------- app */
   'app.state': (win) => win.state(),
   'app.suggest': (win, p) => suggest(p.query),
-  'app.openExternal': (win, p) => shell.openExternal(p.url),
+  'app.openExternal': (win, p) => { if (urls.bezpieczneZewnetrzne(p.url)) shell.openExternal(p.url); },
   'app.copy': (win, p) => clipboard.writeText(p.text || ''),
   'app.devtools': (win) => { const t = win.activeTab(); if (t) t.wc.toggleDevTools(); },
   'app.print': (win) => { const t = win.activeTab(); if (t) t.wc.print({}, () => {}); },

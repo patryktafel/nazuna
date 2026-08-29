@@ -330,7 +330,7 @@ class AppWindow {
        Pasek adresu, pasek wyszukiwania i pasek zakladek naleza do interfejsu
        samej przegladarki, wiec klikniecie w nich prawym nie robilo nic. */
     this.shell.on('context-menu', (_e, params) => this.showShellContextMenu(params));
-    this.shell.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
+    this.shell.setWindowOpenHandler(({ url }) => { if (urls.bezpieczneZewnetrzne(url)) shell.openExternal(url); return { action: 'deny' }; });
 
     this.win.on('resize', () => this.layout());
     this.win.on('maximize', () => { this.layout(); this.scheduleSync(); });

@@ -47,8 +47,11 @@ function patchHint(value, version) {
   return out;
 }
 // keyboardLock celowo poza lista: pozwala stronie przejac Escape w pelnym ekranie.
-const AUTO_ALLOW = new Set(['fullscreen', 'clipboard-sanitized-write', 'background-sync', 'pointerLock', 'window-placement', 'window-management', 'accessibility-events', 'top-level-storage-access']);
-const ASK = new Set(['media', 'geolocation', 'notifications', 'clipboard-read', 'midi', 'midiSysex', 'hid', 'serial', 'usb', 'display-capture', 'idle-detection', 'storage-access']);
+const AUTO_ALLOW = new Set(['fullscreen', 'clipboard-sanitized-write', 'background-sync', 'pointerLock', 'accessibility-events', 'top-level-storage-access']);
+// window-management/window-placement (getScreenDetails - uklad wszystkich monitorow, nie
+// tylko jednego ekranu) to realny sygnal do rozpoznawania urzadzenia - prawdziwy Chrome
+// tez o to pyta, wiec u nas rowniez idzie przez ASK, a nie ciche przyznanie.
+const ASK = new Set(['media', 'geolocation', 'notifications', 'clipboard-read', 'midi', 'midiSysex', 'hid', 'serial', 'usb', 'display-capture', 'idle-detection', 'storage-access', 'window-management', 'window-placement']);
 
 let permissionPrompt = null;   // set by the window layer
 function setPermissionPrompt(fn) { permissionPrompt = fn; }

@@ -54,4 +54,13 @@ function hostOf(url) {
   try { return new URL(url).hostname; } catch (_) { return ''; }
 }
 
-module.exports = { resolve, searchUrl, looksLikeUrl, prettyHost, hostOf, engine };
+/* Zanim cokolwiek oddamy systemowi przez shell.openExternal (otwiera domyslna
+   aplikacje dla danego protokolu), sprawdzamy schemat. Bez tego dowolny kod,
+   ktory trafi do tej sciezki, moglby probowac odpalic dowolny zarejestrowany
+   w Windows handler protokolu (znany wektor w innych aplikacjach Electron). */
+const ZEWNETRZNE_SCHEMATY = new Set(['http:', 'https:', 'mailto:']);
+function bezpieczneZewnetrzne(url) {
+  try { return ZEWNETRZNE_SCHEMATY.has(new URL(url).protocol); } catch (_) { return false; }
+}
+
+module.exports = { resolve, searchUrl, looksLikeUrl, prettyHost, hostOf, engine, bezpieczneZewnetrzne };

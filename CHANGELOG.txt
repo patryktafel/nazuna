@@ -1,6 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.34 - 29 sierpnia 2026
+-------------------------
+
+Przegląd bezpieczeństwa
+
+Sprawdziłem dokładnie, jak Nazuna obsługuje uprawnienia stron i otwieranie
+linków poza przeglądarką, i poprawiłem dwie rzeczy. Po pierwsze, strony
+pytające o układ Twoich monitorów (np. do zarządzania wieloma oknami) teraz
+muszą o to zapytać, tak jak w prawdziwym Chrome - wcześniej dostawały tę
+informację od razu, bez pytania. Po drugie, linki, które przeglądarka sama
+otwiera w innych programach (np. klienty poczty), są teraz ograniczone do
+bezpiecznych typów - stron www i adresów e-mail - żeby żadna strona nie
+mogła podsunąć czegoś, co próbowałoby odpalić coś innego w systemie.
+
 0.1.33 - 28 sierpnia 2026
 -------------------------
 

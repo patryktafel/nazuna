@@ -977,7 +977,9 @@ function permissionPrompt(payload) {
     serial: ['Dostęp do portu szeregowego', 'usb'],
     usb: ['Dostęp do urządzeń USB', 'usb'],
     'idle-detection': ['Wykrywanie bezczynności', 'clock'],
-    'storage-access': ['Element osadzony prosi o swoje ciasteczka', 'file']
+    'storage-access': ['Element osadzony prosi o swoje ciasteczka', 'file'],
+    'window-management': ['Odczyt układu Twoich monitorów', 'window'],
+    'window-placement': ['Odczyt układu Twoich monitorów', 'window']
   };
   const [label, icon] = labels[payload.permission] || ['Uprawnienie: ' + payload.permission, 'info'];
   /* Przy dostępie do danych osadzonej witryny sama nazwa domeny nikomu nic nie
