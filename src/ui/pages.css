@@ -156,3 +156,4 @@ body.newtab { background: var(--bg); overflow-y: auto; overflow-x: hidden; }
 .err p { color: var(--text-dim); line-height: 1.65; margin: 0 0 8px; }
 .err code { background: var(--surface-2); padding: 2px 7px; border-radius: 5px; font-size: 12px; color: var(--text-dim); }
 .err .actions { margin-top: 24px; display: flex; gap: 8px; justify-content: center; }
+.err.danger .icon { color: var(--danger); }

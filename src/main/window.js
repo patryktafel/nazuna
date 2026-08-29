@@ -8,6 +8,7 @@ const urls = require('./urls');
 const sessions = require('./session');
 const adblock = require('./adblock');
 const extensions = require('./extensions');
+const security = require('./security');
 
 const windows = new Set();
 let nextWindowId = 1;
@@ -78,6 +79,7 @@ class Tab {
     this.audible = false;
     this.muted = false;
     this.errorUrl = null;
+    this.warnUrl = null;
     this.zoom = 1;
     this.findState = null;
     this.url = url || NEW_TAB;
@@ -108,10 +110,26 @@ class Tab {
     this.view.setBackgroundColor(pageBackground(this.url));
     this.wc = this.view.webContents;
     this.wire();
-    this.wc.loadURL(this.url).catch(() => {});
+    this.otworz(this.url);
   }
 
-  get displayUrl() { return this.errorUrl || this.url; }
+  get displayUrl() { return this.errorUrl || this.warnUrl || this.url; }
+
+  /* Jedyne miejsce, ktore faktycznie odpala loadURL na docelowy adres.
+     Nowa karta, pasek adresu, klikniecie linku i przekierowanie - wszystkie
+     przechodza przez ta metode (patrz will-navigate/will-redirect nizej i
+     AppWindow.navigate), zeby security.sprawdz() nie dalo sie ominac zadna
+     z tych sciezek. */
+  otworz(target) {
+    const zagrozenie = security.sprawdz(target);
+    if (zagrozenie) {
+      this.warnUrl = target;
+      this.wc.loadURL(security.adresOstrzezenia(zagrozenie.typ, target)).catch(() => {});
+    } else {
+      this.warnUrl = null;
+      this.wc.loadURL(target).catch(() => {});
+    }
+  }
 
   wire() {
     const wc = this.wc;
@@ -129,11 +147,35 @@ class Tab {
     wc.on('did-start-loading', () => { this.loading = true; sync(); });
     wc.on('did-stop-loading', () => { this.loading = false; sync(); });
     wc.on('will-navigate', (event, target) => {
-      if (/^nazuna:/i.test(target) && !/^nazuna:/i.test(wc.getURL())) event.preventDefault();
+      if (/^nazuna:/i.test(target) && !/^nazuna:/i.test(wc.getURL())) { event.preventDefault(); return; }
+      const zagrozenie = security.sprawdz(target);
+      if (zagrozenie) {
+        event.preventDefault();
+        this.warnUrl = target;
+        wc.loadURL(security.adresOstrzezenia(zagrozenie.typ, target)).catch(() => {});
+      }
+    });
+    // Przekierowanie po drodze (np. skrocony link prowadzacy na zlosliwa
+    // domene) - to samo sprawdzenie co przy zwyklej nawigacji, tylko zanim
+    // przekierowanie zdazy sie dokonac.
+    wc.on('will-redirect', (event) => {
+      if (!event.isMainFrame) return;
+      const zagrozenie = security.sprawdz(event.url);
+      if (zagrozenie) {
+        event.preventDefault();
+        this.warnUrl = event.url;
+        wc.loadURL(security.adresOstrzezenia(zagrozenie.typ, event.url)).catch(() => {});
+      }
     });
     wc.on('did-start-navigation', (event) => {
       if (!event.isMainFrame) return;
-      this.errorUrl = null;
+      // Zerujemy adres pokazywany zamiast strony wewnetrznej TYLKO, gdy ta
+      // nawigacja nie jest naszym wlasnym przekierowaniem na nazuna://error
+      // albo nazuna://warning - inaczej ta sama nawigacja, ktora go ustawila
+      // chwile wczesniej, zaraz by go skasowala i pasek adresu pokazalby
+      // brzydki wewnetrzny adres zamiast prawdziwego.
+      if (!(this.errorUrl && event.url.startsWith('nazuna://error/'))) this.errorUrl = null;
+      if (!(this.warnUrl && event.url.startsWith('nazuna://warning/'))) this.warnUrl = null;
       try { this.view.setBackgroundColor(pageBackground(event.url)); } catch (_) {}
       adblock.resetCount(wc.id);
       adblock.setDocumentHost(wc.id, event.url);
@@ -525,7 +567,7 @@ class AppWindow {
     const target = urls.resolve(input);
     if (!target) return;
     tab.errorUrl = null;
-    tab.wc.loadURL(target).catch(() => {});
+    tab.otworz(target);
   }
 
   goBack() { const t = this.activeTab(); if (t && t.wc.navigationHistory.canGoBack()) t.wc.navigationHistory.goBack(); }

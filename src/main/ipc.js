@@ -126,6 +126,17 @@ const handlers = {
   'nav.home': (win) => win.goHome(),
   'nav.go': (win, p) => win.navigate(p.input, p.tabId || null),
 
+  /* Przycisk "przejdz mimo to" na nazuna://warning. Uzytkownik swiadomie
+     omija ostrzezenie, wiec ladujemy prawdziwy adres wprost, bez ponownego
+     pytania security.sprawdz() (patrz komentarz w window.js/Tab.otworz). */
+  'security.proceed': (win, p) => {
+    const tab = win.activeTab();
+    if (!tab || !p.url) return;
+    tab.errorUrl = null;
+    tab.warnUrl = null;
+    tab.wc.loadURL(p.url).catch(() => {});
+  },
+
   /* ---------------------------------------------------------------- find */
   'find.open': (win) => win.openFind(),
   'find.close': (win) => win.closeFind(),
