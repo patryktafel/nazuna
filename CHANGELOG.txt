@@ -1,6 +1,14 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.35 - 29 sierpnia 2026
+-------------------------
+
+Informacja o autorze na stronie "O Nazunie"
+
+Na nazuna://about dodany został podpis "Stworzona przez Tafel" oraz link do
+publicznego repozytorium wydań na GitHubie (patryktafel/nazuna-updates).
+
 0.1.34 - 29 sierpnia 2026
 -------------------------
 
