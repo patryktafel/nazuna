@@ -1,6 +1,23 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.36 - 29 sierpnia 2026
+-------------------------
+
+Ostrzeżenia przed niebezpiecznymi stronami
+
+Nazuna sprawdza teraz każdą stronę przed wejściem na nią. Jeśli adres
+znajduje się na publicznej liście domen znanych z rozsyłania złośliwego
+oprogramowania (lista aktualizuje się sama w tle), pokazuje się pełnoekranowe
+ostrzeżenie z możliwością wycofania się albo wejścia na własną
+odpowiedzialność - i to ostrzeżenie wraca przy każdej kolejnej wizycie na tej
+stronie. To samo dzieje się przy stronach bez szyfrowania (http zamiast
+https), z tą różnicą, że tu Nazuna pyta tylko raz - po kliknięciu "przejdź
+mimo to" zapamiętuje wyjątek dla tej strony i więcej nie pyta. Do tego,
+niezależnie od tego ostrzeżenia, każda strona http ma teraz w pasku adresu
+etykietę "Niezabezpieczona", tak jak w Chrome. Całość da się wyłączyć jednym
+przełącznikiem w Ustawieniach, w sekcji Prywatność i treści.
+
 0.1.35 - 29 sierpnia 2026
 -------------------------
 
