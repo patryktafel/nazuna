@@ -111,6 +111,7 @@ function naLiscie(host) {
 /* ------------------------------------------------------------------ sprawdz */
 
 function sprawdz(url) {
+  if (!data.settings.get('securityWarningsEnabled', true)) return null;
   const r = rozbierz(url);
   if (!r) return null;
   if (naLiscie(r.host)) return { typ: 'malicious' };

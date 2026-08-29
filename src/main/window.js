@@ -924,7 +924,10 @@ class AppWindow {
       url: active ? active.displayUrl : '',
       host,
       secure: active ? /^https:/.test(active.displayUrl) : false,
-      insecure: active ? /^http:/i.test(active.displayUrl) : false,
+      // Etykieta "Niezabezpieczona" idzie razem z przelacznikiem ostrzezen w
+      // Ustawieniach - wylaczona ochrona, wylaczona i etykieta, zeby jedno
+      // nie przeczylo drugiemu.
+      insecure: active && data.settings.get('securityWarningsEnabled', true) ? /^http:/i.test(active.displayUrl) : false,
       internal: active ? /^nazuna:/.test(active.displayUrl) : false,
       loading: active ? active.loading : false,
       canGoBack: active && !active.wc.isDestroyed() ? active.wc.navigationHistory.canGoBack() : false,

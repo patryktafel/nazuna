@@ -73,6 +73,7 @@ function render() {
 
     <div class="card">
       <h2>Prywatność i treści</h2>
+      ${toggleRow('securityWarningsEnabled', 'Ostrzeżenia o niebezpiecznych stronach', 'Blokuje strony z listy znanych złośliwych domen i ostrzega przed połączeniem bez szyfrowania (http). Wyłączenie usuwa też etykietę "Niezabezpieczona" w pasku adresu')}
       ${toggleRow('adblockEnabled', 'Bloker reklam i skryptów śledzących', 'Wbudowany, działa bez rozszerzeń. Pojedyncze strony można wyłączyć tarczą w pasku adresu')}
       <div class="row">
         <div class="body"><div class="title">Siła blokowania</div>

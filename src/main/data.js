@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
   doNotTrack: true,
   passkeys: false,
   blockThirdPartyCookies: true,
+  securityWarningsEnabled: true,
   hardwareAcceleration: true,
   extensionsEnabled: true,
   defaultZoom: 1,
