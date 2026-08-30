@@ -570,8 +570,30 @@ class AppWindow {
     tab.otworz(target);
   }
 
-  goBack() { const t = this.activeTab(); if (t && t.wc.navigationHistory.canGoBack()) t.wc.navigationHistory.goBack(); }
-  goForward() { const t = this.activeTab(); if (t && t.wc.navigationHistory.canGoForward()) t.wc.navigationHistory.goForward(); }
+  /* Wstecz/dalej w historii NIE odpalaja will-navigate (Electron pomija ten
+     event dla nawigacji programowej typu navigationHistory.goBack/goForward),
+     wiec bez tego omijalyby security.sprawdz() - np. gdy strona trafi na
+     liste zlosliwych domen dopiero PO tym, jak juz ja odwiedziles i wciaz
+     jest w historii tej karty. Sprawdzamy wiec adres z historii sami, zanim
+     tam faktycznie przejdziemy, zamiast wolac goBack/goForward wprost. */
+  idzWHistorii(kierunek) {
+    const t = this.activeTab();
+    if (!t) return;
+    const hist = t.wc.navigationHistory;
+    const mozna = kierunek < 0 ? hist.canGoBack() : hist.canGoForward();
+    if (!mozna) return;
+    const cel = hist.getEntryAtIndex(hist.getActiveIndex() + kierunek);
+    const zagrozenie = cel && cel.url ? security.sprawdz(cel.url) : null;
+    if (zagrozenie) {
+      t.warnUrl = cel.url;
+      t.wc.loadURL(security.adresOstrzezenia(zagrozenie.typ, cel.url)).catch(() => {});
+      return;
+    }
+    if (kierunek < 0) hist.goBack(); else hist.goForward();
+  }
+
+  goBack() { this.idzWHistorii(-1); }
+  goForward() { this.idzWHistorii(1); }
   reload(hard = false) {
     const t = this.activeTab();
     if (!t) return;
