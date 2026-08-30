@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.37 - 29 sierpnia 2026
+-------------------------
+
+Dopracowanie ostrzeżeń bezpieczeństwa
+
+Wstecz i dalej w historii przechodzą teraz przez to samo sprawdzenie co
+zwykła nawigacja - do tej pory dało się nimi ominąć ostrzeżenie o złośliwej
+stronie. W Ustawieniach widać już listę złośliwych domen, z liczbą wpisów,
+datą ostatniej aktualizacji i przyciskiem do odświeżenia na żądanie, tak jak
+przy listach blokera reklam. Ostrzeżenie o złośliwej stronie chowa teraz
+przycisk "przejdź mimo to" za dodatkowym kliknięciem "Szczegóły", żeby nikt
+nie kliknął przez samo przyzwyczajenie, tak jak robi to Chrome i Firefox. I
+pobieranie plików z domen na tej liście jest teraz blokowane od razu, zanim
+cokolwiek trafi na dysk, z krótkim powiadomieniem w rogu okna.
+
 0.1.36 - 29 sierpnia 2026
 -------------------------
 
