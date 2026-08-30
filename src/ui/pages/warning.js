@@ -17,6 +17,13 @@ const TRESCI = {
 
 const t = TRESCI[typ] || TRESCI.malicious;
 
+/* Dla zlosliwych domen przycisk "przejdz mimo to" jest celowo schowany za
+   dodatkowym klikniecem "Szczegoly" - tak samo robi to Chrome i Firefox przy
+   prawdziwym ostrzezeniu Safe Browsing, zeby nikt nie kliknal przez samo
+   przyzwyczajenie do klikania w duzy przycisk. Przy http nie ma takiej
+   potrzeby - to ostrzezenie i tak pyta tylko raz na strone. */
+const chowajPrzycisk = typ === 'malicious';
+
 document.getElementById('err').innerHTML = `
   ${iconSvg(t.ikona)}
   <h1>${esc(t.tytul)}</h1>
@@ -25,11 +32,26 @@ document.getElementById('err').innerHTML = `
   <div class="actions">
     <button class="btn primary" id="safe">Wróć do bezpieczeństwa</button>
   </div>
+  ${chowajPrzycisk ? `
+  <div class="actions" id="detailsRow" style="margin-top:16px">
+    <button class="btn ghost" id="details" style="font-size:11.5px">Szczegóły</button>
+  </div>
+  <div class="actions" id="detailsBox" hidden style="margin-top:6px;flex-direction:column;gap:10px">
+    <p style="font-size:11.5px;margin:0">Ta strona jest na liście znanych zagrożeń. Jeśli mimo to chcesz tam wejść, robisz to na własną odpowiedzialność.</p>
+    <button class="btn ghost danger" id="proceed">Mimo wszystko przejdź do tej strony</button>
+  </div>` : `
   <div class="actions" style="margin-top:2px">
     <button class="btn ghost" id="proceed">Rozumiem ryzyko, przejdź mimo to</button>
-  </div>`;
+  </div>`}`;
 
 document.getElementById('safe').addEventListener('click', () => api.send('nav.go', { input: 'nazuna://newtab' }));
+const detailsBtn = document.getElementById('details');
+if (detailsBtn) {
+  detailsBtn.addEventListener('click', () => {
+    document.getElementById('detailsBox').hidden = false;
+    document.getElementById('detailsRow').hidden = true;
+  });
+}
 document.getElementById('proceed').addEventListener('click', () => {
   if (target) api.send('security.proceed', { url: target, typ });
 });
