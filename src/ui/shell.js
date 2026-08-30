@@ -1184,6 +1184,18 @@ function renderUpdateToast(stan) {
 }
 api.on('update:status', renderUpdateToast);
 
+/* Ten sam mechanizm karty co przy aktualizacjach (showUpdateToast dzieli
+   jeden slot w rogu okna) - tu tylko inna tresc, na powiadomienie o
+   zablokowanym pobieraniu z listy zlosliwych domen (patrz downloads.js). */
+api.on('download-blocked', (d) => {
+  const node = showUpdateToast(`
+    <div class="row">${iconSvg('shield')}<div class="title">Zablokowano pobieranie</div>
+      <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
+    <div class="sub">"${escapeHtml(d.filename || 'plik')}"${d.host ? ` z ${escapeHtml(d.host)}` : ''} - ta domena jest na liście znanych zagrożeń.</div>`);
+  node.classList.add('error');
+  node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
+});
+
 api.on('find:focus', () => setTimeout(() => { el.findInput.focus(); el.findInput.select(); }, 40));
 api.on('find:result', (r) => {
   el.findCount.textContent = r && r.matches ? `${r.active}/${r.matches}` : (el.findInput.value ? '0/0' : '');

@@ -140,6 +140,16 @@ function sprawdz(url) {
   return null; // null = bezpieczne
 }
 
+/* Wolane przez downloads.js dla kazdego pobierania, osobno od sprawdz() -
+   pobrany plik sprawdzamy tylko wobec listy zlosliwych domen, nie wobec
+   http (zwykle pobieranie plikow po http to nic niezwyklego i nie ma tu co
+   ostrzegac tak jak przy calej stronie). */
+function jestZlosliwy(url) {
+  if (!data.settings.get('securityWarningsEnabled', true)) return false;
+  const r = rozbierz(url);
+  return !!(r && naLiscie(r.host));
+}
+
 /* Wolane, gdy uzytkownik kliknie "przejdz mimo to" na nazuna://warning
    (patrz ipc.js, 'security.proceed'). Zlosliwych domen to nie dotyczy -
    tam ostrzezenie ma wracac za kazdym razem. */
@@ -154,4 +164,4 @@ function adresOstrzezenia(typ, target) {
   return `nazuna://warning/?${params.toString()}`;
 }
 
-module.exports = { init, sprawdz, zapamietajWyjatek, adresOstrzezenia, status, refresh };
+module.exports = { init, sprawdz, jestZlosliwy, zapamietajWyjatek, adresOstrzezenia, status, refresh };

@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { app, shell, dialog } = require('electron');
 const data = require('./data');
+const security = require('./security');
 
 const active = new Map();      // id -> DownloadItem
 let nextId = 1;
@@ -72,6 +73,19 @@ function serialise(item, record) {
 
 function attach(session) {
   session.on('will-download', (event, item, webContents) => {
+    // Ten sam mechanizm co ostrzezenia przy nawigacji (security.js), tylko
+    // bez pytania - plik z listy zlosliwych domen po prostu sie nie sciaga,
+    // z krotkim powiadomieniem w rogu okna zamiast pelnoekranowego ostrzezenia
+    // (pobieranie nie ma wlasnej karty, ktora moglaby je pokazac).
+    const zrodlo = item.getURL();
+    if (security.jestZlosliwy(zrodlo)) {
+      event.preventDefault();
+      let host = '';
+      try { host = new URL(zrodlo).hostname; } catch (_) {}
+      broadcast('download-blocked', { filename: safeFilename(item.getFilename()), host });
+      return;
+    }
+
     const id = `d${Date.now().toString(36)}${nextId++}`;
     const dir = defaultDir();
     const filename = safeFilename(item.getFilename());
