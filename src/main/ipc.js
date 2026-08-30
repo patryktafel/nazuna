@@ -360,6 +360,11 @@ const handlers = {
     const result = await adblock.refresh(true);
     return { ...result, status: adblock.status() };
   },
+  'app.securityStatus': () => security.status(),
+  'app.securityUpdate': async () => {
+    const result = await security.refresh(true);
+    return { ...result, status: security.status() };
+  },
   'app.adblockSite': (win, p) => {
     win.closePopover();               // najpierw zwin okienko, dopiero potem przeladuj
     adblock.setSiteEnabled(p.host, p.enabled);

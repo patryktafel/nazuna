@@ -74,6 +74,10 @@ function render() {
     <div class="card">
       <h2>Prywatność i treści</h2>
       ${toggleRow('securityWarningsEnabled', 'Ostrzeżenia o niebezpiecznych stronach', 'Blokuje strony z listy znanych złośliwych domen i ostrzega przed połączeniem bez szyfrowania (http). Wyłączenie usuwa też etykietę "Niezabezpieczona" w pasku adresu')}
+      <div class="row">
+        <div class="body"><div class="title">Lista złośliwych domen</div><div class="sub" id="securityInfo">sprawdzam...</div></div>
+        <div class="ctl"><button class="btn" id="updateSecurity">Zaktualizuj teraz</button></div>
+      </div>
       ${toggleRow('adblockEnabled', 'Bloker reklam i skryptów śledzących', 'Wbudowany, działa bez rozszerzeń. Pojedyncze strony można wyłączyć tarczą w pasku adresu')}
       <div class="row">
         <div class="body"><div class="title">Siła blokowania</div>
@@ -142,6 +146,17 @@ function render() {
     else toast(result && result.reason ? `Bez zmian: ${result.reason}` : 'Nie udało się pobrać list');
     refreshFilterInfo();
   });
+  refreshSecurityInfo();
+  document.getElementById('updateSecurity').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    document.getElementById('securityInfo').textContent = 'pobieram najnowszą listę...';
+    const result = await api.invoke('app.securityUpdate');
+    btn.disabled = false;
+    if (result && result.ok) toast('Lista złośliwych domen zaktualizowana');
+    else toast(result && result.reason ? `Bez zmian: ${result.reason}` : 'Nie udało się pobrać listy');
+    refreshSecurityInfo();
+  });
 }
 
 async function refreshFilterInfo() {
@@ -153,6 +168,15 @@ async function refreshFilterInfo() {
   node.textContent = st.updatedAt
     ? `Ostatnia aktualizacja: ${new Date(st.updatedAt).toLocaleString('pl-PL')}. Listy odświeżają się same co kilka dni, nie trzeba do tego aktualizować przeglądarki.`
     : 'Używane są listy dołączone do programu. Odświeżą się same przy pierwszym połączeniu z internetem.';
+}
+
+async function refreshSecurityInfo() {
+  const node = document.getElementById('securityInfo');
+  if (!node) return;
+  const st = await api.invoke('app.securityStatus').catch(() => null);
+  if (!st) { node.textContent = 'brak informacji'; return; }
+  if (!st.ready) { node.textContent = 'lista nie jest jeszcze wczytana - potrzebne połączenie z internetem'; return; }
+  node.textContent = `${st.count} znanych złośliwych domen. Ostatnia aktualizacja: ${new Date(st.updatedAt).toLocaleString('pl-PL')}. Lista odświeża się sama co kilka godzin.`;
 }
 
 async function save(patch) {

@@ -26,6 +26,8 @@ const ODSWIEZAJ_CO = 6 * 60 * 60 * 1000; // tyle samo co listy filtrow blokera
 
 let zleHosty = new Set();
 let gotowe = false;
+let updatedAt = 0;
+let updating = false;
 
 function cachePath() { return path.join(app.getPath('userData'), 'zlosliwe-hosty.json'); }
 
@@ -47,21 +49,20 @@ function wczytajCache() {
     if (Array.isArray(surowe.hosty) && surowe.hosty.length) {
       zleHosty = new Set(surowe.hosty);
       gotowe = true;
-      return surowe.updatedAt || 0;
+      updatedAt = surowe.updatedAt || 0;
     }
   } catch (_) { /* pierwszy start - jeszcze nie ma cache */ }
-  return 0;
 }
 
 function zapiszCache() {
   try {
-    fs.writeFileSync(cachePath(), JSON.stringify({ updatedAt: Date.now(), hosty: [...zleHosty] }));
+    fs.writeFileSync(cachePath(), JSON.stringify({ updatedAt, hosty: [...zleHosty] }));
   } catch (err) {
     console.warn('[security] nie moge zapisac cache listy zlosliwych domen:', err.message);
   }
 }
 
-async function odswiez() {
+async function pobierz() {
   try {
     const odp = await fetch(ZRODLO_HOSTOW);
     if (!odp.ok) return false;
@@ -70,6 +71,7 @@ async function odswiez() {
     if (!nowa.size) return false; // pusta odpowiedz - lepiej zostac przy starej liscie niz wyzerowac ochrone
     zleHosty = nowa;
     gotowe = true;
+    updatedAt = Date.now();
     zapiszCache();
     return true;
   } catch (err) {
@@ -78,13 +80,32 @@ async function odswiez() {
   }
 }
 
+/* Ta sama logika co adblock.refresh() - jedno miejsce chroni przed dwoma
+   pobieraniami naraz, force=true (przycisk "Zaktualizuj teraz" w Ustawieniach)
+   pomija sprawdzanie "czy lista jest jeszcze swieza". */
+async function refresh(force) {
+  if (updating) return { ok: false, reason: 'trwa aktualizacja' };
+  if (!force && gotowe && Date.now() - updatedAt < ODSWIEZAJ_CO) return { ok: false, reason: 'lista jest aktualna' };
+  updating = true;
+  try {
+    const ok = await pobierz();
+    return ok ? { ok: true } : { ok: false, reason: 'nie udało się pobrać (brak sieci?)' };
+  } finally {
+    updating = false;
+  }
+}
+
+function status() {
+  return { ready: gotowe, updatedAt, count: zleHosty.size, updating };
+}
+
 /* Wolane raz przy starcie programu (patrz index.js). Cache z dysku wczytuje
    sie od razu, wiec ochrona dziala juz od pierwszej otwartej karty - swiezej
    listy z sieci program i tak nie zdazylby pobrac przed pokazaniem okna. */
 function init() {
-  const updatedAt = wczytajCache();
-  if (!gotowe || Date.now() - updatedAt > ODSWIEZAJ_CO) odswiez().catch(() => {});
-  setInterval(() => { odswiez().catch(() => {}); }, ODSWIEZAJ_CO);
+  wczytajCache();
+  if (!gotowe || Date.now() - updatedAt > ODSWIEZAJ_CO) refresh(false).catch(() => {});
+  setInterval(() => { refresh(false).catch(() => {}); }, ODSWIEZAJ_CO);
 }
 
 function rozbierz(url) {
@@ -133,4 +154,4 @@ function adresOstrzezenia(typ, target) {
   return `nazuna://warning/?${params.toString()}`;
 }
 
-module.exports = { init, sprawdz, zapamietajWyjatek, adresOstrzezenia };
+module.exports = { init, sprawdz, zapamietajWyjatek, adresOstrzezenia, status, refresh };
