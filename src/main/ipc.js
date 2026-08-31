@@ -28,7 +28,11 @@ function ownerOf(sender) {
     if (win.tabs.some((t) => t.wc === sender)) return win;
     if (win.extensionPopup && win.extensionPopup.view.webContents === sender) return win;
   }
-  return W.focusedWindow();
+  // Brak dopasowania to sygnal, ze nadawca akurat nie nalezy do zadnego
+  // znanego okna (np. karta w trakcie przenoszenia miedzy oknami) - zamiast
+  // zgadywac i dzialac na przypadkowym, skupionym oknie, wolimy nic nie
+  // robic. register() nizej juz i tak liczy sie z brakiem okna.
+  return null;
 }
 
 async function suggest(query) {

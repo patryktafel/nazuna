@@ -765,8 +765,12 @@ class AppWindow {
     const view = new WebContentsView({
       webPreferences: {
         partition: this.partition,
-        contextIsolation: false,
-        sandbox: false,
+        // Popup nie ma wlasnego preloadu, a chrome.* dostarcza natywnie
+        // session.loadExtension() (patrz session.js) - wiec bezpieczne
+        // domyslne ustawienia Electrona nic tu nie psuja. Tak samo robi to
+        // referencyjna biblioteka electron-chrome-extensions.
+        contextIsolation: true,
+        sandbox: true,
         nodeIntegration: false
       }
     });
