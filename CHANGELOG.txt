@@ -1,6 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.38 - 31 sierpnia 2026
+-------------------------
+
+Domykanie zabezpieczeń
+
+Okienko popup rozszerzenia (to, które otwiera się po kliknięciu ikony
+rozszerzenia obok paska adresu) działa teraz z pełną izolacją kontekstu i
+piaskownicą, dokładnie tak jak reszta przeglądarki - wcześniej miało
+złagodzone ustawienia, bez żadnego powodu, dla którego byłyby tam potrzebne.
+Wewnętrzny mechanizm, który rozpoznaje, do którego okna należy dane
+polecenie z wnętrza przeglądarki, przestał zgadywać skupione okno, gdy nie
+potrafi dopasować nadawcy - teraz po prostu nic wtedy nie robi, zamiast
+działać na przypadkowym oknie.
+
 0.1.37 - 29 sierpnia 2026
 -------------------------
 
