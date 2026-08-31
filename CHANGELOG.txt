@@ -386,7 +386,6 @@ megabajtów, a program antywirusowy to potem skanuje. Wersja z rozpakowanego
 folderu nie robi tego w ogóle i startuje od razu. Jeśli szybkość startu jest
 ważniejsza od wygody jednego pliku, używaj folderu.
 
-
 0.1.15 - 26 sierpnia 2026
 -------------------------
 
