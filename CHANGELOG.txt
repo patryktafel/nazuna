@@ -698,15 +698,15 @@ z poprawnym rozwinięciem adresu do pełnej postaci.
 Poprawka znaleziona pomiarem prawdziwego Chrome.
 
 Dostałem dostęp do Chrome na Twoim komputerze i pierwsze, co zrobiłem, to
-porownanie go z Nazuną. Wyszedł mój błąd z 0.1.7.
+porównanie go z Nazuną. Wyszedł mój błąd z 0.1.7.
 
 - Uzupełniając window.chrome dołożyłem tam człon "runtime", bo tak
   zapamiętałem. Prawdziwy Chrome go na zwykłej stronie nie ma. Czyli Nazuna
   wyglądała na lepiej wyposażoną niż oryginał, a to jest niespójność tego
-  samego rodzaju co ta, którą naprawialismy w 0.1.6, tylko w drugą stronę.
+  samego rodzaju co ta, którą naprawialiśmy w 0.1.6, tylko w drugą stronę.
   Usunięte.
 - Reszta zgadza się co do przecinka, sprawdzone na Chrome 151: te same trzy
-  człony, te same cztery pola w csi, te same trzynascie w loadTimes, ten sam
+  człony, te same cztery pola w csi, te same trzynaście w loadTimes, ten sam
   zestaw w chrome.app.
 - Potwierdziła się też poprawka języka z 0.1.6. Chrome na Twoim komputerze
   zgłasza pl-PL, pl, en-US, en, czyli dokładnie to, co teraz wysyła Nazuna.
@@ -723,7 +723,7 @@ i siedzi za przełącznikiem, ale nazwa rzeczy powinna się zgadzać.
 Silnik
 
 Zostaje na Chromium 150. Twój Chrome ma 151, ale castLabs, czyli jedyne
-zródło Electrona z obsługą Widevine, nie wydał jeszcze nic nowszego niż
+źródło Electrona z obsługą Widevine, nie wydał jeszcze nic nowszego niż
 43.2.0 w wersji stabilnej. Sprawdziłem wszystkie kolejne numery. Podbicie
 silnika oznaczałoby dziś rezygnację z Widevine, czyli zamknięcie drogi do
 Netfliksa na zawsze, żeby zyskać jedną wersję Chromium. Nie warto.
@@ -837,14 +837,14 @@ dzisiaj bardziej, wymieniał tylko Chromium. Miałem kod, który to
 poprawiał, ale uruchamiał się dopiero po zobaczeniu słowa "Electron",
 a Electron 43 przestał je tam wpisywać. Łatka nie robiła więc nic.
 Teraz dopisujemy brakującą markę zawsze, i to do tego, co wygenerował
-Chromium, zamiast podmieniac całość na sztywno.
+Chromium, zamiast podmieniać całość na sztywno.
 
-3. window.chrome było pustym pudłekiem
+3. window.chrome było pustym pudełkiem
 
 W każdym prawdziwym Chromium ten obiekt ma cztery standardowe człony.
-Electron ich nie dostarcza i zostawia puste pudłko, co jest jednym
+Electron ich nie dostarcza i zostawia puste pudełko, co jest jednym
 z najstarszych sposobów odróżnienia zwykłej przeglądarki od okienka
-wklejonego w środek innej aplikacji. Uzupełnilismy brakujące wyposażenie.
+wklejonego w środek innej aplikacji. Uzupełniliśmy brakujące wyposażenie.
 Działa też w ramkach osadzonych, bo strony logowania sporo sprawdzeń
 robią właśnie w nich.
 
@@ -894,7 +894,7 @@ Logowanie do Google
 - Uczciwie: to może nie wystarczyć. Google sprawdza więcej sygnałów niż ten
   jeden i zmienia te kontrole. Jeżeli komunikat o niebezpiecznej przeglądarce
   wróci, to nie jest awaria, tylko ich decyzja, na którą nie mamy wpływu.
-- Świadomie nie poszłem dalej w podrabianie kolejnych elementów Chrome.
+- Świadomie nie poszedłem dalej w podrabianie kolejnych elementów Chrome.
   Ta blokada istnieje po to, żeby program nie mógł podejrzeć hasła wpisywanego
   w okno logowania, i nie zamierzam budować obejścia cudzego zabezpieczenia.
 
