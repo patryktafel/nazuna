@@ -24,4 +24,271 @@ polecenie z wnętrza przeglądarki, przestał zgadywać skupione okno, gdy nie
 potrafi dopasować nadawcy - teraz po prostu nic wtedy nie robi, zamiast
 działać na przypadkowym oknie.
 
-ZOSTALO_DO_UZUPELNIENIA_TESTOWO
+0.1.37 - 29 sierpnia 2026
+-------------------------
+
+Dopracowanie ostrzeżeń bezpieczeństwa
+
+Wstecz i dalej w historii przechodzą teraz przez to samo sprawdzenie co
+zwykła nawigacja - do tej pory dało się nimi ominąć ostrzeżenie o złośliwej
+stronie. W Ustawieniach widać już listę złośliwych domen, z liczbą wpisów,
+datą ostatniej aktualizacji i przyciskiem do odświeżenia na żądanie, tak jak
+przy listach blokera reklam. Ostrzeżenie o złośliwej stronie chowa teraz
+przycisk "przejdź mimo to" za dodatkowym kliknięciem "Szczegóły", żeby nikt
+nie kliknął przez samo przyzwyczajenie, tak jak robi to Chrome i Firefox. I
+pobieranie plików z domen na tej liście jest teraz blokowane od razu, zanim
+cokolwiek trafi na dysk, z krótkim powiadomieniem w rogu okna.
+
+0.1.36 - 29 sierpnia 2026
+-------------------------
+
+Ostrzeżenia przed niebezpiecznymi stronami
+
+Nazuna sprawdza teraz każdą stronę przed wejściem na nią. Jeśli adres
+znajduje się na publicznej liście domen znanych z rozsyłania złośliwego
+oprogramowania (lista aktualizuje się sama w tle), pokazuje się pełnoekranowe
+ostrzeżenie z możliwością wycofania się albo wejścia na własną
+odpowiedzialność - i to ostrzeżenie wraca przy każdej kolejnej wizycie na tej
+stronie. To samo dzieje się przy stronach bez szyfrowania (http zamiast
+https), z tą różnicą, że tu Nazuna pyta tylko raz - po kliknięciu "przejdź
+mimo to" zapamiętuje wyjątek dla tej strony i więcej nie pyta. Do tego,
+niezależnie od tego ostrzeżenia, każda strona http ma teraz w pasku adresu
+etykietę "Niezabezpieczona", tak jak w Chrome. Całość da się wyłączyć jednym
+przełącznikiem w Ustawieniach, w sekcji Prywatność i treści.
+
+0.1.35 - 29 sierpnia 2026
+-------------------------
+
+Informacja o autorze na stronie "O Nazunie"
+
+Na nazuna://about dodany został podpis "Stworzona przez Tafel" oraz link do
+publicznego repozytorium wydań na GitHubie (patryktafel/nazuna-updates).
+
+0.1.34 - 29 sierpnia 2026
+-------------------------
+
+Przegląd bezpieczeństwa
+
+Sprawdziłem dokładnie, jak Nazuna obsługuje uprawnienia stron i otwieranie
+linków poza przeglądarką, i poprawiłem dwie rzeczy. Po pierwsze, strony
+pytające o układ Twoich monitorów (np. do zarządzania wieloma oknami) teraz
+muszą o to zapytać, tak jak w prawdziwym Chrome - wcześniej dostawały tę
+informację od razu, bez pytania. Po drugie, linki, które przeglądarka sama
+otwiera w innych programach (np. klienty poczty), są teraz ograniczone do
+bezpiecznych typów - stron www i adresów e-mail - żeby żadna strona nie
+mogła podsunąć czegoś, co próbowałoby odpalić coś innego w systemie.
+
+0.1.33 - 28 sierpnia 2026
+-------------------------
+
+Aktualizacja przy starcie, tak jak w Chrome
+
+Do tej pory aktualizacja pobierała się w tle w trakcie pracy, a instalowała
+się przy zamknięciu programu. Teraz Nazuna sprawdza to od razu przy starcie,
+zanim cokolwiek się pokaże - jeśli jest nowa wersja, pobiera ją i instaluje
+po cichu, a dopiero potem otwiera się już zaktualizowana. Przy złym
+połączeniu nie blokuje tego dłużej niż minutę - wtedy program po prostu się
+otwiera, a aktualizacja doleci w tle jak dotychczas. Program nadal sprawdza
+też regularnie co kilka godzin, gdyby był otwarty bardzo długo.
+
+0.1.32 - 28 sierpnia 2026
+-------------------------
+
+Wydanie testowe - dziennik z 0.1.31 pokazał, że automatyczne sprawdzanie
+działa poprawnie, po prostu wcześniejsze testy sprawdzały wersję, która
+akurat już była aktualna. To wydanie służy do sprawdzenia mechanizmu na
+kimś, kto nie zaktualizował się jeszcze ręcznie. Bez zmian w przeglądarce.
+
+0.1.31 - 28 sierpnia 2026
+-------------------------
+
+Dziennik diagnostyczny dla aktualizacji
+
+Automatyczne sprawdzanie u jednej osoby uparcie nie działa, mimo kilku
+poprawek, a ręczne zawsze działa bez problemu - żeby w końcu zobaczyć co
+się naprawdę dzieje zamiast zgadywać, dodano dziennik zapisujący każdą
+próbę sprawdzenia (i cały wewnętrzny log mechanizmu aktualizacji) do pliku
+aktualizacje.log w folderze danych Nazuny (nazuna://about - Ta instalacja -
+Otwórz).
+
+0.1.30 - 28 sierpnia 2026
+-------------------------
+
+Aktualizacje jak w Chrome i Firefoksie
+
+Do tej pory znalezioną aktualizację trzeba było samemu pobrać i zainstalować
+(klikając w karcie powiadomienia albo w O programie). Teraz dzieje się to
+samo, bez klikania: gdy Nazuna znajdzie nową wersję, od razu pobiera ją w
+tle, a instaluje przy najbliższym zamknięciu programu - dokładnie tak, jak
+robią to Chrome i Firefox. Kartę powiadomienia i przycisk w O programie
+zostawiliśmy, dla kogoś kto wolałby zainstalować od razu, ale nie trzeba
+już nic klikać, żeby aktualizacja w ogóle ruszyła.
+
+0.1.29 - 28 sierpnia 2026
+-------------------------
+
+Bezpieczniejsze automatyczne sprawdzanie aktualizacji
+
+Automatyczne sprawdzenie po starcie dzieje się teraz nie raz, tylko trzy: od
+razu po chwili, jeszcze raz kilka minut później na wszelki wypadek (świeżo
+opublikowane wydanie czasem potrzebuje chwili, zanim rozejdzie się po sieci
+GitHuba), a potem regularnie co kilka godzin - dzięki temu program otwarty
+cały dzień też sam się dowie o nowej wersji, nie tylko przy restarcie.
+
+0.1.28 - 28 sierpnia 2026
+-------------------------
+
+Wydanie testowe - sprawdzenie, czy automatyczne powiadomienie o nowej
+wersji pojawia się samo po świeżym uruchomieniu programu. Bez zmian w
+samej przeglądarce.
+
+0.1.27 - 28 sierpnia 2026
+-------------------------
+
+Drobna poprawka karty powiadomienia
+
+Karta z informacją o błędzie pobierania aktualizacji wyglądała tak samo jak
+zwykłe, spokojne powiadomienia - teraz ma czerwoną ikonę i delikatnie
+czerwoną obwódkę, więc od razu widać, że to błąd, a nie zwykła informacja.
+
+0.1.26 - 28 sierpnia 2026
+-------------------------
+
+Poprawka wyglądu karty powiadomienia
+
+Karta powiadomienia o aktualizacji potrafiła wyświetlić się ucięta - widać
+było tylko tytuł, bez opisu i przycisków "Pobierz"/"Później". Powodem było
+rozmycie tła pod kartą, które w niektórych układach Windows/Chromium nie
+nadążało z domalowaniem świeżo dodanego elementu. Usunięto samo rozmycie -
+karta ma teraz zwykłe, prawie nieprzezroczyste tło bez tego ryzyka, wygląda
+niemal identycznie.
+
+0.1.25 - 28 sierpnia 2026
+-------------------------
+
+Poprawki karty powiadomienia z 0.1.24
+
+Karta z informacją o aktualizacji miała na sztywno wpisaną pozycję - przy
+widocznym pasku zakładek albo otwartym polu szukania mogła się na nie
+nakładać. Teraz sama liczy, ile miejsca zajmuje reszta paska, i ustawia się
+zawsze tuż pod nim. Dodatkowo: jeśli pobieranie się nie powiedzie, karta
+pokaże teraz komunikat o błędzie zamiast zostać na zawsze zamrożona na
+"Pobieranie...". Otwarcie menu albo innego okienka chowa też kartę, żeby się
+z nimi nie zderzała.
+
+0.1.24 - 28 sierpnia 2026
+-------------------------
+
+Powiadomienie o aktualizacji
+
+Do tej pory dostępność nowej wersji było widać tylko w O programie - trzeba
+było tam samemu zajrzeć. Teraz, gdy ciche sprawdzenie w tle znajdzie nową
+wersję, w prawym górnym rogu okna wyskakuje karta z informacją i przyciskiem
+"Pobierz". Po pobraniu karta zmienia się w "Zainstaluj i uruchom ponownie".
+Kartę można odłożyć na później (x albo "Później") - dla tej samej wersji nie
+wróci sama, ale wciąż będzie czekać w O programie.
+
+0.1.23 - 28 sierpnia 2026
+-------------------------
+
+Wydanie testowe mechanizmu automatycznych aktualizacji z 0.1.22 - bez zmian
+w samej przeglądarce. Jeśli to czytasz w O programie po automatycznej
+aktualizacji z poprzedniej wersji, to znaczy, że mechanizm działa.
+
+0.1.22 - 28 sierpnia 2026
+-------------------------
+
+Instalator, GitHub i automatyczne aktualizacje
+
+Windows dostaje teraz normalny instalator zamiast jednego pliku Nazuna.exe.
+Instalator pyta o folder docelowy i o to, czy zrobić skróty na pulpicie i w
+menu Start, ma ciemny, fioletowy wygląd z logo Nazuny (tak jak przeglądarka),
+i tworzy w Panelu sterowania wpis do odinstalowania. Wersję przenosną (jeden
+plik .exe) da się zbudować dalej na żądanie - domyślnie już nie powstaje.
+
+Kod przeniósł się na GitHuba, do prywatnego repozytorium. Osobne, publiczne
+repozytorium (nazuna-updates) nie zawiera kodu źródłowego - tylko gotowe
+wydania, z których ta wersja i wszystkie następne same sprawdzają, czy jest
+coś nowszego. Sprawdzanie dzieje się po cichu, w tle, chwilę po starcie, a
+w O programie widać stan i można to zrobić ręcznie, pobrać aktualizację i
+zainstalować ją jednym kliknięciem.
+
+Przy okazji: biblioteka adm-zip (rozpakowuje rozszerzenia i silnik
+przeglądarki) poszła w górę do wersji 0.6.0 - poprzednia miała znaną lukę,
+przez którą specjalnie spreparowany plik zip mógł wymusić przydzielenie
+4 GB pamięci. Bez zmian w działaniu, tylko łatka.
+
+0.1.21 - 27 sierpnia 2026
+-------------------------
+
+Usunięcie automatycznego odrzucania banerów zgody na ciasteczka
+
+Ta funkcja (guzik z ciastkiem w pasku adresu) miała same dobre intencje:
+zamiast klikać "odrzuć" na każdym barierze zgody ręcznie, robiła to sama,
+zarówno z góry (podkładając gotowe ciasteczko z odmową, zanim strona zdążyła
+cokolwiek pokazać), jak i klikając widoczny baner, gdyby ten pierwszy sposób
+zawiódł.
+
+Problem w tym, że na YouTube to psuło menu boczne: czasem znikała cała lewa
+kolumna, czasem tylko część ikon (dzwonek powiadomień, awatar, przycisk
+"Utwórz"). Okazało się, że to właśnie to automatyczne odrzucanie zgody -
+Google traktuje ją inaczej niż zwykłe strony z banerami reklamowymi i po
+odrzuceniu potrafi okroić więcej niż tylko reklamy, w tym elementy interfejsu
+związane z kontem. Zamiast dodawać wyjątek tylko dla YouTube i zgadywać, gdzie
+indziej ta sama funkcja może psuć podobne rzeczy po cichu, usunąłem ją
+całkowicie: guzik z paska adresu, ustawienie w Prywatności, oraz cały kod,
+który rozpoznawał i klikał banery.
+
+Banery zgody trzeba więc teraz zamykać samemu, tak jak w każdej innej
+przeglądarce. Blokowanie ciasteczek podmiotów trzecich (osobna funkcja,
+tarcza obok) działa bez zmian.
+
+0.1.20 - 27 sierpnia 2026
+-------------------------
+
+Przegląd całego kodu i sprzątanie
+
+Poprosiłem sam siebie o przejrzenie całej przeglądarki pod kątem błędów, i
+parę się znalazło:
+
+- Okna wyskakujące (np. z linków otwierających się w nowym, małym okienku)
+  nie miały tej samej blokady co zwykłe karty i teoretycznie mogłyby dać
+  złośliwej stronie wejście na nazuna:// (adresy wewnętrzne przeglądarki).
+  Zamknięte.
+- W oknie prywatnym zaznaczenie "zapamiętaj ten wybór" przy zgodzie na
+  uprawnienie (kamera, mikrofon, lokalizacja...) i tak zapisywało tę zgodę na
+  stałe na dysku - przetrwałaby więc zamknięcie okna prywatnego i wpływała na
+  zwykłe przeglądanie później. Teraz w oknie prywatnym nic z tego nie jest
+  zapisywane.
+- Podobnie zgody na dostęp do ciasteczek między osadzonymi stronami były
+  trzymane wspólnie dla wszystkich okien, zamiast osobno dla zwykłego i
+  prywatnego przeglądania.
+- Dodanie dwóch różnych rozszerzeń z folderu o podobnej nazwie (np.
+  "moj-dodatek-1" i "moj-dodatek-2") mogło dać im ten sam wewnętrzny
+  identyfikator - usunięcie jednego kasowało wtedy oba.
+- Wklejenie ścieżki do pliku na Windows (np. C:\Users\...) w pasek adresu
+  kończyło się błędem zamiast otwarciem pliku - pasek brał "C" za nieznany
+  protokół.
+- Menu pod trzema kreskami pokazywało procent powiększenia zamrożony na tym,
+  co było w chwili otwarcia menu - klikanie +/- działało, ale liczba obok się
+  nie ruszała, dopóki nie zamknęło się i otworzyło menu ponownie.
+- Strzałki w górę/w dół w pasku adresu przy przewijaniu podpowiedzi umiały
+  zostawić w pasku tekst z jednej z podpowiedzi zamiast tego, co się faktycznie
+  wpisało, gdy strzałka wróciła do stanu "nic nie wybrane".
+- Okienko z prośbą o zgodę na uprawnienie, zamknięte czymkolwiek innym niż
+  jego własnym przyciskiem (np. otwarciem menu, kliknięciem gdzie indziej),
+  zostawiało proszącą stronę czekającą w nieskończoność, bo żadna odpowiedź do
+  niej nie wracała. Teraz takie zamknięcie liczy się jako odmowa.
+- Dwa rzadsze błędy związane z synchronizacją: strona z listy pobierania mogła
+  (bardzo rzadko, przy dwóch pobraniach tej samej nazwy naraz) nadpisać
+  wcześniejszy plik, a bloker reklam przez chwilę po przekierowaniu strony
+  sprawdzał wyjątki dla starego adresu zamiast nowego.
+- Usunąłem z paska menu Electrona domyślne angielskie menu (File/Edit/View),
+  które nigdy nie było wyłączone i nie miało nic wspólnego z interfejsem
+  przeglądarki.
+
+Poza tym trochę porządków w komentarzach w kodzie (kilka było po angielsku,
+zostały po polsku jak reszta) i usunięcie martwego, deweloperskiego fragmentu
+kodu, który i tak nigdy się nie uruchamiał poza moim środowiskiem testowym.
+
+ZOSTALO_2
