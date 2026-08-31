@@ -692,3 +692,271 @@ Sprawdzone klikaniem myszą, nie na oko: zaznaczenie tekstu, Kopiuj, wyczysz-
 czenie pola, Wklej i odzyskanie tej samej treści, a na koniec Wklej i przejdź
 z poprawnym rozwinięciem adresu do pełnej postaci.
 
+0.1.9 - 25 sierpnia 2026
+------------------------
+
+Poprawka znaleziona pomiarem prawdziwego Chrome.
+
+Dostałem dostęp do Chrome na Twoim komputerze i pierwsze, co zrobiłem, to
+porownanie go z Nazuną. Wyszedł mój błąd z 0.1.7.
+
+- Uzupełniając window.chrome dołożyłem tam człon "runtime", bo tak
+  zapamiętałem. Prawdziwy Chrome go na zwykłej stronie nie ma. Czyli Nazuna
+  wyglądała na lepiej wyposażoną niż oryginał, a to jest niespójność tego
+  samego rodzaju co ta, którą naprawialismy w 0.1.6, tylko w drugą stronę.
+  Usunięte.
+- Reszta zgadza się co do przecinka, sprawdzone na Chrome 151: te same trzy
+  człony, te same cztery pola w csi, te same trzynascie w loadTimes, ten sam
+  zestaw w chrome.app.
+- Potwierdziła się też poprawka języka z 0.1.6. Chrome na Twoim komputerze
+  zgłasza pl-PL, pl, en-US, en, czyli dokładnie to, co teraz wysyła Nazuna.
+
+Sprostowanie do 0.1.7
+
+Pisząc o kluczach dostępu stwierdziłem, że odpowiadanie "nie ma czym się
+zalogować" jest po prostu prawdą na Twoim komputerze. Pomiar pokazał co
+innego: Chrome zgłasza, że Windows Hello jednak jest tam dostępne, mimo że
+nic w nim nie ustawiłeś. Nasza odpowiedź jest więc decyzją, a nie
+stwierdzeniem faktu. Zachowanie zostaje bez zmian, bo taki był Twój wybór
+i siedzi za przełącznikiem, ale nazwa rzeczy powinna się zgadzać.
+
+Silnik
+
+Zostaje na Chromium 150. Twój Chrome ma 151, ale castLabs, czyli jedyne
+zródło Electrona z obsługą Widevine, nie wydał jeszcze nic nowszego niż
+43.2.0 w wersji stabilnej. Sprawdziłem wszystkie kolejne numery. Podbicie
+silnika oznaczałoby dziś rezygnację z Widevine, czyli zamknięcie drogi do
+Netfliksa na zawsze, żeby zyskać jedną wersję Chromium. Nie warto.
+
+Od tej wersji obie odmiany, na Windowsa i na Maca, powstają razem.
+
+0.1.8 - 25 sierpnia 2026
+------------------------
+
+Wersja na Maca (jednorazowo, na prośbę).
+
+Na Windowsie nic się nie zmienia. Jeśli masz działającą 0.1.7, nie musisz jej
+przebudowywać: kod dla Windowsa zachowuje się identycznie.
+
+Co przybyło
+
+- Budowanie paczki Nazuna.app dla Maców z procesorem Apple (M1 i nowsze).
+  Polecenie: npm run dist:mac. Silnik castLabs dla Maca pobiera się osobno,
+  do folderu electron-wv-mac, więc oba warianty mogą leżeć obok siebie.
+- Rozpakowywanie silnika dla Maca idzie systemowym unzip, a nie biblioteką,
+  której używamy na Windowsie. Ta druga zamienia dowiązania symboliczne na
+  zwykłe pliki, po czym aplikacja w ogóle się nie uruchamia.
+
+Poprawki, które wynikły przy okazji
+
+- Wizytówka przeglądarki zależy teraz od systemu, na którym naprawdę stoi.
+  Była zaszyta na sztywno jako Windows, więc na Macu strona zobaczyłaby
+  przeglądarkę twierdzącą, że siedzi na Windowsie. To dokładnie ta sprzeczność,
+  przez którą Google odmawiał logowania do 0.1.6.
+- Na Macu okno pokazuje systemowe kropki zamykania w lewym górnym rogu, tam
+  gdzie ich szukasz, a nasze windowsowe przyciski z prawej znikają. Pasek kart
+  odsuwa się, żeby karty pod kropkami nie lądowały.
+- Skróty klawiszowe działały na Macu już wcześniej, na klawiszu Command.
+
+Czego na Macu nie będzie
+
+- Aplikacja nie jest podpisana u Apple, bo podpis kosztuje 99 dolarów rocznie.
+  Przy pierwszym uruchomieniu system ją zablokuje. Obchodzi się to raz: prawy
+  przycisk na ikonie, Otwórz, potem jeszcze raz Otwórz w okienku.
+- Serwisy z DRM nie zadziałają, tak samo jak na Windowsie, z tego samego
+  powodu: brakuje podpisu produkcyjnego castLabs.
+- Dane przeglądarki lądują w Bibliotece użytkownika, w folderze Application
+  Support, czyli tam gdzie trzymają je wszystkie programy na Macu.
+
+0.1.7 - 24 sierpnia 2026
+------------------------
+
+Koniec z oknem "Zabezpieczenia Windows" przy logowaniu.
+
+Skąd się brało
+
+Coraz więcej stron, z Google na czele, zanim pokaże pole na hasło, pyta
+przeglądarkę: "da się tu zalogować kluczem dostępu?". Chrome widzi, że na
+komputerze nic takiego nie ma, odpowiada "nie" i strona od razu pokazuje
+hasło. Nazuna nie odpowiadała nic, więc pytanie leciało dalej, prosto do
+Windowsa, a Windows uprzejmie otwierał swoje okno. Dlatego wyskakiwało
+wszędzie tam, gdzie strona obsługuje klucze, i to nawet komuś, kto żadnego
+klucza nie ma skonfigurowanego.
+
+Co się zmieniło
+
+- Przeglądarka odpowiada teraz sama, zgodnie z prawdą: na tym urządzeniu
+  nie ma czym się zalogować kluczem. Większość stron w ogóle przestanie
+  próbować.
+- Gdyby jakaś strona mimo to spróbowała, zamykamy to tak, jakbyś kliknął
+  "Anuluj" w oknie systemu. Strona płynnie wraca do hasła, bez błędu.
+- Zapisane hasła i logowanie przez konto Google czy Facebooka idą tą samą
+  funkcją przeglądarki i celowo ich nie ruszamy. Wyłączone są wyłącznie
+  klucze.
+- W Ustawieniach, w sekcji Prywatność i treści, jest przełącznik "Klucze
+  dostępu (passkeys)", domyślnie wyłączony. Gdybyś kiedyś zaczął ich
+  używać, włączasz go i wszystko wraca do normy. Zmiana działa od nowej
+  karty.
+
+Zmierzone po naprawie
+
+- pytanie o dostępność klucza: odpowiedź "nie", w oknie i w ramkach
+- próba logowania kluczem: kończy się jak anulowanie, strona wraca do hasła
+- tryb podpowiedzi przy polu logowania: cisza, dokładnie jak w przeglądarce
+  bez kluczy
+- logowanie hasłem i przez konto zewnętrzne: nietknięte
+- po włączeniu przełącznika wszystko wraca do zachowania silnika
+
+Nic nie kosztuje. Sprawdzenie tego ustawienia odbywa się raz, przy tworzeniu
+karty, bez żadnej komunikacji w tle przy wczytywaniu stron.
+
+0.1.6 - 24 sierpnia 2026
+------------------------
+
+Logowanie do Google, tym razem na podstawie pomiarów, a nie domysłów.
+
+W 0.1.5 poprawiłem jedno miejsce i miałem nadzieję, że wystarczy. Nie
+wystarczyło, więc tym razem najpierw zmierzyłem, co Nazuna naprawdę mówi
+o sobie w sieci i w JavaScripcie. Wyszły trzy konkretne błędy po naszej
+stronie. Wszystkie trzy są naprawione.
+
+1. Przeglądarka zdradzała się przy ikonkach stron
+
+Pasek zakładek i historia pobierają ikonki stron. Te zapytania szły przez
+kanał, którego nigdy nie przykryłem czystym podpisem, więc wychodziły
+w świat z oryginalnym opisem Electrona, razem z nazwą i numerem wersji
+Nazuny. Wystarczyła jedna taka ikonka, żeby serwis wiedział, z czym ma do
+czynienia. Teraz cały program ma jeden wspólny podpis, ustawiony u samej
+podstawy, więc nie da się o żadnym kanale zapomnieć. Przy okazji te
+zapytania przechodzą wreszcie przez bloker i wysyłają "nie śledź mnie".
+
+2. Nasza wizytówka sama sobie przeczyła
+
+Stary nagłówek mówił "jestem Chrome". Nowy, ten na którym Google polega
+dzisiaj bardziej, wymieniał tylko Chromium. Miałem kod, który to
+poprawiał, ale uruchamiał się dopiero po zobaczeniu słowa "Electron",
+a Electron 43 przestał je tam wpisywać. Łatka nie robiła więc nic.
+Teraz dopisujemy brakującą markę zawsze, i to do tego, co wygenerował
+Chromium, zamiast podmieniac całość na sztywno.
+
+3. window.chrome było pustym pudłekiem
+
+W każdym prawdziwym Chromium ten obiekt ma cztery standardowe człony.
+Electron ich nie dostarcza i zostawia puste pudłko, co jest jednym
+z najstarszych sposobów odróżnienia zwykłej przeglądarki od okienka
+wklejonego w środek innej aplikacji. Uzupełnilismy brakujące wyposażenie.
+Działa też w ramkach osadzonych, bo strony logowania sporo sprawdzeń
+robią właśnie w nich.
+
+Przy okazji: język
+
+Przeglądarka prosiła strony o angielski niezależnie od ustawień systemu.
+Teraz bierze język z Windowsa, więc Google i reszta serwisów odzywają się
+po polsku.
+
+Co zmierzyłem po naprawie
+
+- każde zapytanie wychodzące, łącznie z ikonkami, ma ten sam czysty podpis
+- nowy nagłówek wymienia Chromium i Google Chrome w tej samej wersji
+- window.chrome ma komplet, tak samo w oknie głównym i w ramce
+- trzy miejsca, w których strona może zapytać o wersję, dają tę samą odpowiedź
+- nagłówek języka to teraz pl-PL zamiast en-US
+
+Granica, której nie przekraczam
+
+Poprawiam wyłącznie naszą stronę: uzupełniam braki i usuwam niespójności,
+tak samo jak robi to każda przeglądarka zbudowana na Chromium. Nie ruszam
+strony logowania Google i nie rozbrajam ich sprawdzeń. Jeżeli mimo tego
+komunikat wróci, to znaczy, że patrzą na coś, czego nie widzę, i wtedy
+uczciwą odpowiedzią jest zalogowanie się kodem z telefonu, a nie kolejne
+podrabianie.
+
+DRM bez zmian. Widevine działa i pobiera licencje, ale serwisy pokroju
+Prime Video odrzucają je do czasu, aż plik dostanie podpis produkcyjny
+od castLabs. To osobny temat, czeka na Twoją decyzję.
+
+0.1.5 - 24 sierpnia 2026
+------------------------
+
+Dwie zmiany naraz: próba odblokowania logowania do Google oraz moduł do
+odtwarzania serwisów z DRM.
+
+Logowanie do Google
+
+- Nazuna mówiła o sobie dwie różne rzeczy naraz. W nagłówku wysyłanym do
+  serwera przedstawiała się jako Chrome, ale gdy strona zapytała o to samo
+  przez JavaScript, dostawała odpowiedź wymieniającą wyłącznie Chromium, bez
+  słowa Chrome. Google na takich niespójnościach wyłapuje programy, które
+  podszywają się pod przeglądarkę, i odmawia im logowania.
+- Teraz wszystkie trzy miejsca mówią to samo. Sprawdzone pomiarem: lista marek
+  widziana przez stronę zawiera Chromium i Google Chrome w tej samej wersji co
+  nagłówek.
+- Uczciwie: to może nie wystarczyć. Google sprawdza więcej sygnałów niż ten
+  jeden i zmienia te kontrole. Jeżeli komunikat o niebezpiecznej przeglądarce
+  wróci, to nie jest awaria, tylko ich decyzja, na którą nie mamy wpływu.
+- Świadomie nie poszłem dalej w podrabianie kolejnych elementów Chrome.
+  Ta blokada istnieje po to, żeby program nie mógł podejrzeć hasła wpisywanego
+  w okno logowania, i nie zamierzam budować obejścia cudzego zabezpieczenia.
+
+Serwisy z DRM (Netflix, HBO Max, Disney+, Spotify Web)
+
+- Przeglądarka stoi teraz na buildzie Electrona od castLabs, który zawiera
+  obsługę modułu Widevine. To ten sam Chromium, tylko z dołożoną obsługą
+  odszyfrowywania chronionego wideo.
+- Sam moduł nie siedzi w pliku programu. Dociąga się z serwerów Google przy
+  pierwszym uruchomieniu, więc do jego pobrania potrzebny jest internet.
+  Jeżeli pobranie się nie uda, przeglądarka startuje normalnie i działa jak
+  dotąd, tylko bez serwisów z DRM. Start nigdy nie czeka na ten moduł.
+- Stan modułu widać na stronie nazuna://about, w sekcji "Ta instalacja".
+  Przy pierwszym uruchomieniu może przez chwilę pokazywać "w toku".
+
+Czego się spodziewać, żeby nie było rozczarowania
+
+- Ta wersja NIE jest podpisana u castLabs. Podpis to osobny krok wymagający
+  darmowego konta u nich i wybrałeś, żeby najpierw sprawdzić co działa bez
+  niego. Bez podpisu Netflix najprawdopodobniej nadal odmówi. Spotify Web
+  i część mniej wymagających serwisów mogą ruszyć.
+- Nawet z podpisem serwisy takie jak Netflix zwykle ograniczają jakość do 720p
+  w przeglądarkach innych niż Chrome i Edge. To ograniczenie po ich stronie.
+
+Drobne
+
+- Strona "O Nazunie" pokazuje teraz stan modułu DRM i wyjaśnia ograniczenia.
+- Wersja silnika cofa się z Electrona 43.4.1 na 43.2.0, bo tylko taką wydał
+  castLabs w tej linii. To dwie łatki wstecz, Chromium 150.0.7871.129.
+
+0.1.4 - 23 sierpnia 2026
+------------------------
+
+Koniec mrugania podpowiedzi w pasku adresu
+
+- Przy każdej dopisanej literze okienko z podpowiedziami było kasowane i budowane
+  od zera, razem z animacją pojawiania się. Stąd mruganie: animacja startowała
+  od przezroczystości przy każdym znaku.
+- Teraz okienko powstaje raz, przy pierwszej literze, a potem podmieniana jest
+  wyłącznie jego zawartość. Animacja zostaje tylko dla faktycznego otwarcia.
+- Odpytywanie o podpowiedzi jest opóźnione o siedemdziesiąt milisekund, więc
+  szybkie pisanie nie wywołuje zapytania po każdym znaku. Przy okazji ubyło
+  jednej niepotrzebnej wiadomości do procesu głównego na każdą literę.
+- Sprawdzone zrzutami robionymi tuż po każdym naciśnięciu klawisza: okienko
+  pozostaje w pełni widoczne przez cały czas pisania.
+
+Zakładki pod ręką
+
+- Nowy przycisk zakładek w pasku narzędzi, po lewej stronie przycisku pobierania.
+- Kliknięcie rozwija zwykłą listę zakładek pod przyciskiem, bez otwierania nowej
+  karty. Foldery rozwijają się jako podlisty po najechaniu.
+- Prawy przycisk na pozycji daje otwieranie, otwieranie w nowej karcie i
+  usuwanie. Na folderze zamiast otwierania jest otwarcie wszystkiego w kartach.
+- Na dole panelu jest skrót do dodania bieżącej strony, a w nagłówku wejście do
+  pełnego menedżera.
+- Wpis w menu głównym zmienił nazwę na "Menedżer zakładek", żeby nie dublował
+  nowego przycisku.
+
+Drobne
+
+- Ikony stron w panelu zakładek i na pasku zakładek dokładają się dopiero gdy
+  naprawdę się wczytają, a do tego czasu widać globus. Wcześniej opierało się to
+  na atrybucie onerror, który i tak był blokowany przez politykę bezpieczeństwa
+  interfejsu, więc przy nieosiągalnej ikonie zostawała pusta dziura.
+
