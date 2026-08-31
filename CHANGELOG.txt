@@ -291,4 +291,198 @@ Poza tym trochę porządków w komentarzach w kodzie (kilka było po angielsku,
 zostały po polsku jak reszta) i usunięcie martwego, deweloperskiego fragmentu
 kodu, który i tak nigdy się nie uruchamiał poza moim środowiskiem testowym.
 
-ZOSTALO_2
+0.1.19 - 27 sierpnia 2026
+-------------------------
+
+Przeglądarka pamięta, że było zmaksymalizowane okno
+
+Zgłoszone: po każdym odpaleniu .exe okno wracało do zwykłego rozmiaru, nawet
+jeśli zamknąłem je zmaksymalizowane. Zapisywałem tylko rozmiar i pozycję
+zwykłego okna, nigdy sam fakt, że było zmaksymalizowane - teraz to też
+zapamiętuję i, jeśli tak było, okno startuje od razu zmaksymalizowane (bez
+mignięcia małym oknem po drodze). Zwykły rozmiar zostaje osobno zapamiętany,
+więc po odklikaniu maksymalizacji okno wraca do tego, co było wcześniej.
+Wyrywanie karty na osobne okno tego nie dotyczy - takie okno zawsze staje
+dokładnie tam, gdzie się je puści.
+
+0.1.18 - 27 sierpnia 2026
+-------------------------
+
+Kafelki na nowej karcie można teraz edytować
+
+Propozycja kolegi, który testuje przeglądarkę: kafelki na nowej karcie były
+tylko z automatu (najczęściej odwiedzane strony), bez możliwości ruszenia
+czegokolwiek. Teraz najbieżądzając na kafelek pokazuje się małe "x" w rogu, które
+go usuwa (usunięty nie wróci sam z siebie, nawet jeśli dana strona znowu
+zacznie być często odwiedzana - trzeba go dodać ręcznie z powrotem). Ostatni
+kafelek to "Dodaj" - otwiera mały formularz z adresem strony i opcjonalną
+nazwą. Własne kafelki stoją przed tymi z automatu i zostają nawet po
+zamknięciu przeglądarki.
+
+0.1.17 - 27 sierpnia 2026
+-------------------------
+
+Wyrwana karta trafia na drugi monitor
+
+Zgłoszone po 0.1.16: przy puszczeniu karty na drugim ekranie nowe okno i tak
+lądowało na głównym monitorze. Znalazłem powód, i był banalny - w kodzie,
+który ustawia pozycję nowego okna, warunek pilnujący jednej ścieżki (przywracanie
+zapamiętanej pozycji przy zwykłym otwarciu) miał zastrzeżenie "tylko gdy nie
+podano pozycji wprost". Dla wyrwanej karty pozycję zawsze podaję wprost (to
+miejsce, gdzie puściłeś kartę), więc ten warunek nigdy się nie spełniał i cały
+blok ustawiający x/y w ogóle się nie wykonywał. Okno dostawało poprawny rozmiar,
+ale bez żadnej pozycji - a wtedy system stawia je tam, gdzie stawia zwykle okna
+bez pozycji, czyli na głównym monitorze.
+
+Poprawka jest prosta: gdy pozycja jest podana wprost (czyli właśnie przy
+wyrywaniu karty), używam jej od razu, bez tamtego warunku. Nie mam tu drugiego
+monitora do przetestowania na miejscu, więc jeśli to nadal nie zadziała tak jak
+trzeba, daj znać ze szczegółami (który monitor główny, który drugorzędny,
+w którą stronę od głównego).
+
+0.1.16 - 26 sierpnia 2026
+-------------------------
+
+Trzy sprawy zgłoszone po 0.1.15.
+
+Widać, co się trzyma w kursorze
+
+Przy przeciąganiu karty nie było widać niczego, bo prowadzę przeciąganie sam,
+a systemowy mechanizm, który wcześniej rysował ją za mnie, okazał się bezużyteczny
+między oknami. Teraz karta rysuje się pod kursorem, w tym oknie, nad którym
+akurat jesteś, a pasek docelowy podświetla się i pokazuje kreskę w miejscu
+wstawienia.
+
+Trafiłem przy tym na własne zabezpieczenie: interfejs sam zwija rozwiniętą
+warstwę, gdy nie ma w niej okienka do pokazania. Przeciąganie właśnie w to
+wpadało i trzymana karta znikała po pierwszym drgnięciu myszy.
+
+Wyrwane okno wychodzi na wierzch
+
+Powstawało pod oknem, z którego karta wyszła, więc wyglądało to, jakby nic się
+nie stało. Były dwa powody: okno pokazywało się dwa razy, raz jako pusta rama
+i raz z kartą, a samo pokazanie nie wynosi okna na wierzch, gdy poprzednie
+właśnie oddaje mysz. Teraz pokazuje się raz, już z kartą, i jest wynoszone
+wprost.
+
+Czas uruchomienia, czyli koniec zgadywania
+
+Na stronie "O Nazunie" jest teraz pozycja "Czas uruchomienia" z liczbą
+milisekund od startu programu do pojawienia się okna. To rozstrzyga spór:
+jeśli liczba jest mała, a od kliknięcia ikony mijają sekundy, to znaczy, że
+wolne jest rozpakowywanie pliku, a nie sama przeglądarka.
+
+U mnie okno wstaje w 364 ms, a nowe okno w około 30 ms.
+
+O wolnym starcie wersji jednoplikowej, uczciwie
+
+Sprawdziłem, czy da się to przyspieszyć słabszym pakowaniem. Nie da się:
+"normalne" i "maksymalne" dają plik tej samej wielkości, około 92 MB, więc
+rozpakowują się tak samo długo. Brak pakowania rozpakowuje się natychmiast,
+ale plik rośnie do 376 MB.
+
+Jeden plik z natury musi przed każdym uruchomieniem wypakować ponad dwieście
+megabajtów, a program antywirusowy to potem skanuje. Wersja z rozpakowanego
+folderu nie robi tego w ogóle i startuje od razu. Jeśli szybkość startu jest
+ważniejsza od wygody jednego pliku, używaj folderu.
+
+0.1.15 - 26 sierpnia 2026
+-------------------------
+
+Karty da się przeciągać między oknami.
+
+Przeciągasz kartę na pasek innego okna Nazuny i tam ląduje, w miejscu, które
+wskażesz. Pasek podświetla się i pokazuje kreskę tam, gdzie karta wejdzie.
+Karta przenosi się żywa, z wczytaną stroną i historią cofania.
+
+Dlaczego napisałem to sam, zamiast oprzeć się na systemie
+
+Zacząłem od drogi tańszej, czyli systemowego mechanizmu przenoszenia, tego
+samego, którym przerzucasz pliki między folderami. Sprawdziłem i NIE donosi
+on zdarzeń między dwoma oknami tej samej przeglądarki: karta zamiast wlądować
+w drugim oknie wyrywała się w trzecie. Uprzedzałem, że to niewiadoma, więc
+przeszedłem na drogę drugą.
+
+Teraz pasek melduje procesowi głównemu, gdzie jest kursor na ekranie, a ten
+wie, gdzie stoją wszystkie okna, więc sam rozstrzyga, nad którym jesteś.
+Działa niezależnie od kaprysów systemu i, co dla mnie ważne, da się to
+przetestować, bo potrzebuje tylko zwykłego ruchu myszy.
+
+Zabezpieczenia, o których mówiłem
+
+- Okno prywatne i zwykłe się nie mieszają, w obie strony. Karta prywatna
+  przeniesiona do zwykłego okna wyglądałaby na zwykłą, będąc dalej prywatną.
+  Sprawdzone: przeciągnięcie odbija się i karta zostaje na miejscu.
+- Okno, z którego wyszła ostatnia karta, zamyka się samo.
+- Przeciąganie oznaczamy znacznikiem losowanym przy starcie, żeby zwykła
+  strona internetowa nie mogła podrzucić czegoś, co pasek weźmie za kartę.
+- Kolejność zdarzeń przestała mieć znaczenie, bo o tym, czy karta się przenosi
+  czy wyrywa, rozstrzyga teraz jedno miejsce zamiast dwóch.
+
+Przy okazji
+
+Okno prywatne mówi to o sobie w tytule, więc da się je odróżnić na pasku zadań,
+gdy oba wyglądają tak samo. Wyszło mi to przy pisaniu testu, w którym sam nie
+umiałem ich rozróżnić.
+
+Sprawdzone przeciąganiem myszą, siedem rzeczy: przeniesienie między oknami,
+zmiana kolejności w obrębie paska, wyrwanie do nowego okna, samozamknięcie
+opróżnionego okna, odbicie karty prywatnej, zwykłe klikanie kart i krzyżyk
+zamykania.
+
+0.1.14 - 26 sierpnia 2026
+-------------------------
+
+Banery zgody rozpoznawane po treści, a nie po nazwie.
+
+Dlaczego to przepisałem
+
+Zajrzałem na prawdziwe strony i okazało się, że wersja z 0.1.12 na tych
+największych polskich w ogóle się nie odpalała. Nie dlatego, że była zepsuta,
+tylko dlatego, że szukała banera po nazwie, a prawdziwy internet tych nazw
+już nie zdradza:
+
+- allegro.pl ma baner o nazwie "dg8gwj mpof_z0 m7er_k4"
+- wp.pl ma "ztn2a5s"
+
+Nazwy są generowane losowo i nic nie znaczą. Testowałem wcześniej na własnych
+podróbkach, w których grzecznie wpisywałem "rodo-popup", i dlatego wszystko
+ładnie przechodziło.
+
+Jak jest teraz
+
+Baner poznajemy po tym, czym naprawdę jest: nakładką leżącą na wierzchu
+ekranu, która mówi o ciasteczkach albo prywatności i ma w sobie przyciski.
+Zamiast przegladać wszystkie elementy strony, pytamy co leży pod pięcioma
+punktami ekranu. Kosztuje to tyle samo na stronie z tysiącem elementów co
+z dziesięcioma.
+
+Trzy rzeczy, które przy okazji wyszły
+
+1. Polska odmowa brzmi "Nie zgadzam się" i zawiera w sobie "zgadzam się".
+   Moja lista zakazanych napisów wycinała więc własną odmowę. Teraz liczy się
+   kolejność: jeśli przeczenie stoi przed słowem zgody, to jest odmowa.
+   Osobno wypisane są napisy jednoznaczne, żeby "Akceptuj tylko niezbędne"
+   też trafiało tam, gdzie trzeba.
+2. Odmowa bywa dwuetapowa. Na wp.pl przycisk brzmi "Odrzucam i chcę
+   dowiedzieć się więcej" i prowadzi do drugiego ekranu. Przeglądarka szuka
+   tam odmowy dalej, ale nie więcej niż trzy kliknięcia, żeby nie klikać po
+   stronie bez opamiętania. Najpierw zawsze próbujemy odmowy kończącej sprawę.
+3. Zapis odmowy podkładany przed wejściem na stronę deklarował wersję zasad 4,
+   a wp.pl oczekuje 5 i uznawał nasz za przestarzały. Poprawione.
+
+Czego nie ruszamy
+
+Ścian, czyli nakładek na cały ekran bez żadnej odmowy. onet.pl daje do wyboru
+"Przejdź do serwisu" albo "Ustawienia zaawansowane" i nic więcej. Schowanie
+tego zostawia stronę, której i tak nie da się używać.
+
+Sprawdzone na siedmiu przypadkach odwzorowujących prawdziwe strony, wszystkie
+przechodzą: allegro (losowa nazwa, odmowa jednym klikiem), wp (losowa nazwa,
+odmowa w dwóch krokach), onet (ściana, zostaje nietknięta), OneTrust przez
+funkcję platformy, baner dobładowany po sekundzie, podlożona odmowa obecna
+przed kodem strony, oraz pułapka: nakładka z przyciskiem "Odrzuć", która nie
+dotyczy ciasteczek, a więc nie wolno jej tknąć.
+
+Samo dopasowywanie napisów ma osobny zestaw szesnastu sprawdzeń, od
+"Nie zgadzam się" po "PRZEJDŹ DO SERWISU", i wszystkie wychodzą poprawnie.
