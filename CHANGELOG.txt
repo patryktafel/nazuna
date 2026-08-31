@@ -24,7 +24,4 @@ polecenie z wnętrza przeglądarki, przestał zgadywać skupione okno, gdy nie
 potrafi dopasować nadawcy - teraz po prostu nic wtedy nie robi, zamiast
 działać na przypadkowym oknie.
 
-0.1.37 - 29 sierpnia 2026
--------------------------
-
-PLACEHOLDER_REST
+ZOSTALO_DO_UZUPELNIENIA_TESTOWO
