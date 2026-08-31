@@ -385,3 +385,311 @@ Jeden plik z natury musi przed każdym uruchomieniem wypakować ponad dwieście
 megabajtów, a program antywirusowy to potem skanuje. Wersja z rozpakowanego
 folderu nie robi tego w ogóle i startuje od razu. Jeśli szybkość startu jest
 ważniejsza od wygody jednego pliku, używaj folderu.
+
+
+0.1.15 - 26 sierpnia 2026
+-------------------------
+
+Karty da się przeciągać między oknami.
+
+Przeciągasz kartę na pasek innego okna Nazuny i tam ląduje, w miejscu, które
+wskażesz. Pasek podświetla się i pokazuje kreskę tam, gdzie karta wejdzie.
+Karta przenosi się żywa, z wczytaną stroną i historią cofania.
+
+Dlaczego napisałem to sam, zamiast oprzeć się na systemie
+
+Zacząłem od drogi tańszej, czyli systemowego mechanizmu przenoszenia, tego
+samego, którym przerzucasz pliki między folderami. Sprawdziłem i NIE donosi
+on zdarzeń między dwoma oknami tej samej przeglądarki: karta zamiast wlądować
+w drugim oknie wyrywała się w trzecie. Uprzedzałem, że to niewiadoma, więc
+przeszedłem na drogę drugą.
+
+Teraz pasek melduje procesowi głównemu, gdzie jest kursor na ekranie, a ten
+wie, gdzie stoją wszystkie okna, więc sam rozstrzyga, nad którym jesteś.
+Działa niezależnie od kaprysów systemu i, co dla mnie ważne, da się to
+przetestować, bo potrzebuje tylko zwykłego ruchu myszy.
+
+Zabezpieczenia, o których mówiłem
+
+- Okno prywatne i zwykłe się nie mieszają, w obie strony. Karta prywatna
+  przeniesiona do zwykłego okna wyglądałaby na zwykłą, będąc dalej prywatną.
+  Sprawdzone: przeciągnięcie odbija się i karta zostaje na miejscu.
+- Okno, z którego wyszła ostatnia karta, zamyka się samo.
+- Przeciąganie oznaczamy znacznikiem losowanym przy starcie, żeby zwykła
+  strona internetowa nie mogła podrzucić czegoś, co pasek weźmie za kartę.
+- Kolejność zdarzeń przestała mieć znaczenie, bo o tym, czy karta się przenosi
+  czy wyrywa, rozstrzyga teraz jedno miejsce zamiast dwóch.
+
+Przy okazji
+
+Okno prywatne mówi to o sobie w tytule, więc da się je odróżnić na pasku zadań,
+gdy oba wyglądają tak samo. Wyszło mi to przy pisaniu testu, w którym sam nie
+umiałem ich rozróżnić.
+
+Sprawdzone przeciąganiem myszą, siedem rzeczy: przeniesienie między oknami,
+zmiana kolejności w obrębie paska, wyrwanie do nowego okna, samozamknięcie
+opróżnionego okna, odbicie karty prywatnej, zwykłe klikanie kart i krzyżyk
+zamykania.
+
+0.1.14 - 26 sierpnia 2026
+-------------------------
+
+Banery zgody rozpoznawane po treści, a nie po nazwie.
+
+Dlaczego to przepisałem
+
+Zajrzałem na prawdziwe strony i okazało się, że wersja z 0.1.12 na tych
+największych polskich w ogóle się nie odpalała. Nie dlatego, że była zepsuta,
+tylko dlatego, że szukała banera po nazwie, a prawdziwy internet tych nazw
+już nie zdradza:
+
+- allegro.pl ma baner o nazwie "dg8gwj mpof_z0 m7er_k4"
+- wp.pl ma "ztn2a5s"
+
+Nazwy są generowane losowo i nic nie znaczą. Testowałem wcześniej na własnych
+podróbkach, w których grzecznie wpisywałem "rodo-popup", i dlatego wszystko
+ładnie przechodziło.
+
+Jak jest teraz
+
+Baner poznajemy po tym, czym naprawdę jest: nakładką leżącą na wierzchu
+ekranu, która mówi o ciasteczkach albo prywatności i ma w sobie przyciski.
+Zamiast przeglądać wszystkie elementy strony, pytamy co leży pod pięcioma
+punktami ekranu. Kosztuje to tyle samo na stronie z tysiącem elementów co
+z dziesięcioma.
+
+Trzy rzeczy, które przy okazji wyszły
+
+1. Polska odmowa brzmi "Nie zgadzam się" i zawiera w sobie "zgadzam się".
+   Moja lista zakazanych napisów wycinała więc własną odmowę. Teraz liczy się
+   kolejność: jeśli przeczenie stoi przed słowem zgody, to jest odmowa.
+   Osobno wypisane są napisy jednoznaczne, żeby "Akceptuj tylko niezbędne"
+   też trafiało tam, gdzie trzeba.
+2. Odmowa bywa dwuetapowa. Na wp.pl przycisk brzmi "Odrzucam i chcę
+   dowiedzieć się więcej" i prowadzi do drugiego ekranu. Przeglądarka szuka
+   tam odmowy dalej, ale nie więcej niż trzy kliknięcia, żeby nie klikać po
+   stronie bez opamiętania. Najpierw zawsze próbujemy odmowy kończącej sprawę.
+3. Zapis odmowy podkładany przed wejściem na stronę deklarował wersję zasad 4,
+   a wp.pl oczekuje 5 i uznawał nasz za przestarzały. Poprawione.
+
+Czego nie ruszamy
+
+Ścian, czyli nakładek na cały ekran bez żadnej odmowy. onet.pl daje do wyboru
+"Przejdź do serwisu" albo "Ustawienia zaawansowane" i nic więcej. Schowanie
+tego zostawia stronę, której i tak nie da się używać.
+
+Sprawdzone na siedmiu przypadkach odwzorowujących prawdziwe strony, wszystkie
+przechodzą: allegro (losowa nazwa, odmowa jednym klikiem), wp (losowa nazwa,
+odmowa w dwóch krokach), onet (ściana, zostaje nietknięta), OneTrust przez
+funkcję platformy, baner doładowany po sekundzie, podłożona odmowa obecna
+przed kodem strony, oraz pułapka: nakładka z przyciskiem "Odrzuć", która nie
+dotyczy ciasteczek, a więc nie wolno jej tknąć.
+
+Samo dopasowywanie napisów ma osobny zestaw szesnastu sprawdzeń, od
+"Nie zgadzam się" po "PRZEJDŹ DO SERWISU", i wszystkie wychodzą poprawnie.
+
+0.1.13 - 25 sierpnia 2026
+-------------------------
+
+Naprawa mojego błędu z 0.1.12 oraz wyrywanie kart do osobnego okna.
+
+Okienko "Dostęp do danych witryny"
+
+Zgłosiłeś je ze strony weryfikacji dwuetapowej Facebooka. To nie był wirus,
+tylko skutek uboczny blokowania ciasteczek podmiotów trzecich, którą
+wprowadziłem w poprzedniej wersji. Osadzony na tej stronie element od Google
+stracił dostęp do swoich ciasteczek i zgodnie ze standardem poprosił Cię
+o zgodę.
+
+Mechanizm zadziałał, jak miał. Błąd był gdzie indziej i był mój:
+
+- Kliknięcie "Zezwól" NIC NIE DAWAŁO. Zgoda zapisywała się w jednym miejscu,
+  a wycinanie ciasteczek działo się piętro niżej i nic o niej nie wiedziało.
+  Okienko obiecywało coś, czego nie dowoziło. Teraz zgoda naprawdę przepuszcza
+  ciasteczka.
+- Zgoda dotyczy PARY stron, nie samej domeny. Wpuszczenie google.com na
+  facebook.com nie otwiera google.com dostępu nigdzie indziej.
+- Zapamiętany wybór przeżywa zamknięcie przeglądarki.
+- Samo okienko mówiło "www.google.com prosi o zgodę", co nie tłumaczyło
+  niczego. Teraz pisze, co jest w co osadzone i po co to zwykle bywa
+  potrzebne: logowanie, płatności, weryfikacja dwuetapowa.
+
+Karty da się wyrwać do osobnego okna
+
+Zgłoszone przez Twojego kolegę. Można teraz przerzucić kartę na drugi ekran.
+
+- Przeciągnij kartę poza pasek kart i puść. Powstanie nowe okno dokładnie
+  tam, gdzie puściłeś, z tą kartą w środku.
+- Albo prawy przycisk na karcie i "Przenieś do nowego okna".
+- Karta przenosi się żywa: zachowuje wczytaną stronę, historię cofania
+  i wszystko inne. Nie jest wczytywana od nowa.
+- Gdy w oknie jest tylko jedna karta, nic się nie dzieje, bo powstałoby okno
+  identyczne z obecnym.
+- Przeciąganie w obrębie paska dalej zmienia kolejność, tak jak dotąd.
+
+Sprawdzone klikaniem i przeciąganiem: obie drogi tworzą drugie okno,
+przeniesiona karta zachowuje swój adres, a okno źródłowe zostaje z resztą kart.
+
+Czego jeszcze nie ma: przeciągnięcia karty z jednego okna Nazuny wprost do
+paska drugiego. Na razie trzeba ją wyrwać i zamknąć, albo przenieść ręcznie.
+
+0.1.12 - 25 sierpnia 2026
+-------------------------
+
+Koniec z klikaniem banerów o ciasteczkach.
+
+Przeglądarka odmawia za Ciebie, i to naprawdę odmawia, a nie zakleja baner.
+Różnica jest istotna: zaklejony baner wraca przy każdej wizycie i strona i tak
+uznaje, że nic nie wybrałeś. Naciśnięta odmowa zapisuje się na stałe.
+
+Trzy warstwy, od najlepszej do awaryjnej
+
+1. Odmowa niesiona z góry. Przed wejściem na nową stronę przeglądarka
+   podkłada gotowy zapis odmowy w formacie, którego używa większość
+   europejskich stron. Baner nie ma się wtedy kiedy pokazać, nawet nie
+   mrugnie. Zapis sprawdziłem oficjalną biblioteką IAB: czyta go poprawnie
+   jako TCF 2.2, zgoda na nic.
+2. Naciśnięcie odmowy w banerze, który jednak się pojawił. Znamy przyciski
+   kilkunastu platform zgody (OneTrust, Cookiebot, Didomi, Usercentrics,
+   Quantcast, CookieYes i innych), a tam gdzie ich nie znamy, szukamy
+   przycisku po napisie: "Odrzuć wszystkie", "Nie zgadzam się", "Tylko
+   niezbędne", "Reject all" i podobne.
+3. Schowanie banera, w którym nie ma czego nacisnąć.
+
+Czego świadomie NIE robimy
+
+Nie ruszamy ścian, czyli banerów na cały ekran, w których jedyne wyjścia to
+zgoda albo abonament. Tak działają polskie serwisy informacyjne. Schowanie
+takiej ściany zostawia stronę, której i tak nie da się używać, a to gorsze
+niż sam baner.
+
+Przełącznik obok tarczy
+
+Nowa ikonka w pasku adresu, tuż obok tarczy blokera. Pokazuje, co zrobiliśmy
+na tej stronie, i pozwala jednym kliknięciem zezwolić danej witrynie na
+ciasteczka. Wtedy podłożona odmowa jest usuwana, a baner zostawiamy w spokoju.
+Decyzja jest pamiętana dla tej witryny.
+
+Ciasteczka podmiotów trzecich
+
+Blokowane domyślnie. To ustawienie istniało w kodzie od dawna, ale nie było
+podpięte do niczego, więc przełącznik nie robił nic. Teraz działa naprawdę:
+ciasteczka do domen innych niż ta w pasku adresu nie są ani wysyłane, ani
+zakładane. Tędy płynie śledzenie między stronami.
+
+Sprawdziłem to osobno, bo błąd tutaj wylogowałby Cię ze wszystkiego:
+własne ciasteczko strony przechodzi normalnie, obcej domeny nie dociera nic.
+
+Nagłówek Sec-GPC
+
+Wysyłany przy każdym zapytaniu. Mówi wprost: nie zgadzam się na handel moimi
+danymi. W dwunastu stanach USA respektowanie go jest obowiązkiem prawnym.
+W Europie banera nie zdejmuje i nie udaję, że zdejmuje.
+
+O szybkość nie musisz się martwić
+
+Zapytanie o to, czy działać, idzie raz na stronę. Potem najwyżej piętnaście
+krótkich zajrzeń rozłożonych na osiem sekund i po wszystkim nie zostaje w tle
+nic. Celowo liczymy próby, a nie sekundy, bo karta otwarta w tle ma przez
+przeglądarkę wyhamowane liczniki czasu i odliczanie zegarem kończyło się tym,
+że budżet wygasał, zanim cokolwiek zdążyło się wydarzyć.
+
+Sprawdzone na zestawie sztucznych banerów odwzorowujących prawdziwe platformy:
+OneTrust, Cookiebot, polski baner z wyborem zgoda/odmowa (klikamy odmowę, nie
+zgodę), baner doładowujący się po półtorej sekundy, ściana bez odmowy (którą
+zostawiamy) oraz strona sprawdzająca, czy odmowa dotarła przed jej kodem.
+Wszystkie sześć przechodzi.
+
+Uczciwie o granicach
+
+Formaty tych platform bywają zmieniane przez ich twórców. Zbudowałem to tak,
+żeby najgorsze, co się wtedy stanie, to pojawienie się banera do kliknięcia
+ręcznego. Nigdy zepsuta strona. Może się też zdarzyć, że gdzieś klikniemy
+odmowę tam, gdzie nie trzeba; od tego jest przełącznik przy pasku adresu.
+
+0.1.11 - 25 sierpnia 2026
+-------------------------
+
+Jasny motyw.
+
+Ciemny zostaje dokładnie taki, jaki był, i dalej jest domyślny. Porównałem
+zrzuty przed i po, żeby mieć pewność, że nic mu się nie przesunęło.
+
+Jak to zrobiłem
+
+Jasny motyw to osobno dobrana paleta, a nie odwrócony ciemny. Odwracanie
+kolorów daje szare litery na białym tle i po dziesięciu minutach bolą oczy.
+Kolory akcentu też mają osobne, ciemniejsze wersje, bo pastele czytelne na
+czarnym tle na bieli się rozpływają.
+
+Gdzie to znajdziesz
+
+Ustawienia, sekcja Wygląd, pozycja Motyw. Trzy opcje: Ciemny, Jasny oraz
+Jak w systemie. Ta ostatnia idzie za ustawieniem Windowsa i reaguje od razu,
+gdy zmienisz je w systemie.
+
+Przełączenie działa na żywo, bez zamykania przeglądarki. Zmienia się cały
+pasek, wszystkie okienka i wszystkie nasze strony we wszystkich otwartych
+kartach naraz.
+
+Drobiazgi, które przy tym wyszły
+
+- Kropki wyboru koloru akcentu pokazywały paletę ciemną nawet w jasnym
+  motywie, czyli klikałeś jeden kolor, a dostawałeś inny. Teraz pokazują to,
+  co naprawdę dostaniesz.
+- Tło okna i tło naszych stron przemalowuje się od razu przy zmianie motywu.
+  Bez tego przy przełączaniu kart błyskałoby starym kolorem aż do restartu.
+
+Sprawdzone na zrzutach: nowa karta, ustawienia i rozwinięte menu w obu
+motywach, oraz samo przełączenie na żywo z ciemnego na jasny.
+
+Wersja na Ubuntu (dołożona później, ta sama 0.1.11)
+
+Paczka .deb dla Ubuntu i pochodnych, architektura x86_64. Program jest
+identyczny, zmieniło się tylko to, czym go pakujemy. Polecenie: npm run
+dist:linux.
+
+Tę wersję, jako jedyną z trzech, mogłem naprawdę uruchomić u siebie i to
+zrobiłem: paczka instaluje się poprawnie, przeglądarka wstaje i rysuje się
+tak jak powinna.
+
+W paczce siedzą też dwie rzeczy, na których zwykle wykładają się programy
+oparte na Chromium pod nowszym Ubuntu: ustawienie uprawnień piaskownicy oraz
+profil AppArmor wymagany od Ubuntu 24.04. Bez nich przeglądarka po prostu
+nie wstaje.
+
+0.1.10 - 25 sierpnia 2026
+-------------------------
+
+Prawy przycisk myszy działa wreszcie w pasku adresu.
+
+Skąd się brało
+
+Menu pod prawym przyciskiem było podpięte wyłącznie do stron internetowych.
+Pasek adresu, pole wyszukiwania na stronie i pasek zakładek należą do
+interfejsu samej przeglądarki, a do niego nie było podpięte nic. Klikanie
+prawym nie robiło tam dosłownie niczego. Zgłoszone przez Ciebie.
+
+Co jest teraz
+
+- Cofnij, Ponów, Wytnij, Kopiuj, Wklej i Zaznacz wszystko, wyszarzone tam,
+  gdzie nie mają sensu.
+- Wklej i przejdź, czyli wklejenie adresu i natychmiastowe otwarcie go,
+  jednym kliknięciem. Pozycja pokazuje się tylko wtedy, gdy w schowku
+  faktycznie coś jest.
+- Działa w całym pasku przeglądarki, nie tylko w adresie.
+
+Dwie pułapki po drodze
+
+Obie znalazłem przy testowaniu i obie były realne, nie teoretyczne.
+
+- Kliknięcie pozycji menu normalnie zabiera kursor z pola tekstowego, przez
+  co Wklej nie miałoby dokąd wkleić. Menu blokuje teraz tę reakcję, więc
+  kursor zostaje na miejscu.
+- Zamknięcie menu przerzucało kursor na stronę. Po wklejeniu adresu nie dało
+  by się wcisnąć Enter. Gdy menu wyszło z paska, kursor wraca do paska.
+
+Sprawdzone klikaniem myszą, nie na oko: zaznaczenie tekstu, Kopiuj, wyczysz-
+czenie pola, Wklej i odzyskanie tej samej treści, a na koniec Wklej i przejdź
+z poprawnym rozwinięciem adresu do pełnej postaci.
+
