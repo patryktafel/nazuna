@@ -203,7 +203,7 @@ Instalator, GitHub i automatyczne aktualizacje
 Windows dostaje teraz normalny instalator zamiast jednego pliku Nazuna.exe.
 Instalator pyta o folder docelowy i o to, czy zrobić skróty na pulpicie i w
 menu Start, ma ciemny, fioletowy wygląd z logo Nazuny (tak jak przeglądarka),
-i tworzy w Panelu sterowania wpis do odinstalowania. Wersję przenosną (jeden
+i tworzy w Panelu sterowania wpis do odinstalowania. Wersję przenośną (jeden
 plik .exe) da się zbudować dalej na żądanie - domyślnie już nie powstaje.
 
 Kod przeniósł się na GitHuba, do prywatnego repozytorium. Osobne, publiczne
@@ -312,5 +312,76 @@ Kafelki na nowej karcie można teraz edytować
 
 Propozycja kolegi, który testuje przeglądarkę: kafelki na nowej karcie były
 tylko z automatu (najczęściej odwiedzane strony), bez możliwości ruszenia
-czegokolwiek. Teraz najbieżdzając na kafelek pokazuje się małe "x" w rogu, które
-ZOSTALO_BLAD
+czegokolwiek. Teraz najeżdżając na kafelek pokazuje się małe "x" w rogu, które
+go usuwa (usunięty nie wróci sam z siebie, nawet jeśli dana strona znowu
+zacznie być często odwiedzana - trzeba go dodać ręcznie z powrotem). Ostatni
+kafelek to "Dodaj" - otwiera mały formularz z adresem strony i opcjonalną
+nazwą. Własne kafelki stoją przed tymi z automatu i zostają nawet po
+zamknięciu przeglądarki.
+
+0.1.17 - 27 sierpnia 2026
+-------------------------
+
+Wyrwana karta trafia na drugi monitor
+
+Zgłoszone po 0.1.16: przy puszczeniu karty na drugim ekranie nowe okno i tak
+lądowało na głównym monitorze. Znalazłem powód, i był banalny - w kodzie,
+który ustawia pozycję nowego okna, warunek pilnujący jednej ścieżki (przywracanie
+zapamiętanej pozycji przy zwykłym otwarciu) miał zastrzeżenie "tylko gdy nie
+podano pozycji wprost". Dla wyrwanej karty pozycję zawsze podaję wprost (to
+miejsce, gdzie puściłeś kartę), więc ten warunek nigdy się nie spełniał i cały
+blok ustawiający x/y w ogóle się nie wykonywał. Okno dostawało poprawny rozmiar,
+ale bez żadnej pozycji - a wtedy system stawia je tam, gdzie stawia zwykle okna
+bez pozycji, czyli na głównym monitorze.
+
+Poprawka jest prosta: gdy pozycja jest podana wprost (czyli właśnie przy
+wyrywaniu karty), używam jej od razu, bez tamtego warunku. Nie mam tu drugiego
+monitora do przetestowania na miejscu, więc jeśli to nadal nie zadziała tak jak
+trzeba, daj znać ze szczegółami (który monitor główny, który drugorzędny,
+w którą stronę od głównego).
+
+0.1.16 - 26 sierpnia 2026
+-------------------------
+
+Trzy sprawy zgłoszone po 0.1.15.
+
+Widać, co się trzyma w kursorze
+
+Przy przeciąganiu karty nie było widać niczego, bo prowadzę przeciąganie sam,
+a systemowy mechanizm, który wcześniej rysował ją za mnie, okazał się bezużyteczny
+między oknami. Teraz karta rysuje się pod kursorem, w tym oknie, nad którym
+akurat jesteś, a pasek docelowy podświetla się i pokazuje kreskę w miejscu
+wstawienia.
+
+Trafiłem przy tym na własne zabezpieczenie: interfejs sam zwija rozwiniętą
+warstwę, gdy nie ma w niej okienka do pokazania. Przeciąganie właśnie w to
+wpadało i trzymana karta znikała po pierwszym drgnięciu myszy.
+
+Wyrwane okno wychodzi na wierzch
+
+Powstawało pod oknem, z którego karta wyszła, więc wyglądało to, jakby nic się
+nie stało. Były dwa powody: okno pokazywało się dwa razy, raz jako pusta rama
+i raz z kartą, a samo pokazanie nie wynosi okna na wierzch, gdy poprzednie
+właśnie oddaje mysz. Teraz pokazuje się raz, już z kartą, i jest wynoszone
+wprost.
+
+Czas uruchomienia, czyli koniec zgadywania
+
+Na stronie "O Nazunie" jest teraz pozycja "Czas uruchomienia" z liczbą
+milisekund od startu programu do pojawienia się okna. To rozstrzyga spór:
+jeśli liczba jest mała, a od kliknięcia ikony mijają sekundy, to znaczy, że
+wolne jest rozpakowywanie pliku, a nie sama przeglądarka.
+
+U mnie okno wstaje w 364 ms, a nowe okno w około 30 ms.
+
+O wolnym starcie wersji jednoplikowej, uczciwie
+
+Sprawdziłem, czy da się to przyspieszyć słabszym pakowaniem. Nie da się:
+"normalne" i "maksymalne" dają plik tej samej wielkości, około 92 MB, więc
+rozpakowują się tak samo długo. Brak pakowania rozpakowuje się natychmiast,
+ale plik rośnie do 376 MB.
+
+Jeden plik z natury musi przed każdym uruchomieniem wypakować ponad dwieście
+megabajtów, a program antywirusowy to potem skanuje. Wersja z rozpakowanego
+folderu nie robi tego w ogóle i startuje od razu. Jeśli szybkość startu jest
+ważniejsza od wygody jednego pliku, używaj folderu.
