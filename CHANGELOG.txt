@@ -249,7 +249,7 @@ tarcza obok) działa bez zmian.
 Przegląd całego kodu i sprzątanie
 
 Poprosiłem sam siebie o przejrzenie całej przeglądarki pod kątem błędów, i
-pare się znalazło:
+parę się znalazło:
 
 - Okna wyskakujące (np. z linków otwierających się w nowym, małym okienku)
   nie miały tej samej blokady co zwykłe karty i teoretycznie mogłyby dać
