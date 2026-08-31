@@ -249,7 +249,7 @@ tarcza obok) działa bez zmian.
 Przegląd całego kodu i sprzątanie
 
 Poprosiłem sam siebie o przejrzenie całej przeglądarki pod kątem błędów, i
-parę się znalazło:
+pare się znalazło:
 
 - Okna wyskakujące (np. z linków otwierających się w nowym, małym okienku)
   nie miały tej samej blokady co zwykłe karty i teoretycznie mogłyby dać
@@ -960,3 +960,212 @@ Drobne
   na atrybucie onerror, który i tak był blokowany przez politykę bezpieczeństwa
   interfejsu, więc przy nieosiągalnej ikonie zostawała pusta dziura.
 
+0.1.3 - 23 sierpnia 2026
+------------------------
+
+Przegląd bezpieczeństwa całego kodu i wynikające z niego poprawki, plus kilka
+rzeczy dla szybkości.
+
+Bezpieczeństwo
+
+- Strony wewnętrzne (ustawienia, historia, zakładki) nie dają się już osadzić
+  w ramce przez żadną stronę internetową. Wcześniej złośliwa strona mogła
+  wstawić niewidoczną ramkę z ustawieniami i podstawić pod kliknięcie na
+  przykład przycisk czyszczenia danych. Blokada jest podwójna: nagłówek
+  zakazujący osadzania oraz mostek do procesu głównego wydawany wyłącznie
+  ramce najwyższego poziomu.
+- Pobierane rozszerzenia mają teraz weryfikowany podpis kryptograficzny.
+  Przeglądarka sprawdza, czy podpis RSA obejmuje dokładnie tę zawartość, która
+  przyszła, i czy klucz odpowiada identyfikatorowi rozszerzenia. Plik
+  z podmienioną zawartością, podmienionym podpisem albo podmienionym kluczem
+  jest odrzucany i nic się nie instaluje.
+- Rozszerzenia nie dostają już dostępu do plików lokalnych. Chrome też go
+  domyślnie nie daje.
+- Pliki wykonywalne (exe, msi, bat, ps1, vbs, jar, reg, dll, lnk i podobne) nie
+  zapisują się już po cichu do folderu Pobrane. Zawsze pojawia się okno zapisu,
+  więc żaden taki plik nie wyląduje na dysku bez twojej wiedzy.
+- Nazwa pobieranego pliku pochodzi ze strony, więc jest teraz obcinana do samej
+  nazwy i czyszczona ze znaków sterujących. Strona nie wskaże już innego
+  katalogu niż folder pobierania.
+- Wejście strony w tryb pełnoekranowy pokazuje na chwilę komunikat z informacją,
+  że wyjście jest pod klawiszem Esc. Utrudnia to podrobienie wyglądu
+  przeglądarki przez stronę na pełnym ekranie.
+- Strona nie może już przejąć klawiatury w pełnym ekranie (uprawnienie
+  keyboardLock przestało być przyznawane automatycznie).
+- Strona nie zasypie cię już okienkami alert bez możliwości ich zatrzymania.
+- Interfejs przeglądarki działa teraz w piaskownicy, tak jak zwykłe strony.
+- Poprawione sprawdzanie ścieżek przy serwowaniu plików wewnętrznych: porównanie
+  uwzględnia separator katalogów, więc katalog o podobnej nazwie nie przejdzie.
+
+Szybkość
+
+- Podmiana nagłówków przeglądarki nie przelicza już nic przy każdym zapytaniu
+  sieciowym. Wszystko, co stałe, liczy się raz przy starcie.
+- Bloker nie pyta już systemu o adres bieżącej strony przy każdym zapytaniu,
+  tylko pamięta go dla każdej karty. Gdy nie masz żadnych wyjątków dla witryn,
+  ten krok jest pomijany w całości.
+- Wczytywanie list filtrów zeszło z toru startowego i biegnie równolegle
+  z otwieraniem okna. Okno pokazuje się o około 30 do 50 milisekund szybciej,
+  a listy i tak są gotowe zanim pierwsza strona wyśle zapytania.
+
+Zmierzone przy okazji: pojedyncze sprawdzenie zapytania w listach filtrów
+zajmuje około 24 mikrosekund, czyli przy stu zapytaniach na stronę daje to
+niecałe 2,5 milisekundy. Bloker nie jest wąskim gardłem.
+
+Czego nadal nie ma i o czym warto pamiętać
+
+- Przeglądarka nie aktualizuje sama silnika Chromium. Chrome łata w ten sposób
+  luki pozwalające przejąć komputer przez samo wejście na stronę. Nazuna trzeba
+  w tym celu przebudować na nowszym Electronie. To najpoważniejsze pozostałe
+  ryzyko i rośnie z czasem.
+- Brak odpowiednika Safe Browsing, czyli ostrzeżeń przed stronami wyłudzającymi
+  dane i przed zainfekowanymi plikami.
+
+0.1.2 - 23 sierpnia 2026
+------------------------
+
+Naprawa zablokowanego interfejsu po użyciu tarczy blokera.
+
+Co było nie tak
+- Warstwa, na której rysują się wszystkie okienka przeglądarki (menu, panel
+  pobierania, podpowiedzi adresu, menu kontekstowe, okienko tarczy),
+  rozciągała się na całe okno i przechwytywała każde kliknięcie, także tam
+  gdzie nic nie było narysowane. Kliknięcie obok otwartego okienka trafiało
+  w pustą warstwę i przepadało, zamiast je zamknąć.
+- Efekt: po otwarciu okienka tarczy nie dało się go zamknąć kliknięciem, a całe
+  okno przestawało reagować, łącznie ze stroną. Ratunkiem był tylko Escape.
+- Dodatkowo o stanie tego okienka decydowały dwa miejsca naraz, proces główny
+  i interfejs, więc przy przeładowaniu strony wywołanym przez tarczę potrafiły
+  się rozjechać i zostawić warstwę rozwiniętą bez niczego na niej.
+
+Co się zmieniło
+- Warstwa okienek jest teraz przezroczysta dla kliknięć. Łapią je wyłącznie
+  konkretne panele, wszystko obok leci niżej i zamyka to, co jest otwarte.
+- O tym, czy warstwa jest rozwinięta, decyduje wyłącznie proces główny.
+  Interfejs tylko odwzorowuje ten stan przy każdej aktualizacji i sam się
+  naprawia, gdyby kiedykolwiek doszło do rozjazdu.
+- Przełączenie tarczy zamyka okienko po stronie procesu głównego, zanim
+  przeładuje stronę, więc nie zależy to już od interfejsu.
+- Escape zamyka okienka zawsze, także wtedy gdy interfejs się pogubi.
+
+Sprawdzone po zmianie: zamykanie okienka tarczy kliknięciem pozycji w menu,
+klawiszem Escape i kliknięciem w tło, wyłączenie i ponowne włączenie blokera
+dla witryny, menu główne, panel pobierania, podpowiedzi w pasku adresu, menu
+kontekstowe strony oraz okienko rozszerzenia.
+
+0.1.1 - 23 sierpnia 2026
+------------------------
+
+Naprawa czarnego ekranu na YouTube i zmiana sposobu działania blokera.
+
+Co było nie tak
+- Listy filtrów wstrzykiwały na YouTube trzydzieści skryptów, które przechwytują
+  odpowiedzi API odtwarzacza, żeby wyciąć z nich reklamy. Te skrypty psuły
+  odtwarzanie: film nie startował, obraz był czarny, dźwięku nie było i nie
+  pojawiał się żaden komunikat o błędzie.
+- Samo blokowanie na poziomie sieci nie miało z tym nic wspólnego. Sprawdziłem
+  bezpośrednio na silniku filtrów, że ani strumienie wideo, ani skrypty
+  odtwarzacza nie były blokowane.
+
+Co się zmieniło
+- Bloker ma teraz dwa poziomy, ustawiane w Ustawieniach:
+  Bezpieczne (domyślne) blokuje reklamy i skrypty śledzące na poziomie sieci
+  oraz ukrywa puste miejsca po reklamach, ale nie dotyka kodu stron. Serwisy
+  wideo działają normalnie.
+  Agresywne dokłada skrypty wycinające reklamy z wnętrza odtwarzaczy. Blokuje
+  reklamy na YouTube, ale może psuć odtwarzanie. Do włączenia na własne ryzyko.
+- Blokowanie sieciowe zostało napisane od nowa, bez pośrednictwa biblioteki.
+  Dzięki temu przeglądarka sama decyduje, czego dotyka, i nigdy nie wstrzykuje
+  niczego na stronę w trybie bezpiecznym.
+
+Listy filtrów aktualizują się same
+- Przeglądarka pobiera świeże listy w tle, po starcie i potem co kilka godzin,
+  odświeżając je nie rzadziej niż co trzy dni. Zapisuje je w folderze profilu.
+- Nie trzeba aktualizować samej przeglądarki, żeby bloker był aktualny.
+- W Ustawieniach widać datę ostatniej aktualizacji i jest przycisk do
+  wymuszenia jej od razu.
+- Listy dołączone do pliku wykonywalnego służą tylko jako punkt startowy przy
+  pierwszym uruchomieniu i przy braku internetu.
+
+Drobne
+- Menu tarczy pokazuje, w którym trybie pracuje bloker.
+- Poprawione polskie znaki w kilkunastu miejscach interfejsu, gdzie ich
+  brakowało (między innymi w ustawieniach prywatności i na stronach błędów).
+
+0.1.0 - 23 sierpnia 2026
+------------------------
+
+Pierwsza wersja. Przenośna przeglądarka internetowa oparta na silniku Chromium
+(Electron 43, Chromium 150), uruchamiana z jednego pliku .exe, bez instalacji
+i bez podnoszenia uprawnień w Windows.
+
+Co powstało w tej wersji:
+
+Rdzeń
+- Okno bez systemowej ramki, z własnym paskiem tytułu i przyciskami okna.
+- Karty: dodawanie, zamykanie, przeciąganie w celu zmiany kolejności, menu
+  kontekstowe karty (duplikuj, wycisz, zamknij pozostałe, zamknij po prawej),
+  wskaźnik ładowania i ikona strony.
+- Pasek adresu łączący wpisywanie adresu i wyszukiwanie, z podpowiedziami
+  z historii, zakładek i wyszukiwarki.
+- Nawigacja wstecz, dalej, odświeżanie, zatrzymanie ładowania, strona startowa.
+- Powiększanie strony zapamiętywane osobno dla każdej witryny.
+- Wyszukiwanie na stronie (Ctrl+F) z licznikiem trafień i podświetleniem.
+- Okno prywatne z osobną, nietrwałą sesją.
+- Tryb pełnoekranowy strony (np. odtwarzacz wideo) chowa cały interfejs.
+- Własne, ciemne menu kontekstowe strony zamiast systemowego.
+- Obsługa okien wyskakujących, potrzebnych przy logowaniu przez Google.
+
+Dane i pliki
+- Zakładki z paskiem zakładek, folderami i menedżerem na osobnej stronie.
+- Historia z wyszukiwaniem, grupowaniem po dniach i usuwaniem pojedynczych wpisów.
+- Menedżer pobierania: panel podręczny i pełna strona, postęp, prędkość,
+  wstrzymywanie, wznawianie, otwieranie pliku i pokazywanie w folderze.
+- Wszystkie dane trzymane w %LOCALAPPDATA%\Nazuna.
+- Tryb w pełni przenośny: plik portable.txt obok .exe przenosi profil
+  do folderu Nazuna-Data obok pliku wykonywalnego.
+
+Blokowanie treści
+- Wbudowany bloker reklam i skryptów śledzących oparty na listach filtrów
+  Ghostery, z listami dołączonymi do pliku wykonywalnego (działa od pierwszego
+  uruchomienia, bez pobierania czegokolwiek).
+- Licznik zablokowanych elementów w pasku adresu.
+- Możliwość wyłączenia blokera dla pojedynczej witryny albo globalnie.
+
+Rozszerzenia
+- Instalacja rozszerzeń przez wklejenie linku ze sklepu Chrome albo samego
+  identyfikatora: przeglądarka pobiera plik .crx, rozpakowuje go i wczytuje.
+- Zachowanie oryginalnego identyfikatora rozszerzenia (klucz publiczny
+  odczytany z nagłówka CRX3 trafia do manifestu).
+- Wczytywanie rozszerzeń z rozpakowanego folderu.
+- Ikony rozszerzeń w pasku narzędzi wraz z ich okienkami (popup).
+- Włączanie, wyłączanie i usuwanie rozszerzeń, wejście do ich opcji.
+- Lista polecanych rozszerzeń z oznaczeniem spodziewanej zgodności.
+
+Ustawienia
+- Wybór wyszukiwarki (Google, DuckDuckGo, Bing, Brave, Startpage).
+- Zachowanie przy starcie: nowa karta, strona startowa albo karty z poprzedniej
+  sesji.
+- Pięć kolorów akcentu interfejsu.
+- Przełączniki: pasek zakładek, bloker, Do Not Track, rozszerzenia, podpowiedzi,
+  pytanie o miejsce zapisu plików, przyspieszenie sprzętowe.
+- Czyszczenie danych przeglądania z wyborem kategorii.
+- Przywracanie ustawień domyślnych.
+
+Prywatność i uprawnienia
+- Pytanie o zgodę na kamerę, mikrofon, lokalizację, powiadomienia i inne
+  uprawnienia, z możliwością zapamiętania decyzji dla witryny.
+- Nagłówek Do Not Track wysyłany domyślnie.
+- Ciąg identyfikacyjny przeglądarki i nagłówki Client Hints podawane jako
+  zwykły Chrome, żeby strony nie odmawiały działania.
+
+Znane ograniczenia tej wersji
+- Serwisy z zabezpieczeniem DRM (Netflix, HBO Max, Disney+, Spotify Web) nie
+  działają, bo Electron nie zawiera modułu Widevine. YouTube, Gemini, Twitch
+  i zwykłe wideo działają normalnie (H.264, AAC, VP9, AV1, Opus, MSE).
+- Część rozszerzeń ze sklepu Chrome zadziała tylko częściowo albo wcale.
+  Dotyczy to zwłaszcza menedżerów haseł, rozszerzeń logujących się kontem
+  Google i tych z własnymi panelami bocznymi.
+- Brak synchronizacji konta, brak menedżera haseł, brak profili użytkownika.
+- Zakładek na pasku nie da się jeszcze przestawiać przeciąganiem.
+- Interfejs jest wyłącznie po polsku.
