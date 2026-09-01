@@ -470,6 +470,7 @@ function renderBookmarks() {
     return;
   }
   el.bookmarksbar.innerHTML = items.map((b) => {
+    if (b.type === 'separator') return `<div class="bm bm-sep" data-id="${b.id}" data-type="separator"></div>`;
     const ico = b.type === 'folder' ? iconSvg('folder') : `<span class="fav">${iconSvg('globe')}</span>`;
     return `<div class="bm" data-id="${b.id}" data-url="${escapeHtml(b.url || '')}" data-type="${b.type}" title="${escapeHtml(b.title)}">${ico}<span>${escapeHtml(b.title)}</span></div>`;
   }).join('');
@@ -492,7 +493,7 @@ function faviconFor(url) {
 
 el.bookmarksbar.addEventListener('click', (e) => {
   const node = e.target.closest('.bm');
-  if (!node) return;
+  if (!node || node.dataset.type === 'separator') return;
   if (node.dataset.type === 'folder') {
     const children = (state.bookmarks || []).filter((b) => b.parent === node.dataset.id);
     const items = children.length
@@ -512,25 +513,188 @@ el.bookmarksbar.addEventListener('click', (e) => {
   api.send('nav.go', { input: node.dataset.url });
 });
 
+function startBmRename(node) {
+  const span = node.querySelector('span:not(.fav)');
+  if (!span) return;
+  const id = node.dataset.id;
+  const original = span.textContent;
+  span.contentEditable = 'true';
+  span.spellcheck = false;
+  const range = document.createRange();
+  range.selectNodeContents(span);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  span.focus();
+  const finish = (save) => {
+    span.contentEditable = 'false';
+    span.removeEventListener('blur', onBlur);
+    span.removeEventListener('keydown', onKey);
+    if (save) {
+      const title = span.textContent.trim() || original || 'Bez nazwy';
+      span.textContent = title;
+      api.invoke('bookmarks.update', { id, patch: { title } });
+    } else {
+      span.textContent = original;
+    }
+  };
+  const onBlur = () => finish(true);
+  const onKey = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); span.blur(); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  };
+  span.addEventListener('blur', onBlur);
+  span.addEventListener('keydown', onKey);
+}
+
+function openDialogPanel(name, node) {
+  closePopover(true);
+  node.classList.add('panel');
+  el.layer.appendChild(node);
+  popover = { name, el: node };
+  layerTouchedAt = Date.now();
+  expand(name);
+  document.body.classList.add('expanded');
+  const pad = 8;
+  const view = (state && state.viewport) || { width: window.innerWidth, height: window.innerHeight };
+  const w = node.offsetWidth;
+  const h = node.offsetHeight;
+  const x = Math.max(pad, Math.round((view.width - w) / 2));
+  const y = Math.max(pad, Math.min(view.height - h - pad, Math.round(view.height * 0.18)));
+  node.style.left = `${x}px`;
+  node.style.top = `${y}px`;
+  return node;
+}
+
+function addBookmarkDialog(parent = 'bar') {
+  const active = (state.tabs || []).find((t) => t.id === state.activeTabId);
+  const defTitle = active ? active.title : '';
+  const defUrl = active && !/^nazuna:/.test(active.url) ? active.url : '';
+  const node = panel(`<div class="prompt">
+      <h3>${iconSvg('star')} Dodawanie zakładki</h3>
+      <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:5px">Nazwa</label>
+      <input type="text" data-f="title" class="field" value="${escapeHtml(defTitle)}" style="margin-bottom:12px">
+      <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:5px">Adres</label>
+      <input type="text" data-f="url" class="field" value="${escapeHtml(defUrl)}" placeholder="https://" style="margin-bottom:14px">
+      <div class="row">
+        <button class="btn" data-cancel>Anuluj</button>
+        <button class="btn primary" data-confirm>Zachowaj</button>
+      </div>
+    </div>`);
+  openDialogPanel('addbm', node);
+  const titleInput = node.querySelector('[data-f="title"]');
+  const urlInput = node.querySelector('[data-f="url"]');
+  const save = () => {
+    const url = urlInput.value.trim();
+    if (!url) { urlInput.focus(); return; }
+    const title = titleInput.value.trim();
+    api.invoke('bookmarks.add', { title: title || url, url, parent });
+    closePopover();
+  };
+  node.addEventListener('click', (e) => {
+    if (e.target.closest('[data-cancel]')) return closePopover();
+    if (e.target.closest('[data-confirm]')) save();
+  });
+  node.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); closePopover(); }
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+  });
+  setTimeout(() => { titleInput.focus(); titleInput.select(); }, 0);
+}
+
+function addFolderDialog(parent = 'bar') {
+  const node = panel(`<div class="prompt">
+      <h3>${iconSvg('folder')} Dodawanie folderu zakładek</h3>
+      <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:5px">Nazwa</label>
+      <input type="text" data-f="title" class="field" value="Nowy folder" style="margin-bottom:14px">
+      <div class="row">
+        <button class="btn" data-cancel>Anuluj</button>
+        <button class="btn primary" data-confirm>Zachowaj</button>
+      </div>
+    </div>`);
+  openDialogPanel('addfolder', node);
+  const titleInput = node.querySelector('[data-f="title"]');
+  const save = () => {
+    const title = titleInput.value.trim() || 'Nowy folder';
+    api.invoke('bookmarks.addFolder', { title, parent });
+    closePopover();
+  };
+  node.addEventListener('click', (e) => {
+    if (e.target.closest('[data-cancel]')) return closePopover();
+    if (e.target.closest('[data-confirm]')) save();
+  });
+  node.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); closePopover(); }
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+  });
+  setTimeout(() => { titleInput.focus(); titleInput.select(); }, 0);
+}
+
 el.bookmarksbar.addEventListener('contextmenu', (e) => {
   const node = e.target.closest('.bm');
-  if (!node) return;
+
+  if (!node) {
+    e.preventDefault();
+    const hasLinks = (state.bookmarks || []).some((b) => b.type === 'link' && b.parent === 'bar');
+    const p = panel(menuHtml([
+      { id: 'openall', label: 'Otwórz wszystkie zakładki', icon: 'globe', enabled: hasLinks },
+      { type: 'separator' },
+      { id: 'addbm', label: 'Dodaj zakładkę...', icon: 'star' },
+      { id: 'addfolder', label: 'Dodaj folder...', icon: 'folder' },
+      { id: 'addsep', label: 'Dodaj separator' },
+      { type: 'separator' },
+      { id: 'togglebar', label: state.showBookmarksBar ? 'Ukryj pasek zakładek' : 'Pokaż pasek zakładek', icon: 'bookmark' },
+      { type: 'separator' },
+      { id: 'manage', label: 'Menedżer zakładek', icon: 'bookmark' }
+    ]));
+    openPanel('bmbarmenu', p, { left: e.clientX, top: e.clientY, right: e.clientX, bottom: e.clientY }, { align: 'point' });
+    p.addEventListener('click', (ev) => {
+      const it = ev.target.closest('.menu-item');
+      if (!it) return;
+      const id = it.dataset.id;
+      if (id === 'openall') api.send('bookmarks.openAll', { parent: 'bar' });
+      if (id === 'addbm') { addBookmarkDialog('bar'); return; }
+      if (id === 'addfolder') { addFolderDialog('bar'); return; }
+      if (id === 'addsep') api.invoke('bookmarks.addSeparator', { parent: 'bar' });
+      if (id === 'togglebar') api.send('menu.action', { id: 'toggle-bookmarks-bar' });
+      if (id === 'manage') api.send('tab.new', { url: 'nazuna://bookmarks' });
+      closePopover();
+    });
+    return;
+  }
+
   e.preventDefault();
-  const p = panel(menuHtml([
-    { id: 'open', label: 'Otwórz', icon: 'globe' },
-    { id: 'newtab', label: 'Otwórz w nowej karcie', icon: 'plus' },
-    { type: 'separator' },
-    { id: 'manage', label: 'Menedżer zakładek', icon: 'bookmark' },
-    { id: 'remove', label: 'Usuń', icon: 'trash', danger: true }
-  ]));
+  const type = node.dataset.type;
+  const items = type === 'separator'
+    ? [{ id: 'remove', label: 'Usuń separator', icon: 'trash', danger: true }]
+    : type === 'folder'
+      ? [
+        { id: 'openall', label: 'Otwórz wszystkie zakładki', icon: 'globe' },
+        { type: 'separator' },
+        { id: 'rename', label: 'Zmień nazwę', icon: 'code' },
+        { id: 'manage', label: 'Menedżer zakładek', icon: 'bookmark' },
+        { id: 'remove', label: 'Usuń folder', icon: 'trash', danger: true }
+      ]
+      : [
+        { id: 'open', label: 'Otwórz', icon: 'globe' },
+        { id: 'newtab', label: 'Otwórz w nowej karcie', icon: 'plus' },
+        { type: 'separator' },
+        { id: 'rename', label: 'Zmień nazwę', icon: 'code' },
+        { id: 'manage', label: 'Menedżer zakładek', icon: 'bookmark' },
+        { id: 'remove', label: 'Usuń', icon: 'trash', danger: true }
+      ];
+  const p = panel(menuHtml(items));
   openPanel('bmmenu', p, { left: e.clientX, top: e.clientY, right: e.clientX, bottom: e.clientY }, { align: 'point' });
   p.addEventListener('click', (ev) => {
     const it = ev.target.closest('.menu-item');
     if (!it) return;
-    if (it.dataset.id === 'open') api.send('nav.go', { input: node.dataset.url });
-    if (it.dataset.id === 'newtab') api.send('tab.new', { url: node.dataset.url, background: true });
-    if (it.dataset.id === 'manage') api.send('tab.new', { url: 'nazuna://bookmarks' });
-    if (it.dataset.id === 'remove') api.invoke('bookmarks.remove', { id: node.dataset.id });
+    const id = it.dataset.id;
+    if (id === 'open') api.send('nav.go', { input: node.dataset.url });
+    if (id === 'newtab') api.send('tab.new', { url: node.dataset.url, background: true });
+    if (id === 'openall') api.send('bookmarks.openAll', { parent: node.dataset.id });
+    if (id === 'manage') api.send('tab.new', { url: 'nazuna://bookmarks' });
+    if (id === 'remove') api.invoke('bookmarks.remove', { id: node.dataset.id });
+    if (id === 'rename') { closePopover(); startBmRename(node); return; }
     closePopover();
   });
 });

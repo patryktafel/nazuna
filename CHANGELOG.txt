@@ -1,6 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.40 - 1 września 2026
+------------------------
+
+Menu paska zakładek
+
+Pasek zakładek ma teraz własne menu pod prawym klawiszem myszy, podobnie
+jak w Firefoksie i Chrome. Kliknięcie prawym w pustym miejscu paska daje
+dostęp do otwarcia od razu wszystkich zakładek, dodania nowej zakładki
+lub folderu przez osobne okienko z polami Nazwa i Adres, dodania
+separatora oraz ukrycia albo pokazania paska. Kliknięcie prawym na
+konkretnej zakładce, folderze lub separatorze pokazuje menu dopasowane
+do tego elementu, w tym zmianę nazwy wprost na pasku i usuwanie.
+Separator jest też łatwiejszy do trafienia kursorem niż na początku.
+
 0.1.39 - 31 sierpnia 2026
 -------------------------
 

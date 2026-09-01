@@ -170,6 +170,7 @@ const handlers = {
   'bookmarks.list': () => data.bookmarkList(),
   'bookmarks.add': (win, p) => { const r = data.addBookmark(p); W.broadcastAll('bookmarks:changed'); return r; },
   'bookmarks.addFolder': (win, p) => { const r = data.addFolder(p.title, p.parent); W.broadcastAll('bookmarks:changed'); return r; },
+  'bookmarks.addSeparator': (win, p) => { const r = data.addSeparator(p.parent); W.broadcastAll('bookmarks:changed'); return r; },
   'bookmarks.update': (win, p) => { const r = data.updateBookmark(p.id, p.patch); W.broadcastAll('bookmarks:changed'); return r; },
   'bookmarks.remove': (win, p) => { data.removeBookmark(p.id); W.broadcastAll('bookmarks:changed'); },
   'bookmarks.move': (win, p) => { data.moveBookmark(p.id, p.parent, p.beforeId); W.broadcastAll('bookmarks:changed'); },

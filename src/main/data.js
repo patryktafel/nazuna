@@ -113,6 +113,13 @@ function addFolder(title, parent = 'bar') {
   return item;
 }
 
+function addSeparator(parent = 'bar') {
+  const item = { id: String(bookmarks.data.nextId++), type: 'separator', parent, ts: Date.now() };
+  bookmarks.data.items.push(item);
+  bookmarks.save();
+  return item;
+}
+
 function updateBookmark(id, patch) {
   const item = bookmarks.data.items.find((b) => b.id === id);
   if (!item) return null;
@@ -236,7 +243,7 @@ module.exports = {
   get extensionsStore() { return extensionsStore; },
   get siteStore() { return siteStore; },
   addHistory, updateHistoryTitle, searchHistory, clearHistory, removeHistory,
-  bookmarkList, isBookmarked, addBookmark, addFolder, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
+  bookmarkList, isBookmarked, addBookmark, addFolder, addSeparator, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
   adblockAllowed, setAdblockForSite, siteZoom, setSiteZoom, permissionFor, setPermission,
   httpZaakceptowany, zaakceptujHttp,
   skrotyStan, dodajSkrot, usunSkrot,
