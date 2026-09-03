@@ -56,7 +56,7 @@ module.exports = {
      Kto chce szybkiego startu, uzywa wersji z rozpakowanego folderu. */
   compression: 'maximum',
   electronDist: electronDist(),
-  electronVersion: '43.2.0',
+  electronVersion: '43.5.0',
   afterPack: 'tools/after-pack.js',
   directories: { output: 'dist', buildResources: 'build' },
   files: ['src/**/*', 'package.json', '!**/*.map'],

@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.41 - 3 września 2026
+------------------------
+
+Aktualizacja silnika przeglądania
+
+Silnik Chromium pod spodem przeglądarki został zaktualizowany do
+najnowszej dostępnej wersji, domykając kilkanaście znanych luk
+bezpieczeństwa załatanych przez Google od czasu poprzedniego wydania,
+między innymi błędy typu use-after-free i przepełnienia bufora w
+silniku JavaScript, GPU i komponencie renderowania grafiki. Reszta
+zależności projektu (aktualizator, builder, bloker reklam) była już
+na najnowszych wersjach.
+
 0.1.40 - 1 września 2026
 ------------------------
 

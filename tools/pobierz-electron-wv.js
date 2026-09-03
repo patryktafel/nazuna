@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const WERSJA = '43.2.0';
+const WERSJA = '43.5.0';
 
 /* Domyslnie pobieramy silnik dla Windows. Uruchomienie z argumentem --mac
    sciaga wariant dla Macow z procesorem Apple, do osobnego folderu, zeby oba
