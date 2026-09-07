@@ -1,6 +1,22 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.42 - 7 września 2026
+------------------------
+
+Poprawka migotania kart
+
+Najechanie myszką na kartę potrafiło czasem sprawić, że przycisk
+zamykania migał, a sąsiednie karty zmieniały szerokość w kółko, przez
+co trudno było trafić w konkretny przycisk. Przyczyną było to, że
+przycisk zamykania wcześniej w ogóle nie zajmował miejsca w karcie i
+pojawiał się dopiero po najechaniu, co za każdym razem przesuwało
+układ całego paska. Teraz miejsce na przycisk jest zawsze
+zarezerwowane, zmienia się tylko jego widoczność, więc najechanie
+myszką nie rusza już żadnej karty. Karty mają też podniesioną
+minimalną szerokość, żeby przy większej liczbie otwartych zakładek
+nie robiły się nieczytelnie wąskie.
+
 0.1.41 - 3 września 2026
 ------------------------
 
