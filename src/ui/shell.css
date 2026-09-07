@@ -220,6 +220,8 @@ html.mac .tabstrip { padding-left: 82px; }
 .omni-btn:hover { background: rgba(var(--tint), 0.09); color: var(--text); }
 .omni-btn.active { color: var(--accent-strong); }
 .omni-btn .icon { width: 16px; height: 16px; }
+.omni-btn.busy { pointer-events: none; color: var(--text-dim); }
+.omni-btn.busy .icon { animation: spin .7s linear infinite; }
 .shield-count {
   font-size: 10px; font-weight: 700; color: var(--text-faint);
   padding: 0 5px; height: 18px; line-height: 18px; border-radius: 5px;

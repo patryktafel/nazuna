@@ -27,6 +27,7 @@ const el = {
   lockLabel: $('#lockLabel'),
   star: $('#star'),
   shield: $('#shield'),
+  webstoreInstall: $('#webstoreInstall'),
   zoomChip: $('#zoomChip'),
   extSlot: $('#extSlot'),
   bookmarksbar: $('#bookmarksbar'),
@@ -52,6 +53,7 @@ setIcon($('#max'), 'maximize');
 setIcon($('#close'), 'close');
 setIcon(el.star, 'star');
 setIcon(el.shield, 'shield');
+setIcon(el.webstoreInstall, 'puzzle');
 setIcon(el.lock, 'globe');
 setIcon($('#findPrev'), 'chevronUp');
 setIcon($('#findNext'), 'chevronDown');
@@ -451,6 +453,14 @@ function renderToolbar() {
   el.shield.title = blocking
     ? `Bloker włączony${state.blockedCount ? ` - zablokowano ${state.blockedCount}` : ''}`
     : 'Bloker wyłączony na tej stronie';
+
+  // Strona szczegolow rozszerzenia w sklepie Chrome - Nazuna nie ma
+  // wewnetrznego API sklepu (chrome.webstorePrivate), wiec sam przycisk
+  // "Dodaj do Chrome" na tej stronie nie zadziala. Ten przycisk omija to,
+  // pobierajac i instalujac to samo rozszerzenie naszym wlasnym mechanizmem
+  // (patrz extensions.install w main), dokladnie tak samo jak przez
+  // wklejenie linku w Ustawieniach - Rozszerzenia.
+  el.webstoreInstall.hidden = !/^https:\/\/chromewebstore\.google\.com\/detail\//i.test(String(state.url || ''));
 
   const zoom = Math.round((state.zoom || 1) * 100);
   el.zoomChip.hidden = zoom === 100;
@@ -1248,6 +1258,30 @@ $('#downloads').addEventListener('click', async () => {
 });
 el.star.addEventListener('click', () => api.send('bookmarks.toggle'));
 el.shield.addEventListener('click', () => (popover && popover.name === 'shield' ? closePopover() : shieldMenu()));
+
+async function installFromWebstorePage() {
+  if (el.webstoreInstall.classList.contains('busy')) return;
+  const url = state.url;
+  el.webstoreInstall.classList.add('busy');
+  try {
+    const r = await api.invoke('extensions.install', { input: url });
+    const node = showUpdateToast(`
+      <div class="row">${iconSvg('puzzle')}<div class="title">Zainstalowano ${escapeHtml(r.name)}</div>
+        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
+      <div class="sub">Rozszerzenie znajdziesz w Ustawieniach - Rozszerzenia.</div>`);
+    node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
+  } catch (err) {
+    const node = showUpdateToast(`
+      <div class="row">${iconSvg('alert')}<div class="title">Nie udało się zainstalować</div>
+        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
+      <div class="sub">${escapeHtml(String((err && err.message) || err).replace(/^Error: /, ''))}</div>`);
+    node.classList.add('error');
+    node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
+  } finally {
+    el.webstoreInstall.classList.remove('busy');
+  }
+}
+el.webstoreInstall.addEventListener('click', installFromWebstorePage);
 el.zoomChip.addEventListener('click', () => api.send('zoom.reset'));
 $('#min').addEventListener('click', () => api.send('window.minimize'));
 $('#max').addEventListener('click', () => api.send('window.maximize'));

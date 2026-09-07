@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.46 - 7 września 2026
+------------------------
+
+Szybsza instalacja rozszerzeń ze sklepu Chrome
+
+Przycisk "Dodaj do Chrome" na stronie sklepu Chrome nie działa w Nazunie -
+strona rozmawia z prywatnym API, które Google wbudowuje tylko w
+oficjalnego Chrome'a, i nie da się tego uczciwie odtworzyć. Zamiast tego,
+kiedy przeglądasz stronę konkretnego rozszerzenia w sklepie, obok paska
+adresu pojawia się teraz własna ikonka - klika się ją zamiast kopiować
+link do Ustawień, a instalacja idzie tym samym, sprawdzonym mechanizmem
+pobierania i weryfikacji paczki, który Nazuna miała już wcześniej.
+
 0.1.45 - 7 września 2026
 ------------------------
 
