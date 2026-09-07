@@ -100,7 +100,7 @@ class Tab {
         // Flagi czytane przez preload z process.argv. Kosztuja zero: nie ma
         // tu zadnej komunikacji miedzy procesami przy wczytywaniu strony.
         additionalArguments: pageFlags(),
-        spellcheck: true,
+        spellcheck: data.settings.get('spellcheckEnabled', false),
         partition: appWindow.partition,
         backgroundThrottling: true,
         safeDialogs: true,          // strona nie zasypie okienkami alert

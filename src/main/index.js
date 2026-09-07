@@ -163,19 +163,31 @@ if (!gotLock) {
     });
   });
 
-  app.on('before-quit', () => {
+  // Store.flush() zapisuje teraz asynchronicznie (patrz store.js), zeby duza
+  // historia nie zamrazala programu przy zwyklym uzyciu - ale to znaczy, ze
+  // przy zamykaniu trzeba poczekac az zapisy naprawde skoncza sie na dysku,
+  // zanim proces faktycznie zniknie. stopujemy wiec pierwsze 'before-quit'
+  // (event.preventDefault) i wywolujemy app.quit() ponownie, gdy wszystko juz
+  // zapisane - flaga 'zamykanie' pilnuje, zeby nie zapetlic tego w kolko.
+  let zamykanie = false;
+  app.on('before-quit', (event) => {
+    if (zamykanie) return;
     try {
       const win = W.focusedWindow() || W.allWindows()[0];
       if (win && !win.isPrivate) {
         const open = win.tabs.map((t) => t.url).filter((u) => u && !/^nazuna:/.test(u));
         data.settings.set('restoreSession', open);
       }
-      data.settings.flush();
-      data.historyStore.flush();
-      data.bookmarksStore.flush();
-      data.downloadsStore.flush();
-      data.siteStore.flush();
     } catch (_) {}
+    zamykanie = true;
+    event.preventDefault();
+    Promise.allSettled([
+      data.settings.flush(),
+      data.historyStore.flush(),
+      data.bookmarksStore.flush(),
+      data.downloadsStore.flush(),
+      data.siteStore.flush()
+    ]).finally(() => app.quit());
   });
 
   app.on('window-all-closed', () => {

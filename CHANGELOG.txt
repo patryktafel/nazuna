@@ -1,6 +1,23 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.44 - 7 września 2026
+------------------------
+
+Optymalizacja wydajności i pamięci
+
+Pierwsza runda pracy nad tym, żeby Nazuna znów była tak szybka i lekka jak
+na początku. Rozszerzenia (jeśli ktoś ich używa) odczytywały z dysku swój
+manifest i ikonę praktycznie za każdym razem, gdy cokolwiek się działo w
+przeglądarce (zmiana tytułu karty, ładowanie strony), zamiast policzyć to
+raz. Zapis historii, zakładek i ustawień na dysk blokował na chwilę cały
+program, a im większa historia, tym dłużej to trwało. Pisanie w pasku
+adresu przy sporej historii przeliczało ją całą od nowa przy każdej
+literce. Sprawdzanie pisowni było włączone domyślnie na każdej karcie,
+mimo że każda karta ładuje wtedy własny słownik do pamięci, a i tak nie był
+ustawiony na polski - teraz jest domyślnie wyłączone, z przełącznikiem w
+Ustawieniach dla tych, którzy go chcą (i wtedy poprawnie po polsku).
+
 0.1.43 - 7 września 2026
 ------------------------
 

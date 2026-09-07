@@ -21,6 +21,11 @@ const DEFAULT_SETTINGS = {
   blockThirdPartyCookies: true,
   securityWarningsEnabled: true,
   hardwareAcceleration: true,
+  // Domyslnie wylaczone: Chromium laduje slownik sprawdzania pisowni do
+  // KAZDEJ karty osobno (to osobny, zywy proces), a bez jawnego ustawienia
+  // jezyka i tak dobiera go automatycznie, wiec czesto wcale nie po polsku.
+  // Kto chce, wlacza w Ustawieniach - wtedy dobieramy tez jezyk (patrz session.js).
+  spellcheckEnabled: false,
   extensionsEnabled: true,
   defaultZoom: 1,
   theme: 'dark',            // dark | light | system
@@ -64,11 +69,32 @@ function updateHistoryTitle(url, title) {
   if (hit && hit.title !== title) { hit.title = title; history.save(); }
 }
 
+/* Pasek adresu odpytuje searchHistory() przy kazdym wcisnietym klawiszu, wiec
+   liczenie .toLowerCase() od nowa dla kazdego z (do 30 tysiecy) wpisow przy
+   kazdej literce potrafilo byc wyczuwalne. Cache trzyma juz policzone,
+   malutkie napisy pod adresem obiektu wpisu (WeakMap - znika sam, gdy wpis
+   wypadnie z historii), a "title" w kluczu cache'a wystarcza za znacznik
+   swiezosci: to jedyne pole, ktore potrafi sie zmienic pod tym samym wpisem. */
+const lowerCache = new WeakMap();
+function lowered(item) {
+  const cached = lowerCache.get(item);
+  if (cached && cached.title === item.title) return cached;
+  const fresh = { title: item.title, urlLower: item.url.toLowerCase(), titleLower: (item.title || '').toLowerCase() };
+  lowerCache.set(item, fresh);
+  return fresh;
+}
+
 function searchHistory(query, limit = 300) {
   const q = (query || '').trim().toLowerCase();
   const out = [];
   for (const item of history.data.items) {
-    if (!q || item.url.toLowerCase().includes(q) || (item.title || '').toLowerCase().includes(q)) {
+    if (!q) {
+      out.push(item);
+      if (out.length >= limit) break;
+      continue;
+    }
+    const low = lowered(item);
+    if (low.urlLower.includes(q) || low.titleLower.includes(q)) {
       out.push(item);
       if (out.length >= limit) break;
     }

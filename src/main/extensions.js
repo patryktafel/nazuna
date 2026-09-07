@@ -159,17 +159,30 @@ function iconDataUrl(dir, manifest) {
   return null;
 }
 
+/* describe() czyta manifest.json i ikone z dysku - dla tego samego
+   zainstalowanego rozszerzenia wynik sie nie zmienia, a state() (i przez to
+   describe()) potrafi wywolywac sie dziesiatki razy na minute przy zwyklym
+   przegladaniu (kazda zmiana tytulu/favicony karty, itp). Cache trzyma wiec
+   policzony wynik dopoki rozszerzenie nie zostanie zainstalowane/zaktualizowane
+   ponownie (klucz cache zmienia sie razem ze sciezka i wersja) - jedyne, co
+   naprawde zmienia sie z sesji na sesje (enabled), doklejamy na zywo z rekordu. */
+const describeCache = new Map();
+
 function describe(record) {
+  const cacheKey = `${record.path}|${record.version || ''}|${record.installedAt || ''}`;
+  const cached = describeCache.get(record.id);
+  if (cached && cached.key === cacheKey) {
+    return { ...cached.data, enabled: record.enabled !== false };
+  }
   const manifest = readManifest(record.path);
   const action = manifest ? (manifest.action || manifest.browser_action || manifest.page_action || null) : null;
-  return {
+  const stale = {
     id: record.id,
     runtimeId: record.runtimeId || record.id,
     name: record.name || record.id,
     version: record.version,
     description: record.description,
     manifestVersion: record.manifestVersion,
-    enabled: record.enabled !== false,
     icon: iconDataUrl(record.path, manifest),
     hasPopup: !!(action && action.default_popup),
     popup: action && action.default_popup ? action.default_popup : null,
@@ -177,6 +190,8 @@ function describe(record) {
     optionsPage: manifest ? (manifest.options_page || (manifest.options_ui && manifest.options_ui.page) || null) : null,
     storeUrl: `https://chromewebstore.google.com/detail/${record.id}`
   };
+  describeCache.set(record.id, { key: cacheKey, data: stale });
+  return { ...stale, enabled: record.enabled !== false };
 }
 
 function list() {
@@ -197,6 +212,7 @@ function remove(id) {
   const rec = data.extensionsStore.data.installed.find((e) => e.id === id);
   if (rec) rmrf(rec.path);
   data.extensionsStore.data.installed = data.extensionsStore.data.installed.filter((e) => e.id !== id);
+  describeCache.delete(id);
   data.extensionsStore.flush();
 }
 

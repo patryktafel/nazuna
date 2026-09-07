@@ -1,6 +1,6 @@
 'use strict';
 const path = require('path');
-const { session } = require('electron');
+const { app, session } = require('electron');
 const { chromeUserAgent, acceptLanguages, PRELOAD_DIR } = require('./constants');
 const protocolHelper = require('./protocol');
 const adblock = require('./adblock');
@@ -140,6 +140,13 @@ function prepare(ses, efemeryczna) {
   // Drugi argument ustawia tez navigator.languages po stronie strony, wiec
   // jezyk zgadza sie w naglowku i w JavaScripcie.
   ses.setUserAgent(UA, acceptLanguages());
+  // Bez tego Chromium sam zgaduje jezyk slownika (czesto wychodzi angielski),
+  // a sprawdzanie pisowni po angielsku w polskim tekscie tylko podkresla
+  // wszystko na czerwono. Ustawiamy go tylko, gdy uzytkownik w ogole wlaczyl
+  // sprawdzanie pisowni w Ustawieniach - patrz spellcheckEnabled w data.js.
+  if (data.settings.get('spellcheckEnabled', false)) {
+    try { ses.setSpellCheckerLanguages([app.getLocale() || 'pl']); } catch (_) {}
+  }
   protocolHelper.handleFor(ses);
   downloads.attach(ses);
 
