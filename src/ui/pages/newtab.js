@@ -165,7 +165,13 @@ async function render() {
   box.appendChild(addTileNode(() => pokazForm(true)));
 }
 
-render();
+/* Strona pokazuje sie dopiero, gdy kafelki sa gotowe - patrz .nt-ready w
+   pages.css. Limit czasu na wszelki wypadek, gdyby IPC sie zacielo. */
+function pokazStrone() {
+  document.body.classList.add('nt-ready');
+}
+const zabezpieczenie = setTimeout(pokazStrone, 400);
+render().catch(() => {}).finally(() => { clearTimeout(zabezpieczenie); pokazStrone(); });
 if (api.on) api.on('skroty:zmiana', render);
 
 window.addEventListener('load', () => document.getElementById('q').focus());

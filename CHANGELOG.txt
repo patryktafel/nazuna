@@ -1,6 +1,25 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.43 - 7 września 2026
+------------------------
+
+Poprawki wizualne nowej karty i podpowiedzi kart
+
+Otwieranie nowej karty potrafiło mrugnąć: najpierw pojawiało się samo
+logo z wyszukiwarką, a dopiero po chwili doskakiwały kafelki i stopka,
+przez co cały układ przesuwał się w pionie i logo na moment
+wyglądało, jakby wisiało samo na środku ekranu. Teraz strona pokazuje
+się dopiero, gdy wszystko jest już gotowe, od razu w komplecie i
+jednym płynnym rozjaśnieniem.
+
+Poprawiona została też podpowiedź pokazywana po najechaniu na kartę.
+Wcześniej korzystała z natywnego okienka Windows, które przez dwie
+linijki tekstu (nazwa i adres strony) renderowało się jako proste,
+białe okienko, zupełnie inne niż reszta ciemnych, zaokrąglonych
+podpowiedzi w przeglądarce. Karty mają teraz własną podpowiedź w tym
+samym stylu co cała reszta interfejsu.
+
 0.1.42 - 7 września 2026
 ------------------------
 

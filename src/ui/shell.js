@@ -159,10 +159,57 @@ function escapeHtml(s) {
 
 const tabNodes = new Map();
 
+/* Wlasny dymek podpowiedzi dla kart, zamiast natywnego atrybutu title.
+   Powod: tytul karty ma dwie linijki (nazwa + adres), a taki wieloliniowy
+   natywny tooltip na Windows renderuje sie zupelnie inaczej niz reszta
+   podpowiedzi w Nazunie (biale, kanciaste okienko zamiast ciemnego, jak np.
+   przy ikonie blokera) - rzucalo sie to w oczy. */
+let tabTipEl = null;
+let tabTipTimer = null;
+let tabTipNode = null;
+
+function ensureTabTip() {
+  if (!tabTipEl) {
+    tabTipEl = document.createElement('div');
+    tabTipEl.className = 'tab-tip';
+    tabTipEl.innerHTML = '<b></b><span></span>';
+    el.layer.appendChild(tabTipEl);
+  }
+  return tabTipEl;
+}
+
+function fillTabTip(node) {
+  const tip = ensureTabTip();
+  tip.querySelector('b').textContent = node.dataset.tipTitle || 'Nowa karta';
+  tip.querySelector('span').textContent = node.dataset.tipUrl || '';
+}
+
+function hideTabTip() {
+  clearTimeout(tabTipTimer);
+  tabTipNode = null;
+  if (tabTipEl) tabTipEl.classList.remove('show');
+}
+
+function scheduleTabTip(node) {
+  clearTimeout(tabTipTimer);
+  tabTipTimer = setTimeout(() => {
+    tabTipNode = node;
+    const tip = ensureTabTip();
+    fillTabTip(node);
+    const r = node.getBoundingClientRect();
+    tip.style.left = `${Math.round(r.left)}px`;
+    tip.style.top = `${Math.round(r.bottom + 6)}px`;
+    tip.classList.add('show');
+  }, 450);
+}
+
 function renderTabs() {
   const ids = new Set(state.tabs.map((t) => t.id));
   for (const [id, node] of tabNodes) {
-    if (!ids.has(id)) { node.remove(); tabNodes.delete(id); }
+    if (!ids.has(id)) {
+      if (tabTipNode === node) hideTabTip();
+      node.remove(); tabNodes.delete(id);
+    }
   }
   state.tabs.forEach((tab, index) => {
     let node = tabNodes.get(tab.id);
@@ -173,14 +220,18 @@ function renderTabs() {
       node.innerHTML = '<span class="lead"></span><span class="label"></span><button class="tab-close"></button>';
       node.querySelector('.tab-close').innerHTML = iconSvg('close');
       node.addEventListener('mousedown', (e) => {
+        hideTabTip();
         if (e.button === 1) { e.preventDefault(); api.send('tab.close', { id: tab.id }); return; }
         if (e.button === 0) api.send('tab.select', { id: tab.id });
       });
-      node.addEventListener('contextmenu', (e) => { e.preventDefault(); tabMenu(tab.id, e); });
+      node.addEventListener('contextmenu', (e) => { hideTabTip(); e.preventDefault(); tabMenu(tab.id, e); });
       node.querySelector('.tab-close').addEventListener('mousedown', (e) => {
         e.stopPropagation(); e.preventDefault();
+        hideTabTip();
         api.send('tab.close', { id: tab.id });
       });
+      node.addEventListener('mouseenter', () => scheduleTabTip(node));
+      node.addEventListener('mouseleave', () => hideTabTip());
       wireTabDrag(node);
       tabNodes.set(tab.id, node);
     }
@@ -208,7 +259,9 @@ function renderTabs() {
     const label = node.querySelector('.label');
     const text = tab.title || 'Nowa karta';
     if (label.textContent !== text) label.textContent = text;
-    node.title = `${text}\n${tab.url}`;
+    node.dataset.tipTitle = text;
+    node.dataset.tipUrl = tab.url || '';
+    if (tabTipNode === node) fillTabTip(node);
     node.classList.toggle('narrow', state.tabs.length > 11);
   });
 }

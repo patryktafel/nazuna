@@ -72,6 +72,15 @@ select.field { appearance: none; padding-right: 30px; cursor: pointer;
 /* ------------------------------------------------------------- new tab */
 
 body.newtab { background: var(--bg); overflow-y: auto; overflow-x: hidden; }
+
+/* Strona (logo, wyszukiwarka, kafelki, stopka) jest niewidoczna dopoki JS nie
+   zbierze kafelkow i nie doda klasy .nt-ready - dzieki temu caly uklad pojawia
+   sie od razu w komplecie, jednym plynnym rozjasnieniem, zamiast najpierw
+   samego logo na srodku ekranu, a potem doskakujacych kafelkow. */
+.nt-wrap, .nt-foot { opacity: 1; transition: opacity .18s var(--ease); }
+body.newtab:not(.nt-ready) .nt-wrap,
+body.newtab:not(.nt-ready) .nt-foot { opacity: 0; }
+
 .aurora { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
 .aurora::before, .aurora::after {
   content: ""; position: absolute; border-radius: 50%; filter: blur(90px); opacity: var(--aurora-opacity);
