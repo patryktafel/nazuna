@@ -1,6 +1,27 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.45 - 7 września 2026
+------------------------
+
+Usypianie kart i płynniejsze otwieranie nowej karty
+
+Karta w tle, z której nikt nie korzysta od 20 minut, usypia sama - zamyka
+swój proces renderujący, więc przestaje zajmować pamięć, a tytuł i
+favicona zostają na pasku bez zmian. Wraca do życia (z krótkim
+przeładowaniem) w chwili kliknięcia w nią z powrotem. Karty stron
+wewnętrznych (nowa karta, historia, ustawienia) same w sobie są tanie,
+więc ich to nie dotyczy. Przełącznik w Ustawieniach pozwala to wyłączyć.
+
+Otwieranie nowej karty potrafiło mrugnąć pustym oknem: każda nowa karta
+budowała od zera cały proces przeglądarki, zanim cokolwiek zdążyło się
+wyrenderować. Teraz każde okno trzyma cicho w tle jedną gotową kartę na
+zapas, już załadowaną - kliknięcie "+" bierze ją od razu zamiast czekać
+na budowę czegokolwiek od podstaw, a w tle od razu zaczyna się
+przygotowywać kolejna na następny raz. Kosztuje to trochę więcej pamięci
+(jedną dodatkową kartę na każde otwarte okno), więc to też można wyłączyć
+w Ustawieniach.
+
 0.1.44 - 7 września 2026
 ------------------------
 

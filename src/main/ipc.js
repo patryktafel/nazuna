@@ -117,7 +117,10 @@ const handlers = {
   'tab.reload': (win, p = {}) => win.reload(!!p.hard),
   'tab.stop': (win) => win.stop(),
   'tab.duplicate': (win, p) => { const t = win.tabById(p.id); if (t) win.newTab({ url: t.url }); },
-  'tab.mute': (win, p) => { const t = win.tabById(p.id) || win.activeTab(); if (t) { t.muted = !t.muted; t.wc.setAudioMuted(t.muted); win.scheduleSync(); } },
+  // t.wc moze byc null, gdy karta spi w tle (patrz Tab.sleep w window.js) -
+  // sam przelacznik i tak sie zapamietuje, a Tab.wake() dopilnuje wyciszenia
+  // na nowo zbudowanym widoku, gdy karta sie obudzi.
+  'tab.mute': (win, p) => { const t = win.tabById(p.id) || win.activeTab(); if (t) { t.muted = !t.muted; if (t.wc) t.wc.setAudioMuted(t.muted); win.scheduleSync(); } },
   'tab.reopen': (win) => win.reopenClosedTab(),
   'tab.closeOthers': (win, p) => { for (const t of [...win.tabs]) if (t.id !== p.id) win.closeTab(t.id); },
   'tab.closeRight': (win, p) => {

@@ -129,6 +129,7 @@ if (!gotLock) {
     // powstanie pierwsza karta, zeby ochrona dzialala juz od pierwszej
     // nawigacji. Swieza lista z sieci i tak dociagnie sie dopiero w tle.
     security.init();
+    W.startTabSleep();
 
     const startUrls = process.argv.slice(1).filter((a) => /^https?:\/\//i.test(a));
     if (process.env.NAZUNA_START) startUrls.push(...process.env.NAZUNA_START.split('|'));

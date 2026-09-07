@@ -26,6 +26,16 @@ const DEFAULT_SETTINGS = {
   // jezyka i tak dobiera go automatycznie, wiec czesto wcale nie po polsku.
   // Kto chce, wlacza w Ustawieniach - wtedy dobieramy tez jezyk (patrz session.js).
   spellcheckEnabled: false,
+  // Karta w tle, o ktorej uzytkownik zapomnial na dluzej, usypia sama -
+  // zamyka jej proces renderujacy, a budzi go z powrotem (przeladowaniem)
+  // dopiero gdy karta znow stanie sie aktywna. Patrz TAB_SLEEP_MS w window.js.
+  tabSleepEnabled: true,
+  // Gdy wlaczone, kazde okno trzyma w tle jedna gotowa, juz zaladowana karte
+  // nowej karty - klikniecie "+" bierze ja od razu zamiast czekac na budowe
+  // calkiem nowego procesu renderujacego od zera (to wlasnie ten widoczny,
+  // krotki blysk pustej karty). Koszt to jeden dodatkowy proces na okno,
+  // caly czas w tle - kto woli oszczedzac pamiec, wylacza w Ustawieniach.
+  tabPrewarmEnabled: true,
   extensionsEnabled: true,
   defaultZoom: 1,
   theme: 'dark',            // dark | light | system

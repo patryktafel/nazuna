@@ -83,7 +83,21 @@ class Tab {
     this.zoom = 1;
     this.findState = null;
     this.url = url || NEW_TAB;
+    this.sleeping = false;
+    // Od kiedy ta karta ostatnio byla aktywna - usypianie w tle patrzy na
+    // ten znacznik (patrz usypianieCheck() nizej), zeby nie tykac karty,
+    // z ktorej ktos wlasnie korzystal.
+    this.lastActiveAt = Date.now();
 
+    this._createView();
+    this.otworz(this.url);
+  }
+
+  /* Buduje WebContentsView od zera. Wywolane raz w konstruktorze i ponownie
+     przy kazdym wake() - karta usypiajaca (sleep(), nizej) traci swoj widok
+     calkowicie, wiec obudzenie jej znaczy zbudowanie go na nowo, dokladnie
+     tak samo jak za pierwszym razem. */
+  _createView() {
     this.view = new WebContentsView({
       webPreferences: {
         preload: path.join(PRELOAD_DIR, 'web.js'),
@@ -101,7 +115,7 @@ class Tab {
         // tu zadnej komunikacji miedzy procesami przy wczytywaniu strony.
         additionalArguments: pageFlags(),
         spellcheck: data.settings.get('spellcheckEnabled', false),
-        partition: appWindow.partition,
+        partition: this.owner.partition,
         backgroundThrottling: true,
         safeDialogs: true,          // strona nie zasypie okienkami alert
         v8CacheOptions: 'code'
@@ -110,6 +124,36 @@ class Tab {
     this.view.setBackgroundColor(pageBackground(this.url));
     this.wc = this.view.webContents;
     this.wire();
+  }
+
+  /* Usypia karte w tle: zamyka jej proces renderujacy (patrz destroy()),
+     wiec przestaje zajmowac pamiec, ale zostaje na pasku kart - tytul,
+     favicona i adres sa juz zapamietane we wlasnych polach obiektu, wiec
+     pasek wyglada tak samo jak przed usnieciem. Budzi sie sama przy
+     kliknieciu (patrz wake() i AppWindow.selectTab). */
+  sleep() {
+    if (this.sleeping || !this.wc || this.wc.isDestroyed()) return;
+    try { this.owner.win.contentView.removeChildView(this.view); } catch (_) {}
+    this.destroy();
+    this.view = null;
+    this.wc = null;
+    this.sleeping = true;
+    this.loading = false;
+    this.audible = false;
+  }
+
+  /* Odwrotnosc sleep() - odtwarza widok i wraca na ten sam adres. Krotkie
+     przeladowanie przy pierwszym kliknieciu w obudzona karte jest tu
+     oczekiwane (tak samo dzieje sie w Chrome/Edge przy ich usypianiu kart). */
+  wake() {
+    if (!this.sleeping) return;
+    this.sleeping = false;
+    this._createView();
+    // Wyciszenie to preferencja, nie stan strony - nowy widok rodzi sie
+    // niewyciszony, wiec trzeba to odtworzyc, gdyby ktos wyciszyl te karte,
+    // zanim zdazyla usnac.
+    if (this.muted) { try { this.wc.setAudioMuted(true); } catch (_) {} }
+    this.owner.win.contentView.addChildView(this.view, 0);
     this.otworz(this.url);
   }
 
@@ -279,6 +323,7 @@ class Tab {
       muted: this.muted,
       active: !!active,
       internal: /^nazuna:/.test(this.displayUrl),
+      sleeping: !!this.sleeping,
       canGoBack: wc ? wc.navigationHistory.canGoBack() : false,
       canGoForward: wc ? wc.navigationHistory.canGoForward() : false
     };
@@ -308,6 +353,8 @@ class AppWindow {
     this.extensionPopup = null;
     this._syncQueued = false;
     this._permissionResolvers = new Map();
+    // Karta trzymana "na zapas", patrz _prepareSpare() i newTab() nizej.
+    this._spareTab = null;
 
     const saved = bounds || data.settings.get('windowBounds', null);
     const opts = {
@@ -392,6 +439,7 @@ class AppWindow {
       for (const url of list) this.newTab({ url, background: true });
       if (this.tabs.length) this.selectTab(this.tabs[0].id);
       this.layout();
+      this._prepareSpare();
       /* Okno "puste" czeka na karte i pokazuje sie dopiero, gdy ja dostanie.
          Inaczej mignelo by najpierw jako pusta rama, a przy okazji drugie
          pokazanie gubilo je pod oknem, z ktorego karta wyszla. */
@@ -425,6 +473,10 @@ class AppWindow {
     this.shellView.setBounds({ x: 0, y: 0, width: shellHeight ? width : 0, height: shellHeight });
     const active = this.activeTab();
     for (const tab of this.tabs) {
+      // Usypiajaca karta (patrz Tab.sleep) nie ma juz swojego widoku - nie ma
+      // wiec czego tu ustawiac, i nie moze byc kartą aktywna (patrz
+      // usypianieCheck/selectTab), wiec zawsze wpada w ta galaz bez szkody.
+      if (!tab.view) continue;
       if (tab === active) tab.view.setBounds({ x: 0, y: top, width, height: Math.max(0, height - top) });
       else tab.view.setBounds({ x: 0, y: top, width: 0, height: 0 });
     }
@@ -459,15 +511,40 @@ class AppWindow {
   activeTab() { return this.tabs.find((t) => t.id === this.activeTabId) || null; }
   tabById(id) { return this.tabs.find((t) => t.id === id) || null; }
 
+  /* Buduje jedna karte "na zapas" - juz zaladowana strone nowej karty,
+     ale jeszcze nie dopieta do paska ani do widoku okna, wiec zupelnie
+     niewidoczna. Nastepne wywolanie newTab() bierze ja gotowa (patrz nizej)
+     zamiast czekac na budowe nowego procesu renderujacego od zera, co jest
+     glownym powodem krotkiego mrugniecia pusta karta przy kazdym "+".
+     Kosztuje to jeden dodatkowy, biezacy w tle proces na okno - kto woli
+     oszczedzac pamiec, wylacza to w Ustawieniach (tabPrewarmEnabled). */
+  _prepareSpare() {
+    if (this._spareTab || this.win.isDestroyed()) return;
+    if (!data.settings.get('tabPrewarmEnabled', true)) return;
+    this._spareTab = new Tab(this, { url: NEW_TAB });
+  }
+
   newTab({ url = NEW_TAB, background = false, index = null } = {}) {
     const resolved = url ? (urls.resolve(url) || NEW_TAB) : NEW_TAB;
-    const tab = new Tab(this, { url: resolved });
+    let tab;
+    if (this._spareTab) {
+      // Karta z zapasu jest juz zbudowana i zaladowana na nazuna://newtab -
+      // gdy potrzebny jest inny adres, dokladamy jedna nawigacje na goracym
+      // juz procesie zamiast budowac wszystko od zera.
+      tab = this._spareTab;
+      this._spareTab = null;
+      tab.lastActiveAt = Date.now();
+      if (resolved !== NEW_TAB) { tab.url = resolved; tab.otworz(resolved); }
+    } else {
+      tab = new Tab(this, { url: resolved });
+    }
     if (index === null || index < 0 || index > this.tabs.length) this.tabs.push(tab);
     else this.tabs.splice(index, 0, tab);
     this.win.contentView.addChildView(tab.view, 0);
     if (!background || this.activeTabId === null) this.selectTab(tab.id);
     else this.layout();
     this.scheduleSync();
+    this._prepareSpare();
     return tab;
   }
 
@@ -492,12 +569,15 @@ class AppWindow {
     return tab;
   }
 
-  /* Przyjecie karty odpietej od innego okna. */
+  /* Przyjecie karty odpietej od innego okna. Jesli karta spala (patrz
+     Tab.sleep), nie ma teraz czego dopinac do widoku - selectTab() nizej i
+     tak ja zaraz obudzi, a wake() sam doda swiezy widok do WLASCIWEGO okna,
+     bo tab.owner jest juz ustawiony na "this" linijke wyzej. */
   przyjmijKarte(tab, index = null) {
     tab.owner = this;
     if (index === null || index < 0 || index > this.tabs.length) this.tabs.push(tab);
     else this.tabs.splice(index, 0, tab);
-    this.win.contentView.addChildView(tab.view, 0);
+    if (tab.view) this.win.contentView.addChildView(tab.view, 0);
     this.selectTab(tab.id);
     this.scheduleSync();
     return tab;
@@ -506,6 +586,8 @@ class AppWindow {
   selectTab(id) {
     const tab = this.tabById(id);
     if (!tab) return;
+    if (tab.sleeping) tab.wake();
+    tab.lastActiveAt = Date.now();
     this.activeTabId = id;
     this.closePopover();
     this.closeExtensionPopup();
@@ -997,6 +1079,7 @@ class AppWindow {
   dispose() {
     for (const tab of this.tabs) tab.destroy();
     this.tabs = [];
+    if (this._spareTab) { this._spareTab.destroy(); this._spareTab = null; }
     windows.delete(this);
   }
 }
@@ -1206,6 +1289,35 @@ function createWindow(opts = {}) {
   return w;
 }
 
+/* -------------------------------------------------------- usypianie kart */
+
+// Karta w tle dluzej niz tyle usypia sama (patrz Tab.sleep/Tab.wake wyzej).
+// Sprawdzamy co minute - i tak dosc czesto, zeby nikt nie zauwazyl opoznienia,
+// a nie ma sensu robic tego czesciej.
+const TAB_SLEEP_MS = 20 * 60 * 1000;
+const TAB_SLEEP_CHECK_MS = 60 * 1000;
+
+function usypianieCheck() {
+  if (!data.settings.get('tabSleepEnabled', true)) return;
+  const now = Date.now();
+  for (const win of windows) {
+    if (win.tabs.length <= 1) continue;
+    for (const tab of win.tabs) {
+      if (tab.sleeping || tab.id === win.activeTabId || tab.audible || tab.loading) continue;
+      // Strony nazuna:// (nowa karta, historia, ustawienia...) same w sobie
+      // sa tanie - nie ma czego tu oszczedzac, a usypianie panelu, ktory
+      // zyje z odswiezania na biezaco (np. pobrane), tylko by przeszkadzalo.
+      if (/^nazuna:/.test(tab.url)) continue;
+      if (now - tab.lastActiveAt < TAB_SLEEP_MS) continue;
+      tab.sleep();
+    }
+  }
+}
+
+function startTabSleep() {
+  setInterval(usypianieCheck, TAB_SLEEP_CHECK_MS);
+}
+
 /* Po zmianie motywu trzeba przemalowac to, co maluje sie poza stronami:
    tlo okna i tla naszych wlasnych kart. Inaczej stary kolor siedzi tam az do
    ponownego uruchomienia i przy przelaczaniu kart widac blysk. */
@@ -1248,4 +1360,4 @@ function broadcastAll(channel, payload) {
   }
 }
 
-module.exports = { AppWindow, createWindow, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs };
+module.exports = { AppWindow, createWindow, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep };

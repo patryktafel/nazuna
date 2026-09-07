@@ -114,6 +114,8 @@ function render() {
       <h2>Zaawansowane</h2>
       ${toggleRow('hardwareAcceleration', 'Przyspieszenie sprzętowe', 'Renderowanie grafiki przez kartę graficzną. Zmiana zadziała po ponownym uruchomieniu')}
       ${toggleRow('spellcheckEnabled', 'Sprawdzanie pisowni', 'Podkreśla literówki w polach tekstowych. Domyślnie wyłączone - każda otwarta karta trzyma wtedy własny słownik w pamięci. Zmiana działa od nowej karty')}
+      ${toggleRow('tabSleepEnabled', 'Usypianie nieużywanych kart', 'Karta, z której nie korzystasz od 20 minut, zwalnia zajmowaną przez siebie pamięć. Wraca do życia (z krótkim przeładowaniem) w chwili, gdy znów w nią klikniesz')}
+      ${toggleRow('tabPrewarmEnabled', 'Szybsze otwieranie nowej karty', 'Trzyma w tle jedną gotową kartę, żeby kliknięcie "+" nie czekało na uruchomienie nowego procesu. Zajmuje trochę więcej pamięci - jedną dodatkową kartę na każde otwarte okno')}
       <div class="row">
         <div class="body"><div class="title">Folder z danymi przeglądarki</div><div class="sub">Profil, zakładki, historia i rozszerzenia</div></div>
         <div class="ctl"><button class="btn" id="openData">Otwórz folder</button></div>
