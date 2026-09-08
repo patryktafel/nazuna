@@ -36,6 +36,10 @@ const DEFAULT_SETTINGS = {
   // krotki blysk pustej karty). Koszt to jeden dodatkowy proces na okno,
   // caly czas w tle - kto woli oszczedzac pamiec, wylacza w Ustawieniach.
   tabPrewarmEnabled: true,
+  // Gdy wlaczone, pasek Nazuny lekko przebarwia sie na kolor wyliczony z
+  // favicony aktywnej strony (jak w Vivaldim) - czysto kosmetyczne, wylacza
+  // sie w Ustawieniach dla kogos, kto woli staly, jeden akcent kolorystyczny.
+  siteAccentEnabled: true,
   extensionsEnabled: true,
   defaultZoom: 1,
   theme: 'dark',            // dark | light | system

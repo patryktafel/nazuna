@@ -1,6 +1,45 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.47 - 8 września 2026
+------------------------
+
+Film w tle nie gubi już odtwarzania
+
+Czasami film puszczony w tle na YouTube, podczas gdy aktywnie
+korzystało się z innej karty, po powrocie wyglądał tak, jakby dopiero
+co się na niego weszło - z przyciskiem play na środku, choć pamiętał
+gdzie film się zatrzymał. Powodem było to, że każda karta w tle
+dostawała od Nazuny okno o rozmiarze zero na zero pikseli, żeby
+oszczędzać pamięć i moc - dla zwykłej, cichej karty to bez znaczenia,
+ale odtwarzacz wideo potrafił to odczytać jako utratę widoczności i
+zresetować się. Karta, na której coś gra (albo kiedykolwiek grało od
+ostatniego przeładowania strony), dostaje teraz normalny, prawdziwy
+rozmiar, tylko przesunięty poza widoczny obszar okna, zamiast zerowego.
+
+Wizualny upgrade Nazuny
+
+Pasek kart i pasek narzędzi otworzyły się, otwieranie i zamykanie karty
+ma teraz własną animację zamiast pojawiania się/znikania z doskoku,
+gwiazdka zakładki odbija się przy kliknięciu, a przyciski i karty
+reagują lekkim wciśnięciem pod kursorem. Karty na pasku są większe i
+czytelniejsze, zwłaszcza gdy jest ich sporo otwartych naraz. Pasek na
+górze okna dostał delikatne, powolne przetło w kolorze akcentu zamiast
+płaskiej barwy, a strona nowej karty ma teraz subtelnie dryfującą poświatę
+w tle i blask podążający za kursorem na kafelkach. Dołożony został też
+pasek postępu ładowania strony u góry okna, znany z Chrome'a i YouTube'a.
+
+Kolor dopasowany do przeglądanej strony
+
+Pasek Nazuny potrafi teraz lekko przebarwić się na kolor wyliczony z
+ikonki aktywnej strony - podobnie jak robi to Vivaldi. Kolor jest liczony
+z favicony, podbijany w nasyceniu i przycinany do przyjemnego zakresu
+jasności, żeby zawsze wyglądał żywo, a nie brudno czy szaro. Działa to
+na wszystkim, co już korzystało ze stałego akcentu (świecenie aktywnej
+karty, obwódka paska adresu, przyciski), bez dotykania niczego osobno.
+Kto woli trzymać się jednego, stałego koloru z Ustawień, wyłącza to
+nowym przełącznikiem "Kolor dopasowany do strony".
+
 0.1.46 - 7 września 2026
 ------------------------
 

@@ -5,9 +5,17 @@ body { cursor: default; }
 
 #chrome {
   position: absolute; inset: 0 0 auto 0;
-  background: linear-gradient(180deg, var(--chrome-top) 0%, var(--chrome-bottom) 100%);
+  /* Delikatna poswiata w kolorze wybranego akcentu, wtopiona w gorny lewy
+     rog - dzieki temu caly pasek czuje sie jak jeden zaprojektowany produkt,
+     a nie neutralnie szara belka z akcentem tylko na pojedynczych
+     przyciskach (patrz --accent-dim w theme.css - zmienia sie sam wraz z
+     motywem i wybranym kolorem, wiec ta poswiata tez). */
+  background:
+    radial-gradient(120% 200% at 6% 0%, var(--accent-dim) 0%, transparent 58%),
+    linear-gradient(180deg, var(--chrome-top) 0%, var(--chrome-bottom) 100%);
   border-bottom: 1px solid rgba(var(--tint), 0.06);
   box-shadow: 0 1px 0 var(--chrome-line), 0 8px 24px -18px var(--chrome-glow);
+  transition: background .3s var(--ease);
 }
 body.content-fullscreen #chrome { display: none; }
 /* W pelnym ekranie warstwa nie moze przechwytywac klikniec dla samej podpowiedzi. */
@@ -27,6 +35,26 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
   background: var(--surface-3); border: 1px solid var(--border-strong); color: var(--text);
 }
 .fs-hint.leaving { opacity: 0; transition: opacity .4s var(--ease); }
+
+/* Cienki pasek ladowania na dole paska narzedzi, jak w YouTube/GitHubie -
+   to jeden z tych drobiazgow, po ktorych od razu poznajesz "dopracowana"
+   przegladarke. Prawdziwego procentu postepu Chromium nie oddaje wprost,
+   wiec przy ladowaniu pasek rosnie "na oko" (patrz @keyframes nizej), a po
+   zakonczeniu doskakuje do konca i znika (patrz updateLoadbar() w shell.js). */
+.loadbar {
+  position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; z-index: 3;
+  background: var(--accent); border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 8px var(--accent-ring);
+  width: 0; opacity: 0; pointer-events: none;
+}
+.loadbar.active { opacity: 1; animation: loadbarGrow 1.6s cubic-bezier(.2,.6,.3,1) infinite; }
+.loadbar.done { width: 100%; opacity: 1; transition: width .2s var(--ease), opacity .35s var(--ease) .15s; }
+.loadbar.done.hide { opacity: 0; }
+@keyframes loadbarGrow {
+  0%   { width: 0%; }
+  55%  { width: 68%; }
+  100% { width: 86%; }
+}
 
 /* Powiadomienie o aktualizacji - karta w prawym gornym rogu, pod paskiem
    narzedzi. Nie jest popoverem (patrz sekcja "popovers" nizej): pojawia sie
@@ -66,7 +94,7 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 /* --------------------------------------------------------------- tab strip */
 
 .tabstrip {
-  height: 40px; display: flex; align-items: flex-end; gap: 2px;
+  height: 44px; display: flex; align-items: flex-end; gap: 2px;
   padding: 0 0 0 8px; -webkit-app-region: drag;
   transition: background .12s var(--ease);
 }
@@ -90,13 +118,13 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 }
 .tabs {
   display: flex; align-items: flex-end; gap: 2px; flex: 0 1 auto;
-  min-width: 0; max-width: calc(100% - 220px); height: 100%; padding-top: 6px;
+  min-width: 0; max-width: calc(100% - 220px); height: 100%; padding-top: 7px;
   -webkit-app-region: no-drag; overflow: hidden;
 }
 .tab {
-  position: relative; display: flex; align-items: center; gap: 8px;
-  height: 34px; padding: 0 7px 0 11px; min-width: 76px; max-width: 240px;
-  flex: 1 1 208px; border-radius: 9px 9px 4px 4px;
+  position: relative; display: flex; align-items: center; gap: 9px;
+  height: 37px; padding: 0 9px 0 13px; min-width: 106px; max-width: 252px;
+  flex: 1 1 220px; border-radius: 10px 10px 4px 4px;
   color: var(--text-dim); background: transparent;
   transition: background .16s var(--ease), color .16s var(--ease), flex-basis .18s var(--ease);
   cursor: default; overflow: hidden;
@@ -107,10 +135,29 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
   box-shadow: inset 0 1px 0 rgba(var(--tint), 0.07), 0 -1px 0 rgba(var(--sink), .25);
 }
 .tab.active::after {
-  content: ""; position: absolute; left: 11px; right: 11px; bottom: 0; height: 2px;
-  border-radius: 2px 2px 0 0; background: var(--accent); opacity: .85;
+  content: ""; position: absolute; left: 13px; right: 13px; bottom: 0; height: 2.5px;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 0 10px var(--accent);
+  opacity: .9;
 }
 .tab.dragging { opacity: .55; }
+/* Karta wjezdza lekkim wyskokiem zamiast pojawiac sie od razu w komplecie -
+   to samo co robi kazda dojrzala przegladarka przy "+". */
+@keyframes tabEnter { from { opacity: 0; transform: scale(.88) translateY(3px); } }
+.tab.tab-enter { animation: tabEnter .16s var(--ease); }
+/* Zamykana karta chowa sie sama zamiast znikac skokowo, a sasiednie karty
+   plynnie wchodza w zwolnione miejsce (patrz renderTabs() w shell.js -
+   filtruje takie "znikajace" karty przy liczeniu pozycji, wiec nie mieszaja
+   kolejnosci prawdziwych kart). */
+@keyframes tabLeave {
+  from { opacity: 1; flex-grow: 1; flex-basis: 220px; min-width: 106px; max-width: 252px; padding: 0 9px 0 13px; }
+  to   { opacity: 0; flex-grow: 0; flex-basis: 0; min-width: 0; max-width: 0; padding: 0 0 0 0; transform: scale(.9); }
+}
+.tab.tab-leave {
+  animation: tabLeave .15s var(--ease) forwards;
+  pointer-events: none; overflow: hidden;
+}
 .tab .favicon {
   width: 16px; height: 16px; flex: none; border-radius: 3px;
   object-fit: contain; background: transparent;
@@ -138,12 +185,13 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .tab-add {
-  width: 30px; height: 30px; flex: none; margin: 0 4px 2px;
-  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; flex: none; margin: 0 4px 3px;
+  border-radius: 9px; display: flex; align-items: center; justify-content: center;
   color: var(--text-dim); -webkit-app-region: no-drag;
   transition: background .14s var(--ease), color .14s var(--ease);
 }
 .tab-add:hover { background: rgba(var(--tint), 0.08); color: var(--text); }
+.tab-add:active { transform: scale(.88); }
 
 .strip-spacer { flex: 1 1 auto; min-width: 12px; height: 100%; }
 
@@ -156,9 +204,10 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 .wincontrols { display: flex; align-items: stretch; height: 100%; -webkit-app-region: no-drag; }
 .wincontrols button {
   width: 46px; display: flex; align-items: center; justify-content: center;
-  color: var(--text-dim); transition: background .12s var(--ease), color .12s var(--ease);
+  color: var(--text-dim); transition: background .12s var(--ease), color .12s var(--ease), transform .1s var(--ease);
 }
 .wincontrols button:hover { background: rgba(var(--tint), 0.08); color: var(--text); }
+.wincontrols button:active { transform: scale(.92); }
 .wincontrols button.close:hover { background: #e04452; color: #fff; }
 .wincontrols .icon { width: 11px; height: 11px; stroke-width: 1.4; }
 
@@ -169,16 +218,16 @@ html.mac .tabstrip { padding-left: 82px; }
 
 /* ----------------------------------------------------------------- toolbar */
 
-.toolbar { height: 46px; display: flex; align-items: center; gap: 3px; padding: 0 9px; }
+.toolbar { height: 48px; display: flex; align-items: center; gap: 4px; padding: 0 10px; }
 
 .tool {
-  width: 32px; height: 32px; flex: none; border-radius: 8px;
+  width: 34px; height: 34px; flex: none; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   color: var(--text-dim); position: relative;
-  transition: background .14s var(--ease), color .14s var(--ease), opacity .14s var(--ease);
+  transition: background .14s var(--ease), color .14s var(--ease), opacity .14s var(--ease), transform .1s var(--ease);
 }
 .tool:hover { background: rgba(var(--tint), 0.075); color: var(--text); }
-.tool:active { background: rgba(var(--tint), 0.12); }
+.tool:active { background: rgba(var(--tint), 0.12); transform: scale(.9); }
 .tool.disabled { opacity: .32; pointer-events: none; }
 .tool.on { color: var(--accent-strong); }
 .tool .badge {
@@ -191,16 +240,16 @@ html.mac .tabstrip { padding-left: 82px; }
 /* ------------------------------------------------------------- address bar */
 
 .omnibox {
-  flex: 1 1 auto; min-width: 0; height: 34px; margin: 0 6px;
-  display: flex; align-items: center; gap: 8px; padding: 0 6px 0 11px;
-  border-radius: 10px; background: rgba(var(--sink), 0.32);
+  flex: 1 1 auto; min-width: 0; height: 37px; margin: 0 6px;
+  display: flex; align-items: center; gap: 8px; padding: 0 7px 0 13px;
+  border-radius: 11px; background: rgba(var(--sink), 0.32);
   border: 1px solid var(--border);
   transition: background .16s var(--ease), border-color .16s var(--ease), box-shadow .16s var(--ease);
 }
 .omnibox:hover { background: rgba(var(--sink), 0.42); border-color: var(--border-strong); }
 .omnibox.focused {
   background: rgba(var(--sink), 0.5); border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-ring);
+  box-shadow: 0 0 0 3px var(--accent-ring), 0 4px 22px -6px var(--accent-ring);
 }
 .omnibox .lock { color: var(--text-faint); display: flex; flex: none; }
 .omnibox.secure .lock { color: var(--ok); }
@@ -213,13 +262,18 @@ html.mac .tabstrip { padding-left: 82px; }
 .omnibox input::placeholder { color: var(--text-faint); }
 .omnibox .omni-actions { display: flex; align-items: center; gap: 2px; flex: none; }
 .omni-btn {
-  width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center;
+  width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center;
   justify-content: center; color: var(--text-dim); position: relative;
-  transition: background .12s var(--ease), color .12s var(--ease);
+  transition: background .12s var(--ease), color .12s var(--ease), transform .1s var(--ease);
 }
 .omni-btn:hover { background: rgba(var(--tint), 0.09); color: var(--text); }
+.omni-btn:active { transform: scale(.88); }
 .omni-btn.active { color: var(--accent-strong); }
-.omni-btn .icon { width: 16px; height: 16px; }
+/* Krotki "odbij sie" przy dodaniu/usunieciu zakladki (patrz .bump w shell.js),
+   zeby ta zmiana bylo cos widac, a nie tylko cichy przeskok ikonki. */
+@keyframes starBump { 0% { transform: scale(1); } 40% { transform: scale(1.32); } 65% { transform: scale(.9); } 100% { transform: scale(1); } }
+.omni-btn.bump .icon { animation: starBump .38s var(--ease); }
+.omni-btn .icon { width: 17px; height: 17px; }
 .omni-btn.busy { pointer-events: none; color: var(--text-dim); }
 .omni-btn.busy .icon { animation: spin .7s linear infinite; }
 .shield-count {
@@ -245,6 +299,7 @@ html.mac .tabstrip { padding-left: 82px; }
   transition: background .13s var(--ease), color .13s var(--ease);
 }
 .bm:hover { background: rgba(var(--tint), 0.07); color: var(--text); }
+.bm:active { background: rgba(var(--tint), 0.12); }
 .bm .fav, .bm .fav-img { width: 14px; height: 14px; border-radius: 3px; flex: none; display: flex; align-items: center; justify-content: center; }
 .bm .fav .icon { width: 14px; height: 14px; color: var(--text-faint); }
 .bm .icon { width: 14px; height: 14px; }
@@ -285,9 +340,10 @@ body:not(.expanded) #layer { pointer-events: none; }
 .panel {
   position: absolute; background: var(--surface);
   border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-panel); padding: 6px; min-width: 220px;
+  box-shadow: var(--shadow-panel), 0 1px 0 rgba(var(--tint), 0.05) inset;
+  padding: 6px; min-width: 220px;
   animation: pop .13s var(--ease);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(22px);
 }
 @keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(.985); } }
 
@@ -297,6 +353,7 @@ body:not(.expanded) #layer { pointer-events: none; }
   transition: background .1s var(--ease);
 }
 .menu-item:hover, .menu-item.hover { background: rgba(var(--tint), 0.07); }
+.menu-item:active { background: rgba(var(--tint), 0.11); }
 .menu-item .icon { width: 16px; height: 16px; color: var(--text-dim); }
 .menu-item .accel { margin-left: auto; color: var(--text-faint); font-size: 11.5px; padding-left: 18px; }
 .menu-item.disabled { opacity: .35; pointer-events: none; }
@@ -349,6 +406,7 @@ body:not(.expanded) #layer { pointer-events: none; }
   border-radius: 8px; color: var(--text); cursor: default;
 }
 .bm-row:hover, .bm-row.open { background: rgba(var(--tint), 0.07); }
+.bm-row:active { background: rgba(var(--tint), 0.11); }
 .bm-row .fav, .bm-row .fav-img, .bm-row .icon { width: 16px; height: 16px; flex: none; border-radius: 3px; }
 .bm-row .fav { display: flex; align-items: center; justify-content: center; }
 .bm-row .fav .icon { color: var(--text-faint); }

@@ -11,8 +11,8 @@ const APP_NAME = 'Nazuna';
 
 // Wymiary interfejsu przegladarki, w pikselach CSS.
 const LAYOUT = {
-  tabStrip: 40,
-  toolbar: 46,
+  tabStrip: 44,
+  toolbar: 48,
   bookmarksBar: 34,
   findBar: 44
 };

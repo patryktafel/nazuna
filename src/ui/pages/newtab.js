@@ -85,6 +85,14 @@ function tile(site, onRemove) {
   btn.appendChild(glyph);
   btn.appendChild(label);
   btn.addEventListener('click', () => api.send('nav.go', { input: site.origin }));
+  // Delikatny "reflektorek" podazajacy za kursorem (patrz .tile::before w
+  // pages.css) - drobiazg, ale to wlasnie takie detale odrozniaja dopracowany
+  // interfejs od plaskiego.
+  btn.addEventListener('mousemove', (e) => {
+    const r = btn.getBoundingClientRect();
+    btn.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
+    btn.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`);
+  });
 
   const img = new Image();
   img.onload = () => { glyph.textContent = ''; glyph.appendChild(img); };

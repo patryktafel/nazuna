@@ -1,7 +1,7 @@
 'use strict';
 const path = require('path');
 const crypto = require('crypto');
-const { BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme } = require('electron');
+const { BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme, net } = require('electron');
 const { LAYOUT, UI_DIR, PRELOAD_DIR, ASSETS_DIR, APP_NAME, rozstrzygnijMotyw, TLA } = require('./constants');
 const data = require('./data');
 const urls = require('./urls');
@@ -69,6 +69,106 @@ function focusedWindow() {
   return [...windows].find((w) => w.win && !w.win.isDestroyed() && w.win.isFocused()) || [...windows][0] || null;
 }
 
+/* Kolor akcentu wyliczony na podstawie favicony danej strony - patrz
+   extractSiteAccent() nizej. Klucz to hostname, wartosc to obiekt czterech
+   kolorow (albo null, gdy wyliczenie sie nie udalo - zeby nie probowac w
+   kolko tej samej zepsutej favicony). */
+const siteAccentCache = new Map();
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s;
+  const l = (max + min) / 2;
+  if (max === min) {
+    h = s = 0;
+  } else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      default: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return [h, s, l];
+}
+
+function hslToRgb(h, s, l) {
+  if (s === 0) {
+    const v = Math.round(l * 255);
+    return [v, v, v];
+  }
+  const hue2rgb = (p, q, t) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return [
+    Math.round(hue2rgb(p, q, h + 1 / 3) * 255),
+    Math.round(hue2rgb(p, q, h) * 255),
+    Math.round(hue2rgb(p, q, h - 1 / 3) * 255)
+  ];
+}
+
+function hex([r, g, b]) {
+  const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+  return '#' + [r, g, b].map((v) => clamp(v).toString(16).padStart(2, '0')).join('');
+}
+
+/* Wyciaga przyjemny kolor akcentu z favicony strony - tak jak Vivaldi robi
+   to ze zdjeciem zakladki. Usredniamy piksele favicony pomijajac
+   przezroczyste, prawie-czarne, prawie-biale i nienasycone (szare), zeby nie
+   wyszedl brudny/szary kolor, a potem podbijamy nasycenie i przycinamy
+   jasnosc do przyjemnego zakresu, zeby akcent byl zywy, ale nadal czytelny
+   i na ciemnym, i na jasnym motywie. Wynik trzymamy w cache per-hostname,
+   bo ta sama strona ma zawsze te sama favicone. */
+async function extractSiteAccent(faviconUrl) {
+  if (!/^https?:\/\//i.test(String(faviconUrl || ''))) return null;
+  let host;
+  try { host = new URL(faviconUrl).hostname; } catch (_) { return null; }
+  if (siteAccentCache.has(host)) return siteAccentCache.get(host);
+  try {
+    const res = await net.fetch(faviconUrl, { redirect: 'follow' });
+    if (!res.ok) { siteAccentCache.set(host, null); return null; }
+    const buf = Buffer.from(await res.arrayBuffer());
+    const img = nativeImage.createFromBuffer(buf);
+    if (img.isEmpty()) { siteAccentCache.set(host, null); return null; }
+    const bitmap = img.toBitmap(); // BGRA na win32
+    let rSum = 0, gSum = 0, bSum = 0, n = 0;
+    for (let i = 0; i + 3 < bitmap.length; i += 4) {
+      const b = bitmap[i], g = bitmap[i + 1], r = bitmap[i + 2], a = bitmap[i + 3];
+      if (a < 80) continue;
+      const [, s, l] = rgbToHsl(r, g, b);
+      if (s < 0.15 || l < 0.08 || l > 0.92) continue;
+      rSum += r; gSum += g; bSum += b; n++;
+    }
+    if (n < 4) { siteAccentCache.set(host, null); return null; }
+    const [h, sRaw, lRaw] = rgbToHsl(rSum / n, gSum / n, bSum / n);
+    const s = Math.max(sRaw, 0.45);
+    const l = Math.min(0.66, Math.max(0.52, lRaw));
+    const base = hslToRgb(h, s, l);
+    const strong = hslToRgb(h, Math.min(1, s + 0.05), Math.min(0.78, l + 0.10));
+    const accent = {
+      accent: hex(base),
+      accentStrong: hex(strong),
+      accentDim: `rgba(${base[0]}, ${base[1]}, ${base[2]}, 0.16)`,
+      accentRing: `rgba(${base[0]}, ${base[1]}, ${base[2]}, 0.3)`
+    };
+    siteAccentCache.set(host, accent);
+    return accent;
+  } catch (_) {
+    siteAccentCache.set(host, null);
+    return null;
+  }
+}
+
 class Tab {
   constructor(appWindow, { url, background = false }) {
     this.id = nextTabId++;
@@ -77,6 +177,13 @@ class Tab {
     this.favicon = null;
     this.loading = false;
     this.audible = false;
+    // Raz ustawione na true juz takie zostaje (patrz media-started-playing
+    // nizej) - dzieki temu zapauzowany film nie wyglada dla usypianieCheck()
+    // tak samo jak zwykla, zapomniana karta (patrz nizej).
+    this.hadAudio = false;
+    // Kolor akcentu wyliczony z favicony tej karty (patrz extractSiteAccent()) -
+    // null, dopoki sie nie wyliczy albo gdy strona nie ma sensownej favicony.
+    this.siteAccent = null;
     this.muted = false;
     this.errorUrl = null;
     this.warnUrl = null;
@@ -187,6 +294,7 @@ class Tab {
     wc.on('page-favicon-updated', (_e, favicons) => {
       this.favicon = favicons && favicons.length ? favicons[favicons.length - 1] : null;
       sync();
+      this._updateSiteAccent();
     });
     wc.on('did-start-loading', () => { this.loading = true; sync(); });
     wc.on('did-stop-loading', () => { this.loading = false; sync(); });
@@ -237,6 +345,8 @@ class Tab {
     wc.on('did-navigate', (_e, url) => {
       this.url = url;
       this.applyZoom();
+      this.hadAudio = false;
+      this.siteAccent = null;
       if (!this.owner.isPrivate) data.addHistory(url, this.title);
       sync();
     });
@@ -253,7 +363,7 @@ class Tab {
       wc.loadURL(`nazuna://error/?${params.toString()}`).catch(() => {});
       sync();
     });
-    wc.on('media-started-playing', () => { this.audible = wc.isCurrentlyAudible(); sync(); });
+    wc.on('media-started-playing', () => { this.audible = wc.isCurrentlyAudible(); this.hadAudio = true; sync(); });
     wc.on('media-paused', () => { this.audible = false; sync(); });
     wc.on('found-in-page', (_e, result) => {
       this.findState = { matches: result.matches, active: result.activeMatchOrdinal };
@@ -303,6 +413,22 @@ class Tab {
     });
   }
 
+  /* Odpala wyliczenie koloru akcentu dla aktualnej favicony, w tle - nie
+     blokuje niczego, a wynik dociera przez sync() gdy juz gotowy. Strazniczka
+     na url pilnuje, zeby szybka kolejna nawigacja nie nadpisala akcentu
+     nowej strony wynikiem liczonym jeszcze dla poprzedniej. */
+  _updateSiteAccent() {
+    if (!data.settings.get('siteAccentEnabled', true)) return;
+    if (/^nazuna:/i.test(this.url)) return;
+    const favicon = this.favicon;
+    const urlPrzy = this.url;
+    extractSiteAccent(favicon).then((accent) => {
+      if (this.url !== urlPrzy || this.favicon !== favicon) return;
+      this.siteAccent = accent;
+      this.owner.scheduleSync();
+    }).catch(() => {});
+  }
+
   applyZoom() {
     const host = urls.hostOf(this.url);
     const stored = data.siteZoom(host);
@@ -324,6 +450,7 @@ class Tab {
       active: !!active,
       internal: /^nazuna:/.test(this.displayUrl),
       sleeping: !!this.sleeping,
+      siteAccent: this.siteAccent,
       canGoBack: wc ? wc.navigationHistory.canGoBack() : false,
       canGoForward: wc ? wc.navigationHistory.canGoForward() : false
     };
@@ -477,8 +604,20 @@ class AppWindow {
       // wiec czego tu ustawiac, i nie moze byc kartą aktywna (patrz
       // usypianieCheck/selectTab), wiec zawsze wpada w ta galaz bez szkody.
       if (!tab.view) continue;
-      if (tab === active) tab.view.setBounds({ x: 0, y: top, width, height: Math.max(0, height - top) });
-      else tab.view.setBounds({ x: 0, y: top, width: 0, height: 0 });
+      if (tab === active) { tab.view.setBounds({ x: 0, y: top, width, height: Math.max(0, height - top) }); continue; }
+      if (tab.audible || tab.hadAudio) {
+        // Karta grajaca dzwiek w tle (patrz hadAudio wyzej) dostaje
+        // prawdziwy rozmiar, tylko wysunięty poza widoczny obszar okna,
+        // zamiast splaszczenia do 0x0 jak zwykla, cicha karta w tle. Widok o
+        // zerowej powierzchni potrafil sprawic, ze YouTube (i pewnie inne
+        // strony z wideo) po jakims czasie same resetowaly odtwarzacz, jakby
+        // strona wcale nie byla wczytana - zerowy rozmiar to dla Chromium
+        // znacznie mocniejszy sygnal "nikt tego nie oglada" niz zwykle
+        // przelaczenie karty w prawdziwej przegladarce.
+        tab.view.setBounds({ x: -width, y: top, width, height: Math.max(0, height - top) });
+      } else {
+        tab.view.setBounds({ x: 0, y: top, width: 0, height: 0 });
+      }
     }
     this.positionExtensionPopup();
   }
@@ -1050,6 +1189,7 @@ class AppWindow {
       adblockSite: host ? data.adblockAllowed(host) : true,
       blockedCount: active && !active.wc.isDestroyed() ? adblock.getCount(active.wc.id) : 0,
       muted: active ? active.muted : false,
+      siteAccent: active ? active.siteAccent : null,
       extensions: (!this.isPrivate && data.settings.get('extensionsEnabled', true)) ? extensions.list().filter((e) => e.enabled) : [],
       settings: data.settings.data,
       motyw: rozstrzygnijMotyw(data.settings.get('theme', 'dark')),
@@ -1304,6 +1444,12 @@ function usypianieCheck() {
     if (win.tabs.length <= 1) continue;
     for (const tab of win.tabs) {
       if (tab.sleeping || tab.id === win.activeTabId || tab.audible || tab.loading) continue;
+      // Karta, ktora choc raz odtworzyla dzwiek (film, muzyka), zostaje
+      // wylaczona z usypiania na dobre, nawet gdy w danej chwili jest tylko
+      // zapauzowana - to wlasnie taka karta ("obejrze to pozniej") najbardziej
+      // chcemy zostawic w spokoju, a usniecie oznacza dla niej pelne
+      // przeladowanie i zgubienie miejsca w odtwarzaczu (patrz hadAudio wyzej).
+      if (tab.hadAudio) continue;
       // Strony nazuna:// (nowa karta, historia, ustawienia...) same w sobie
       // sa tanie - nie ma czego tu oszczedzac, a usypianie panelu, ktory
       // zyje z odswiezania na biezaco (np. pobrane), tylko by przeszkadzalo.

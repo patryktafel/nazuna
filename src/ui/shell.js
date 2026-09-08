@@ -14,6 +14,34 @@ let omniQuery = '';
 let suggestToken = 0;
 let layerTouchedAt = 0;
 let downloadsCache = [];
+let prevBookmarked = null;
+let prevBookmarkedTabId = null;
+let prevLoading = null;
+let loadbarHideTimer = null;
+
+/* Cienki pasek ladowania pod toolbarem (patrz .loadbar w shell.css). Prawdziwego
+   procentu Chromium nie udostepnia wprost, wiec rosnie "na oko" w petli, a po
+   zakonczeniu doskakuje do konca i znika. */
+function updateLoadbar() {
+  const bar = el.loadbar;
+  if (!bar) return;
+  const loading = !!state.loading;
+  if (loading === prevLoading) return;
+  prevLoading = loading;
+  clearTimeout(loadbarHideTimer);
+  if (loading) {
+    bar.classList.remove('done', 'hide');
+    void bar.offsetWidth; // wymus restart animacji, gdyby druga nawigacja ruszyla zanim pierwsza dobiegla konca
+    bar.classList.add('active');
+  } else {
+    bar.classList.remove('active');
+    bar.classList.add('done');
+    loadbarHideTimer = setTimeout(() => {
+      bar.classList.add('hide');
+      loadbarHideTimer = setTimeout(() => bar.classList.remove('done', 'hide'), 400);
+    }, 200);
+  }
+}
 
 const el = {
   chrome: $('#chrome'),
@@ -35,7 +63,8 @@ const el = {
   findInput: $('#findInput'),
   findCount: $('#findCount'),
   layer: $('#layer'),
-  scrim: $('#scrim')
+  scrim: $('#scrim'),
+  loadbar: $('#loadbar')
 };
 
 function setIcon(node, name) { if (node) node.innerHTML = iconSvg(name); }
@@ -210,14 +239,28 @@ function renderTabs() {
   for (const [id, node] of tabNodes) {
     if (!ids.has(id)) {
       if (tabTipNode === node) hideTabTip();
-      node.remove(); tabNodes.delete(id);
+      tabNodes.delete(id);
+      // Karta znika plynnie zamiast skokowo (patrz .tab-leave w shell.css) -
+      // node zostaje w DOM jeszcze przez chwile, wiec dopiero po animacji go
+      // usuwamy. setTimeout to zabezpieczenie, gdyby z jakiegos powodu
+      // animationend nie doszlo (np. wylaczone animacje w systemie).
+      node.classList.add('tab-leave');
+      node.addEventListener('animationend', () => node.remove(), { once: true });
+      setTimeout(() => node.remove(), 220);
     }
   }
+  // Karty w trakcie znikania (patrz wyzej) zostaja fizycznie w #tabs jeszcze
+  // przez chwile - pomijamy je tutaj, zeby nie przesuwaly numeracji
+  // prawdziwych, aktualnych kart przy wstawianiu/przestawianiu ponizej.
+  const zywe = () => [...el.tabs.children].filter((n) => !n.classList.contains('tab-leave'));
   state.tabs.forEach((tab, index) => {
     let node = tabNodes.get(tab.id);
     if (!node) {
       node = document.createElement('div');
-      node.className = 'tab';
+      // Nowa karta wjezdza lekkim wyskokiem (patrz .tab-enter w shell.css) -
+      // klasa sama znika po animacji, zeby nic nie zostawalo na stale.
+      node.className = 'tab tab-enter';
+      node.addEventListener('animationend', () => node.classList.remove('tab-enter'), { once: true });
       node.dataset.id = String(tab.id);
       node.innerHTML = '<span class="lead"></span><span class="label"></span><button class="tab-close"></button>';
       node.querySelector('.tab-close').innerHTML = iconSvg('close');
@@ -237,7 +280,8 @@ function renderTabs() {
       wireTabDrag(node);
       tabNodes.set(tab.id, node);
     }
-    if (el.tabs.children[index] !== node) el.tabs.insertBefore(node, el.tabs.children[index] || null);
+    const kids = zywe();
+    if (kids[index] !== node) el.tabs.insertBefore(node, kids[index] || null);
 
     node.classList.toggle('active', tab.active);
     const lead = node.querySelector('.lead');
@@ -431,6 +475,7 @@ function renderToolbar() {
   $('#forward').classList.toggle('disabled', !state.canGoForward);
   setIcon($('#reload'), state.loading ? 'stop' : 'reload');
   $('#reload').title = state.loading ? 'Zatrzymaj (Esc)' : 'Odśwież (F5)';
+  updateLoadbar();
 
   el.omnibox.classList.toggle('secure', !!state.secure);
   el.omnibox.classList.toggle('internal', !!state.internal);
@@ -445,6 +490,17 @@ function renderToolbar() {
 
   el.star.innerHTML = iconSvg(state.bookmarked ? 'starFilled' : 'star');
   el.star.classList.toggle('active', !!state.bookmarked);
+  // Male "odbicie" gwiazdki przy dodaniu/usunieciu zakladki (patrz .bump w
+  // shell.css) - tylko gdy to naprawde zmiana na TEJ SAMEJ karcie (klikniecie
+  // gwiazdki), a nie efekt przeskoczenia na inna karte o innym stanie
+  // zakladki - inaczej odbijaloby sie przy zwyklym przelaczaniu kart.
+  if (prevBookmarkedTabId === state.activeTabId && prevBookmarked !== !!state.bookmarked) {
+    el.star.classList.remove('bump');
+    void el.star.offsetWidth; // wymus przeliczenie stylow, zeby animacja odpalila sie od nowa
+    el.star.classList.add('bump');
+  }
+  prevBookmarked = !!state.bookmarked;
+  prevBookmarkedTabId = state.activeTabId;
 
   const blocking = state.adblockEnabled && state.adblockSite;
   el.shield.innerHTML = iconSvg(blocking ? 'shield' : 'shieldOff');
@@ -481,6 +537,31 @@ function renderToolbar() {
   document.documentElement.dataset.accent = (state.settings && state.settings.accent) || 'violet';
   document.documentElement.dataset.motyw = state.motyw || 'ciemny';
   document.body.classList.toggle('content-fullscreen', !!state.contentFullScreen);
+  applySiteAccent();
+}
+
+// Nadpisuje staly akcent kolorystyczny akcentem wyliczonym z favicony
+// aktywnej strony (patrz extractSiteAccent() w main) - jak w Vivaldim.
+// Ustawienie i brak wyliczonego koloru po prostu zdejmuja nadpisanie,
+// wracajac do zwyklego, stalego akcentu z Ustawien.
+let siteAccentApplied = false;
+function applySiteAccent() {
+  const enabled = !state.settings || state.settings.siteAccentEnabled !== false;
+  const a = enabled ? state.siteAccent : null;
+  const root = document.documentElement.style;
+  if (a) {
+    root.setProperty('--accent', a.accent);
+    root.setProperty('--accent-strong', a.accentStrong);
+    root.setProperty('--accent-dim', a.accentDim);
+    root.setProperty('--accent-ring', a.accentRing);
+    siteAccentApplied = true;
+  } else if (siteAccentApplied) {
+    root.removeProperty('--accent');
+    root.removeProperty('--accent-strong');
+    root.removeProperty('--accent-dim');
+    root.removeProperty('--accent-ring');
+    siteAccentApplied = false;
+  }
 }
 
 function renderExtensions() {

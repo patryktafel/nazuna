@@ -148,8 +148,12 @@ a:hover { text-decoration: underline; }
 }
 .btn:hover { background: var(--surface-3); border-color: var(--border-strong); }
 .btn:active { transform: translateY(1px); }
-.btn.primary { background: var(--accent); border-color: transparent; color: #10101a; font-weight: 600; }
-.btn.primary:hover { background: var(--accent-strong); }
+.btn.primary {
+  background: linear-gradient(160deg, var(--accent-strong), var(--accent));
+  border-color: transparent; color: #10101a; font-weight: 600;
+  box-shadow: 0 4px 14px -6px var(--accent-ring);
+}
+.btn.primary:hover { background: linear-gradient(160deg, var(--accent-strong), var(--accent-strong)); box-shadow: 0 6px 18px -6px var(--accent-ring); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--text-dim); }
 .btn.ghost:hover { background: rgba(var(--tint), .07); color: var(--text); }
 .btn.danger { color: var(--danger); }
