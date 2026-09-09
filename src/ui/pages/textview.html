@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pl" data-accent="violet">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src nazuna:; img-src nazuna: data:; style-src nazuna: 'unsafe-inline'; script-src nazuna:">
+<title>Podgląd</title>
+<link rel="stylesheet" href="nazuna://ui/theme.css">
+<style>
+  html, body { height: 100%; margin: 0; background: var(--bg-raised); color: var(--text); font: 13px system-ui, sans-serif; overflow: hidden; }
+  #toolbar {
+    height: 46px; display: flex; align-items: center; gap: 4px; padding: 0 12px;
+    background: var(--chrome-top); border-bottom: 1px solid var(--border); flex: none;
+  }
+  #title { font-size: 12.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; margin-right: 10px; }
+  .sep { width: 1px; align-self: stretch; margin: 9px 4px; background: var(--border-strong); }
+  .grow { flex: 1; }
+  .tbtn {
+    height: 30px; padding: 0 11px; border-radius: 8px; display: flex; align-items: center; gap: 6px; justify-content: center;
+    color: var(--text-dim); flex: none; font-size: 12px; transition: background .12s var(--ease), color .12s var(--ease);
+  }
+  .tbtn:hover { background: rgba(var(--tint), 0.09); color: var(--text); }
+  .tbtn:active { transform: scale(.96); }
+  .tbtn .icon { width: 15px; height: 15px; }
+  .tbtn.active { background: var(--accent-dim); color: var(--accent-strong); }
+  #scroll { position: absolute; top: 46px; left: 0; right: 0; bottom: 0; overflow: auto; }
+  #code {
+    display: flex; min-height: 100%; font: 12.5px/1.65 ui-monospace, Consolas, 'Cascadia Mono', monospace;
+    padding: 18px 0;
+  }
+  #lines {
+    flex: none; user-select: none; text-align: right; color: var(--text-faint);
+    padding: 0 14px 0 20px; border-right: 1px solid var(--border); white-space: pre;
+  }
+  #text { flex: 1; padding: 0 20px; white-space: pre-wrap; word-break: break-word; color: var(--text); }
+  #text .key { color: var(--accent-strong); }
+  #text .str { color: var(--ok); }
+  #text .num { color: var(--warn); }
+  #text .bool, #text .null { color: #ff9ecb; }
+  #status { position: absolute; top: 46%; left: 0; right: 0; text-align: center; color: var(--text-faint); font-size: 13px; }
+</style>
+</head>
+<body>
+  <div id="toolbar">
+    <span id="title"></span>
+    <div class="grow"></div>
+    <button class="tbtn" id="format"><span class="icon"></span><span class="lbl">Sformatowany</span></button>
+    <div class="sep"></div>
+    <button class="tbtn" id="copy"><span class="icon"></span><span class="lbl">Kopiuj</span></button>
+    <button class="tbtn" id="download"><span class="icon"></span><span class="lbl">Pobierz</span></button>
+  </div>
+  <div id="scroll"><div id="code"><div id="lines"></div><div id="text"></div></div></div>
+  <div id="status"></div>
+  <script src="nazuna://ui/icons.js"></script>
+  <script src="textview.js"></script>
+</body>
+</html>

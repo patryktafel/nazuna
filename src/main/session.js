@@ -1,6 +1,6 @@
 'use strict';
 const path = require('path');
-const { app, session } = require('electron');
+const { app, session, webContents } = require('electron');
 const { chromeUserAgent, acceptLanguages, PRELOAD_DIR } = require('./constants');
 const protocolHelper = require('./protocol');
 const adblock = require('./adblock');
@@ -145,6 +145,46 @@ function obce(ses, details) {
   return true;
 }
 
+/* Strony, ktore Chromium samo nie umie pokazac ladnie (PDF), albo pokazuje
+   surowym, nieforemnym tekstem (JSON, zwykly .txt) - patrz nazuna://pdf i
+   nazuna://textview w src/ui/pages. Dotyczy tylko GLOWNEJ ramki (kliknietego
+   linku czy wpisanego adresu), nigdy zasobow WEWNATRZ strony (obrazkow,
+   zapytan fetch/XHR jakiejs aplikacji) - inaczej kazda strona korzystajaca
+   z JSON-a przez fetch zaczelaby sama nawigowac gdzies indziej. */
+const VIEWER_TYPES = { 'application/pdf': 'pdf', 'application/json': 'textview', 'text/plain': 'textview' };
+function naglowek(headers, nazwa) {
+  if (!headers) return '';
+  for (const klucz of Object.keys(headers)) {
+    if (klucz.toLowerCase() === nazwa) {
+      const wartosc = headers[klucz];
+      return String(Array.isArray(wartosc) ? wartosc[0] : wartosc || '');
+    }
+  }
+  return '';
+}
+function typZasobu(headers) {
+  return naglowek(headers, 'content-type').split(';')[0].trim().toLowerCase();
+}
+function podmienNaPodglad(details) {
+  if (details.resourceType !== 'mainFrame') return false;
+  if (/^nazuna:/i.test(details.url)) return false;
+  if (details.statusCode >= 400) return false;
+  // Strona sama poprosila o pobranie (Content-Disposition: attachment) - to
+  // jej swiadoma decyzja, ze plik ma trafic na dysk, a nie do podgladu.
+  // Chrome i Firefox tak samo respektuja ten naglowek nawet dla PDF-ow.
+  if (/attachment/i.test(naglowek(details.responseHeaders, 'content-disposition'))) return false;
+  const widok = VIEWER_TYPES[typZasobu(details.responseHeaders)];
+  if (!widok) return false;
+  const wc = webContents.fromId(details.webContentsId);
+  if (!wc || wc.isDestroyed()) return false;
+  const cel = `nazuna://${widok}?src=${encodeURIComponent(details.url)}`;
+  // Nawigacja startuje dopiero po zakonczeniu tego callbacku (cancel:true) -
+  // inaczej wchodzilibysmy w drugie zadanie sieciowe w trakcie obslugi
+  // pierwszego.
+  setImmediate(() => { try { wc.loadURL(cel); } catch (_) {} });
+  return true;
+}
+
 function forPartition(partition) {
   const ses = partition ? session.fromPartition(partition) : session.defaultSession;
   // Partycje bez przedrostka "persist:" Electron trzyma tylko w pamieci - to
@@ -198,6 +238,7 @@ function prepare(ses, efemeryczna) {
   /* Druga polowa blokowania obcych ciasteczek: nie dosc, ze ich nie wysylamy,
      to jeszcze nie pozwalamy ich sobie zakladac. */
   ses.webRequest.onHeadersReceived((details, callback) => {
+    if (podmienNaPodglad(details)) return callback({ cancel: true });
     if (!obceCiasteczka || !obce(ses, details)) return callback({});
     const h = details.responseHeaders;
     if (!h) return callback({});

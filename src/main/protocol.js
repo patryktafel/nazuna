@@ -5,7 +5,7 @@ const { protocol, net } = require('electron');
 const { pathToFileURL } = require('url');
 const { UI_DIR, ASSETS_DIR } = require('./constants');
 
-const PAGES = new Set(['newtab', 'settings', 'history', 'bookmarks', 'downloads', 'extensions', 'about', 'error', 'warning']);
+const PAGES = new Set(['newtab', 'settings', 'history', 'bookmarks', 'downloads', 'extensions', 'about', 'error', 'warning', 'pdf', 'textview']);
 
 function registerSchemes() {
   protocol.registerSchemesAsPrivileged([

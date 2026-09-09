@@ -340,6 +340,25 @@ if (!internal) {
       }
     } catch (_) {}
   } catch (_) {}
+
+  /* --- 5. obraz jako cala strona ------------------------------------------
+     Nawigacja bezposrednio pod adres obrazka (kliknij, otworz w nowej karcie
+     itp.) - Chromium sam go wyswietla wysrodkowanego, ale na BIALYM tle,
+     nawet w ciemnym motywie Nazuny. Dokladamy tylko tlo pod spodem, reszte
+     (dopasowanie do okna, powiekszanie klikinieciem) Chromium juz robi samo. */
+  try {
+    if (document.contentType && document.contentType.indexOf('image/') === 0) {
+      const zastosujTlo = () => {
+        try {
+          const style = document.createElement('style');
+          style.textContent = 'html,body{background:#14151b !important;margin:0;}';
+          (document.head || document.documentElement).appendChild(style);
+        } catch (_) {}
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', zastosujTlo, { once: true });
+      else zastosujTlo();
+    }
+  } catch (_) {}
 })();`;
   try { webFrame.executeJavaScript(script).catch(() => {}); } catch (_) {}
 }

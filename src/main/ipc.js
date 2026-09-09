@@ -406,6 +406,36 @@ const handlers = {
     win.scheduleSync();
   },
   'app.tabSleepStatus': () => W.tabSleepStatus(),
+
+  /* Uzywane przez nazuna://pdf i nazuna://textview (patrz podmienNaPodglad()
+     w session.js) - te strony nie moga pobrac oryginalnego pliku same przez
+     fetch(), bo jako wlasny protokol nazuna:// zawsze trafialyby na CORS.
+     Pobieramy wiec za nie tutaj, w procesie glownym (ktorego CORS nie
+     dotyczy), przez WLASCIWA sesje danego okna - zeby dzialalo tez dla
+     plikow za logowaniem, ktorych ciasteczka trzyma ta sama sesja. */
+  'viewer.fetch': async (win, p) => {
+    const url = String((p && p.url) || '');
+    if (!/^https?:\/\//i.test(url)) return { ok: false, error: 'Zły adres' };
+    try {
+      const resp = await win.session.fetch(url);
+      const bytes = new Uint8Array(await resp.arrayBuffer());
+      return {
+        ok: resp.ok,
+        status: resp.status,
+        contentType: resp.headers.get('content-type') || '',
+        bytes
+      };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  },
+  /* "Pobierz" w nazuna://pdf i nazuna://textview - zwykle wc.downloadURL(),
+     dokladnie to samo, co "Zapisz link jako" z menu prawego przycisku (patrz
+     'save-link' w window.js), tylko wywolane z poziomu samego podgladu. */
+  'viewer.download': (win, p, sender) => {
+    const url = String((p && p.url) || '');
+    if (url && sender && !sender.isDestroyed()) sender.downloadURL(url);
+  },
   'app.updateAvailable': () => updater.dostepny(),
   'app.updateStatus': () => updater.stan(),
   'app.updateCheck': async () => updater.sprawdz('reczne'),

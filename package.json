@@ -1,7 +1,7 @@
 {
   "name": "nazuna",
   "productName": "Nazuna",
-  "version": "0.1.52",
+  "version": "0.1.53",
   "description": "Nazuna - smukla, przenosna przegladarka internetowa",
   "main": "src/main/index.js",
   "author": "Tafel",
@@ -24,7 +24,8 @@
   },
   "devDependencies": {
     "electron": "^43.2.0",
-    "electron-builder": "^26.0.0"
+    "electron-builder": "^26.0.0",
+    "pdfjs-dist": "^6.3.289"
   },
   "homepage": "https://nazuna.local/"
 }

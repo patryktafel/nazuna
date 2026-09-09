@@ -1,6 +1,34 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.53 - 9 września 2026
+------------------------
+
+Wbudowane podglądy: PDF w karcie, ładny JSON/tekst, ciemne tło pod obrazkami
+
+Ostatnia rzecz z listy - to, co Chrome i Firefox robią same, bez pytania.
+
+- Kliknięcie w PDF (albo wpisanie jego adresu) otwiera go teraz od razu w
+  karcie, stronami, z przewijaniem, powiększaniem i przyciskiem pobierania -
+  zamiast pustej karty albo automatycznego pobrania na dysk. Renderowanie
+  stron dzieje się na bieżąco, w miarę przewijania, więc duże dokumenty nie
+  zawieszają przeglądarki na starcie. Link, który sama strona oznaczyła jako
+  plik do pobrania (Content-Disposition: attachment), nadal się pobiera tak
+  jak dotąd - to jej świadoma decyzja, nie nasza
+
+- Surowy JSON z jakiegoś API albo zwykły plik .txt otwierany bezpośrednio
+  (nie przez fetch wewnątrz jakiejś strony - tego nie ruszamy) dostaje teraz
+  czytelne, kolorowe formatowanie z numerami linii zamiast jednej, nieforemnej
+  linijki tekstu na białym tle. Dla JSON-a można przełączyć między widokiem
+  sformatowanym a surowym, jest też przycisk kopiowania i pobrania
+
+- Strona, na którą trafia się bezpośrednio pod adresem obrazka, dostaje pod
+  spód ciemne tło pasujące do reszty Nazuny zamiast białego
+
+Uwaga techniczna: podgląd PDF stoi na pdf.js (biblioteka Mozilli, ta sama,
+której używa Firefox), doszytej do programu jako własne pliki, bez łączenia
+się z niczym na zewnątrz przy wyświetlaniu.
+
 0.1.52 - 9 września 2026
 ------------------------
 
