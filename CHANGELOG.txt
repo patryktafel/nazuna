@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.49 - 9 września 2026
+------------------------
+
+Kafelki na nowej karcie tylko własne
+
+Kafelki pod wyszukiwarką na nowej karcie dobierały się też same, na
+podstawie historii przeglądania - im częściej odwiedzana strona, tym
+większa szansa, że dostała kafelek. To znaczyło, że rząd kafelków
+potrafił się z czasem przetasować, a przy okazji zdradzał, co się
+ostatnio przeglądało, nawet komuś, kto akurat spojrzał na ekran. Teraz
+są tam wyłącznie strony dopięte ręcznie przyciskiem "Dodaj" - nic z
+historii, nic losowego, nic co samo się podmienia.
+
 0.1.48 - 9 września 2026
 ------------------------
 
@@ -22,16 +35,6 @@ został zapauzowany. Teraz taki rozmiar dostaje tylko karta, w której
 coś faktycznie gra w danej chwili, więc przeglądarka wraca do taniego
 trybu zaraz po zatrzymaniu dźwięku - to powinno odczuć się jako wyraźnie
 mniejsze obciążenie przy dłuższym korzystaniu z przeglądarki.
-
-Kafelki na nowej karcie tylko własne
-
-Kafelki pod wyszukiwarką na nowej karcie dobierały się też same, na
-podstawie historii przeglądania - im częściej odwiedzana strona, tym
-większa szansa, że dostała kafelek. To znaczyło, że rząd kafelków
-potrafił się z czasem przetasować, a przy okazji zdradzał, co się
-ostatnio przeglądało, nawet komuś, kto akurat spojrzał na ekran. Teraz
-są tam wyłącznie strony dopięte ręcznie przyciskiem "Dodaj" - nic z
-historii, nic losowego, nic co samo się podmienia.
 
 0.1.47 - 8 września 2026
 ------------------------
