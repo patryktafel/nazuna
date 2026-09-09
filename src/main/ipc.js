@@ -26,6 +26,12 @@ function ownerOf(sender) {
   for (const win of W.windows) {
     if (win.shell === sender) return win;
     if (win.tabs.some((t) => t.wc === sender)) return win;
+    // Karta na zapas (patrz _prepareSpare() w window.js) czeka na promocje
+    // poza tabs - jej strona (np. nowa karta) juz dziala i sama odpytuje
+    // API (skroty, historia) dlugo przed tym, jak ktokolwiek w nia kliknie,
+    // wiec bez tego kazde jej zapytanie trafialoby w brak okna i wracalo
+    // puste, jakby nic sie nie udalo.
+    if (win._spareTab && win._spareTab.wc === sender) return win;
     if (win.extensionPopup && win.extensionPopup.view.webContents === sender) return win;
   }
   // Brak dopasowania to sygnal, ze nadawca akurat nie nalezy do zadnego

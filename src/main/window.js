@@ -605,15 +605,20 @@ class AppWindow {
       // usypianieCheck/selectTab), wiec zawsze wpada w ta galaz bez szkody.
       if (!tab.view) continue;
       if (tab === active) { tab.view.setBounds({ x: 0, y: top, width, height: Math.max(0, height - top) }); continue; }
-      if (tab.audible || tab.hadAudio) {
-        // Karta grajaca dzwiek w tle (patrz hadAudio wyzej) dostaje
-        // prawdziwy rozmiar, tylko wysunięty poza widoczny obszar okna,
-        // zamiast splaszczenia do 0x0 jak zwykla, cicha karta w tle. Widok o
-        // zerowej powierzchni potrafil sprawic, ze YouTube (i pewnie inne
-        // strony z wideo) po jakims czasie same resetowaly odtwarzacz, jakby
-        // strona wcale nie byla wczytana - zerowy rozmiar to dla Chromium
-        // znacznie mocniejszy sygnal "nikt tego nie oglada" niz zwykle
-        // przelaczenie karty w prawdziwej przegladarce.
+      if (tab.audible) {
+        // Karta AKTUALNIE grajaca dzwiek w tle dostaje prawdziwy rozmiar,
+        // tylko wysunięty poza widoczny obszar okna, zamiast splaszczenia do
+        // 0x0 jak zwykla, cicha karta w tle. Widok o zerowej powierzchni
+        // potrafil sprawic, ze YouTube (i pewnie inne strony z wideo) po
+        // jakims czasie same resetowaly odtwarzacz, jakby strona wcale nie
+        // byla wczytana - zerowy rozmiar to dla Chromium znacznie mocniejszy
+        // sygnal "nikt tego nie oglada" niz zwykle przelaczenie karty w
+        // prawdziwej przegladarce. Celowo NIE uzywamy tu hadAudio (ktore
+        // zostaje true na stale, dopoki karta sie nie przeladuje) - to
+        // kosztowny, prawdziwy widok w tle, wiec ma go dostawac tylko karta,
+        // ktora naprawde cos teraz gra, a nie kazda, ktora kiedykolwiek
+        // cokolwiek zagrala. hadAudio samo w sobie dalej chroni karte przed
+        // usypianiem (patrz usypianieCheck), to tam jego koszt jest zerowy.
         tab.view.setBounds({ x: -width, y: top, width, height: Math.max(0, height - top) });
       } else {
         tab.view.setBounds({ x: 0, y: top, width: 0, height: 0 });

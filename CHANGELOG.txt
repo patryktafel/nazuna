@@ -1,6 +1,28 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.48 - 9 września 2026
+------------------------
+
+Poprawki po 0.1.47
+
+Kafelki skrótów pod wyszukiwarką na nowej karcie potrafiły nie pojawić się
+wcale - działały tylko na pierwszej otwartej karcie okna. Powodem była
+karta trzymana na zapas (patrz 0.1.45): jej strona odpytuje o skróty i
+historię od razu po wczytaniu, czyli na długo zanim ktokolwiek w nią
+kliknie, a wtedy Nazuna jeszcze nie wiedziała, do którego okna taka karta
+należy, więc każde takie zapytanie wracało puste. Skróty i historia
+wczytują się teraz poprawnie niezależnie od tego, która to karta z kolei.
+
+Poprawka odtwarzacza wideo w tle z 0.1.47 (prawdziwy rozmiar zamiast
+zera na zero pikseli) trzymała się karty zbyt długo - raz odtworzony
+dźwięk zostawiał kartę przy pełnym, kosztownym rozmiarze widoku aż do
+przeładowania strony, nawet długo po tym jak film się skończył albo
+został zapauzowany. Teraz taki rozmiar dostaje tylko karta, w której
+coś faktycznie gra w danej chwili, więc przeglądarka wraca do taniego
+trybu zaraz po zatrzymaniu dźwięku - to powinno odczuć się jako wyraźnie
+mniejsze obciążenie przy dłuższym korzystaniu z przeglądarki.
+
 0.1.47 - 8 września 2026
 ------------------------
 
