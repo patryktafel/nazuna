@@ -170,10 +170,13 @@ async function extractSiteAccent(faviconUrl) {
 }
 
 class Tab {
-  constructor(appWindow, { url, background = false }) {
+  constructor(appWindow, { url, background = false, lazy = false }) {
     this.id = nextTabId++;
     this.owner = appWindow;
-    this.title = 'Nowa karta';
+    // Karta z przywracania sesji nie ma jeszcze prawdziwego tytulu (patrz
+    // nizej, lazy) - pusty string, zeby serialise() sam pokazal nazwe hosta
+    // zamiast mylacego "Nowa karta" na karcie, ktora wcale nie jest nowa.
+    this.title = lazy ? '' : 'Nowa karta';
     this.favicon = null;
     this.loading = false;
     this.audible = false;
@@ -196,8 +199,21 @@ class Tab {
     // z ktorej ktos wlasnie korzystal.
     this.lastActiveAt = Date.now();
 
-    this._createView();
-    this.otworz(this.url);
+    if (lazy) {
+      // Karta odtworzona z sesji przy starcie, ale jeszcze nie kliknieta -
+      // od razu w stanie "spi", dokladnie tak jak zwykla karta usypiona z
+      // bezczynnosci (patrz sleep()/wake() nizej), tylko nigdy nie zdazyla
+      // sie obudzic. Bez tego przywrocenie np. 15 kart odpalaloby 15
+      // procesow renderujacych naraz, wszystkie na starcie walczace o CPU i
+      // siec - dokladnie tak, jak robi to Chrome/Edge przy przywracaniu
+      // sesji, buduje sie tylko ta karta, w ktora ktos faktycznie kliknie.
+      this.view = null;
+      this.wc = null;
+      this.sleeping = true;
+    } else {
+      this._createView();
+      this.otworz(this.url);
+    }
   }
 
   /* Buduje WebContentsView od zera. Wywolane raz w konstruktorze i ponownie
@@ -563,7 +579,13 @@ class AppWindow {
       // Okno "puste" powstaje po to, zeby przyjac karte wyrwana z innego okna.
       // Nie tworzymy w nim nowej karty, bo za chwile dostanie gotowa.
       const list = puste ? [] : (startUrls.length ? startUrls : [data.settings.get('homepage', NEW_TAB) || NEW_TAB]);
-      for (const url of list) this.newTab({ url, background: true });
+      // lazy: przy przywracaniu calej sesji na starcie buduje sie proces
+      // renderujacy tylko dla karty, ktora faktycznie sie zaraz pokaze
+      // (patrz selectTab() ponizej i Tab constructor) - reszta czeka spiaca,
+      // dokladnie jak w Chrome/Edge. Dla pojedynczego adresu (zwykly start)
+      // ta karta i tak od razu sie budzi w tej samej linijce, wiec dla niej
+      // nic sie nie zmienia.
+      for (const url of list) this.newTab({ url, background: true, lazy: true });
       if (this.tabs.length) this.selectTab(this.tabs[0].id);
       this.layout();
       this._prepareSpare();
@@ -668,10 +690,16 @@ class AppWindow {
     this._spareTab = new Tab(this, { url: NEW_TAB });
   }
 
-  newTab({ url = NEW_TAB, background = false, index = null } = {}) {
+  newTab({ url = NEW_TAB, background = false, index = null, lazy = false } = {}) {
     const resolved = url ? (urls.resolve(url) || NEW_TAB) : NEW_TAB;
     let tab;
-    if (this._spareTab) {
+    if (lazy) {
+      // Ominiecie karty z zapasu jest tu celowe - lazy sluzy do przywracania
+      // calej sesji naraz (patrz konstruktor AppWindow nizej), a karta z
+      // zapasu i tak zaraz dostalaby prawdziwy adres i od razu by go
+      // wczytala, co jest dokladnie tym, czego lazy ma unikac.
+      tab = new Tab(this, { url: resolved, lazy: true });
+    } else if (this._spareTab) {
       // Karta z zapasu jest juz zbudowana i zaladowana na nazuna://newtab -
       // gdy potrzebny jest inny adres, dokladamy jedna nawigacje na goracym
       // juz procesie zamiast budowac wszystko od zera.
@@ -684,7 +712,9 @@ class AppWindow {
     }
     if (index === null || index < 0 || index > this.tabs.length) this.tabs.push(tab);
     else this.tabs.splice(index, 0, tab);
-    this.win.contentView.addChildView(tab.view, 0);
+    // Karta lazy nie ma jeszcze widoku (patrz konstruktor Tab) - nie ma wiec
+    // czego doczepiac do okna, dopoki sama sie nie obudzi (wake()).
+    if (tab.view) this.win.contentView.addChildView(tab.view, 0);
     if (!background || this.activeTabId === null) this.selectTab(tab.id);
     else this.layout();
     this.scheduleSync();

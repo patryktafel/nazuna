@@ -1,6 +1,33 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.50 - 9 września 2026
+------------------------
+
+Płynność przy wielu otwartych kartach
+
+Przywracanie sesji ze wszystkimi kartami z poprzedniego uruchomienia
+odpalało proces renderujący dla każdej z nich naraz, od razu przy
+starcie - im więcej kart, tym mocniejsze szarpnięcie na starcie, wszystkie
+walczyły wtedy o procesor i sieć jednocześnie. Teraz buduje się tylko ta
+karta, którą faktycznie widać, reszta czeka w tym samym stanie "śpi", w
+jakim czekają karty uśpione z bezczynności - budzą się dopiero, gdy się w
+nie kliknie. Dokładnie tak samo robi to Chrome i Edge przy przywracaniu
+sesji.
+
+Przy wielu kartach na pasku otwieranie i zamykanie kolejnej odpalało też
+animowane "rozjeżdżanie się" szerokości WSZYSTKICH kart naraz, co dla
+przeglądarki znaczy przeliczanie układu całego paska klatka po klatce -
+koszt rósł wraz z liczbą otwartych kart. Powyżej progu, przy którym karty
+i tak są już przy najmniejszej szerokości, ta konkretna animacja się
+wyłącza (kolor i podświetlenie karty nadal się animują).
+
+Zmniejszono też promień rozmycia szkła na panelach, podpowiedziach i pod
+wyszukiwarką na nowej karcie - z 18-22px do 12-14px. Różnicy na oko
+prawie nie widać, a to jedno z droższych dla karty graficznej rozmycie
+kosztuje wyraźnie mniej, zwłaszcza że pod wyszukiwarką jest ono włączone
+praktycznie za każdym razem, gdy widać nową kartę.
+
 0.1.49 - 9 września 2026
 ------------------------
 

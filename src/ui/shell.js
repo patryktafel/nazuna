@@ -235,6 +235,14 @@ function scheduleTabTip(node) {
 }
 
 function renderTabs() {
+  // Przy duzej liczbie kart plynne "rozjezdzanie sie" szerokosci wszystkich
+  // kart naraz (patrz transition: flex-basis w shell.css) to animacja
+  // ktora przelicza uklad (reflow), a nie tylko przesuwa gotowa warstwe -
+  // koszt rosnie z liczba kart na pasku. Przy tylu kartach sa i tak juz przy
+  // minimalnej szerokosci (patrz .narrow ponizej), wiec wizualnie prawie nic
+  // to nie traci, a ratuje plynnosc dokladnie tam, gdzie ma to najwieksze
+  // znaczenie - przy wielu otwartych kartach.
+  el.tabs.classList.toggle('many', state.tabs.length > 11);
   const ids = new Set(state.tabs.map((t) => t.id));
   for (const [id, node] of tabNodes) {
     if (!ids.has(id)) {
