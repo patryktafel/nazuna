@@ -41,11 +41,20 @@ if (internal) {
 let bezKluczy = false;
 try { bezKluczy = process.argv.indexOf('--nazuna-bez-kluczy') !== -1; } catch (_) {}
 
+// Ziarno do domykania odcisku przegladarki - patrz fpSeed w window.js. Puste,
+// gdy uzytkownik wylaczyl ochrone w Ustawieniach (fingerprintProtection).
+let fpSeed = '';
+try {
+  const arg = process.argv.find((a) => a.indexOf('--nazuna-fp-seed=') === 0);
+  if (arg) fpSeed = arg.slice('--nazuna-fp-seed='.length);
+} catch (_) {}
+
 if (!internal) {
   const FULL = String(process.versions.chrome || '120.0.0.0');
   const MAJOR = FULL.split('.')[0] || '120';
   const script = `(() => {
   const BEZ_KLUCZY = ${JSON.stringify(bezKluczy)};
+  const FP_SEED = ${JSON.stringify(fpSeed)};
   const CHROME = 'Google Chrome';
   const MAJOR = '${MAJOR}';
   const FULL = '${FULL}';
@@ -214,6 +223,122 @@ if (!internal) {
         }
       });
     }
+  } catch (_) {}
+
+  /* --- 4. domykanie odcisku przegladarki (fingerprinting) -----------------
+     Trzy klasyczne zrodla, po ktorych skrypty sledzace rozpoznaja jedno
+     konkretne urzadzenie miedzy stronami: to, co narysuje canvas, to, co
+     zwroci karta graficzna przez WebGL, i to, jak dokladnie zabrzmi cichy
+     dzwiek wygenerowany przez Web Audio. Kazdy z tych trzech odczytow lekko
+     przesuwamy - za malo, zeby cokolwiek bylo widac czy slychac, wystarczajaco,
+     zeby wynik nie byl juz Twoim prawdziwym, unikalnym odciskiem sprzetu.
+
+     FP_SEED miesza sie z domena aktualnej strony (nie samym FP_SEED), wiec
+     kazda strona dostaje INNY falszywy odcisk (nie da sie po nim polaczyc
+     wizyty na dwoch roznych stronach w jedna osobe), ale ZAWSZE TEN SAM przy
+     kolejnych wizytach na TEJ SAMEJ stronie i przeladowaniach (zwykle strony
+     dalej dzialaja normalnie, nic im nie "miga" ani nie znika). Nowe FP_SEED
+     przy kazdym uruchomieniu Nazuny znaczy, ze nawet ten falszywy odcisk
+     zmienia sie miedzy sesjami przegladania. */
+  if (FP_SEED) try {
+    function fnv1a(str) {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+      return h >>> 0;
+    }
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    let host = '';
+    try { host = location.hostname || ''; } catch (_) {}
+    const originSeed = fnv1a(FP_SEED + '|' + host);
+
+    // --- canvas ---
+    try {
+      const clamp = (v) => (v < 0 ? 0 : v > 255 ? 255 : v);
+      function noisifyPixels(bytes) {
+        const rnd = mulberry32(originSeed);
+        for (let i = 0; i < bytes.length; i += 4) {
+          if (rnd() < 0.03) {
+            const d1 = rnd() < 0.5 ? -1 : 1, d2 = rnd() < 0.5 ? -1 : 1, d3 = rnd() < 0.5 ? -1 : 1;
+            bytes[i] = clamp(bytes[i] + d1);
+            bytes[i + 1] = clamp(bytes[i + 1] + d2);
+            bytes[i + 2] = clamp(bytes[i + 2] + d3);
+          }
+        }
+      }
+      const origToDataURL = HTMLCanvasElement.prototype.toDataURL;
+      const origToBlob = HTMLCanvasElement.prototype.toBlob;
+      const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+      function noisyClone(canvas) {
+        try {
+          const clone = document.createElement('canvas');
+          clone.width = canvas.width;
+          clone.height = canvas.height;
+          const cctx = clone.getContext('2d');
+          cctx.drawImage(canvas, 0, 0);
+          const id = origGetImageData.call(cctx, 0, 0, clone.width || 1, clone.height || 1);
+          noisifyPixels(id.data);
+          cctx.putImageData(id, 0, 0);
+          return clone;
+        } catch (_) { return canvas; }
+      }
+      HTMLCanvasElement.prototype.toDataURL = function (...args) {
+        return origToDataURL.apply(noisyClone(this), args);
+      };
+      HTMLCanvasElement.prototype.toBlob = function (callback, ...args) {
+        return origToBlob.apply(noisyClone(this), [callback, ...args]);
+      };
+      CanvasRenderingContext2D.prototype.getImageData = function (...args) {
+        const id = origGetImageData.apply(this, args);
+        try { noisifyPixels(id.data); } catch (_) {}
+        return id;
+      };
+    } catch (_) {}
+
+    // --- WebGL: karta graficzna to jeden z najbardziej "gadatliwych" o Twoim
+    // sprzecie odczytow - dokladny model i sterownik. Podmieniamy na ten sam,
+    // szeroko rozpowszechniony, generyczny opis co przegladarki bez wlasnej
+    // karty graficznej (np. wirtualki), zamiast prawdziwego modelu Twojego GPU. ---
+    try {
+      const FAKE_VENDOR = 'Google Inc. (Google)';
+      const FAKE_RENDERER = 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)';
+      function patchGl(proto) {
+        if (!proto || !proto.getParameter) return;
+        const orig = proto.getParameter;
+        proto.getParameter = function (param) {
+          if (param === 0x9245) return FAKE_VENDOR;
+          if (param === 0x9246) return FAKE_RENDERER;
+          return orig.call(this, param);
+        };
+      }
+      if (window.WebGLRenderingContext) patchGl(WebGLRenderingContext.prototype);
+      if (window.WebGL2RenderingContext) patchGl(WebGL2RenderingContext.prototype);
+    } catch (_) {}
+
+    // --- Web Audio: klasyczna sztuczka renderuje cichy dzwiek w tle i liczy
+    // sume probek - na kazdym sprzecie/sterowniku wychodzi troszke inna suma,
+    // co daje kolejny odcisk urzadzenia. Zwracamy kopie bufora z drobnym,
+    // niesluchalnym przesunieciem zamiast prawdziwej proby. ---
+    try {
+      if (window.AudioBuffer) {
+        const origGetChannelData = AudioBuffer.prototype.getChannelData;
+        AudioBuffer.prototype.getChannelData = function (channel) {
+          const data = origGetChannelData.call(this, channel);
+          try {
+            const rnd = mulberry32(originSeed ^ ((channel | 0) + 1));
+            const copy = new Float32Array(data.length);
+            for (let i = 0; i < data.length; i++) copy[i] = data[i] + (i % 97 === 0 ? (rnd() - 0.5) * 0.0001 : 0);
+            return copy;
+          } catch (_) { return data; }
+        };
+      }
+    } catch (_) {}
   } catch (_) {}
 })();`;
   try { webFrame.executeJavaScript(script).catch(() => {}); } catch (_) {}

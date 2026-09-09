@@ -23,9 +23,20 @@ const NEW_TAB = 'nazuna://newtab';
    pytanie dalej do Windows Hello. To wlasnie milczenie powodowalo, ze przy
    logowaniu wyskakiwalo okno "Zabezpieczenia Windows", takze u kogos, kto
    zadnego klucza nie ma skonfigurowanego. */
+/* Ziarno losowe do domykania odcisku przegladarki (fingerprintingu) w
+   preload/web.js - jedno na cale uruchomienie programu, wspolne dla
+   wszystkich kart i okien. Preload miesza je z domena kazdej odwiedzanej
+   strony, wiec kazda strona dostaje inny, ale za to STALY (nie skaczacy przy
+   kazdym przeladowaniu) odczyt z canvasu/WebGL/audio - to wlasnie ta
+   stalosc w obrebie jednej domeny odroznia sensowna ochrone od czegos, co
+   psuloby zwykle strony. Nowe ziarno przy kazdym starcie Nazuny znaczy, ze
+   ten "fałszywy" odcisk tez sie zmienia miedzy uruchomieniami. */
+const fpSeed = crypto.randomBytes(8).toString('hex');
+
 function pageFlags() {
   const flags = [];
   if (!data.settings.get('passkeys', false)) flags.push('--nazuna-bez-kluczy');
+  if (data.settings.get('fingerprintProtection', true)) flags.push(`--nazuna-fp-seed=${fpSeed}`);
   return flags;
 }
 

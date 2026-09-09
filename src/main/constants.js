@@ -52,6 +52,17 @@ function acceptLanguages() {
   return out.join(',');
 }
 
+/* Dostawcy DNS-over-HTTPS do wyboru w Ustawieniach > Prywatnosc sieciowa.
+   "template" to adres, pod ktory Chromium wysyla zapytania DNS szyfrowane
+   przez HTTPS zamiast zwyklym, jawnym tekstem UDP - dzieki temu dostawca
+   internetu (i kazdy po drodze) widzi tylko, ze laczysz sie z serwerem DNS,
+   a nie jakich domen pytasz. */
+const DOH_PROVIDERS = {
+  cloudflare: { name: 'Cloudflare', template: 'https://cloudflare-dns.com/dns-query' },
+  google: { name: 'Google', template: 'https://dns.google/dns-query' },
+  quad9: { name: 'Quad9', template: 'https://dns.quad9.net/dns-query' }
+};
+
 const SEARCH_ENGINES = {
   google: { name: 'Google', search: 'https://www.google.com/search?q=%s', suggest: 'https://suggestqueries.google.com/complete/search?client=chrome&q=%s' },
   duckduckgo: { name: 'DuckDuckGo', search: 'https://duckduckgo.com/?q=%s', suggest: 'https://duckduckgo.com/ac/?q=%s&type=list' },
@@ -79,4 +90,4 @@ function resourcesDir() {
   return app.isPackaged ? process.resourcesPath : path.join(ROOT, 'resources');
 }
 
-module.exports = { ROOT, UI_DIR, PRELOAD_DIR, ASSETS_DIR, APP_NAME, LAYOUT, chromeUserAgent, acceptLanguages, rozstrzygnijMotyw, TLA, SEARCH_ENGINES, resourcesDir };
+module.exports = { ROOT, UI_DIR, PRELOAD_DIR, ASSETS_DIR, APP_NAME, LAYOUT, chromeUserAgent, acceptLanguages, rozstrzygnijMotyw, TLA, SEARCH_ENGINES, DOH_PROVIDERS, resourcesDir };

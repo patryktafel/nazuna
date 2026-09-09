@@ -102,6 +102,21 @@ function render() {
     </div>
 
     <div class="card">
+      <h2>Domykanie przecieków</h2>
+      ${toggleRow('webrtcLeakProtection', 'Ukryj lokalny adres IP w WebRTC', 'Strony potrafią wyciągnąć adres IP z Twojej sieci domowej czy firmowej samą próbą połączenia peer-to-peer, nawet bez pytania o kamerę czy mikrofon. Prawdziwe połączenia (np. rozmowa wideo) dalej działają')}
+      <div class="row">
+        <div class="body"><div class="title">DNS przez HTTPS</div><div class="sub">Szyfruje zapytania "jaki adres ma ta domena", żeby dostawca internetu nie widział listy stron, które odwiedzasz. "Wyłączony" zostawia to systemowi tak jak dziś</div></div>
+        <div class="ctl"><select class="field" data-key="secureDns" style="width:170px">
+          <option value="off" ${v.secureDns === 'off' ? 'selected' : ''}>Wyłączony</option>
+          <option value="cloudflare" ${v.secureDns !== 'off' && v.secureDns !== 'google' && v.secureDns !== 'quad9' ? 'selected' : ''}>Cloudflare</option>
+          <option value="google" ${v.secureDns === 'google' ? 'selected' : ''}>Google</option>
+          <option value="quad9" ${v.secureDns === 'quad9' ? 'selected' : ''}>Quad9</option>
+        </select></div>
+      </div>
+      ${toggleRow('fingerprintProtection', 'Utrudnianie rozpoznawania po odcisku przeglądarki', 'Lekko zaburza odczyt z canvasu, karty graficznej (WebGL) i Web Audio - trzy klasyczne sposoby na rozpoznanie jednego urządzenia bez ciasteczek. Ten sam, spójny wynik wraca za każdym razem na tej samej stronie, więc zwykłe strony działają normalnie; między różnymi stronami wynik już się różni, co utrudnia łączenie wizyt w jedną osobę. Zmiana działa od nowej karty')}
+    </div>
+
+    <div class="card">
       <h2>Pobieranie</h2>
       <div class="row">
         <div class="body"><div class="title">Folder pobierania</div><div class="sub">${esc(cfg.downloadDir)}</div></div>

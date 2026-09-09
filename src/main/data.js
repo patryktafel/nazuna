@@ -44,7 +44,22 @@ const DEFAULT_SETTINGS = {
   defaultZoom: 1,
   theme: 'dark',            // dark | light | system
   accent: 'violet',
-  restoreSession: null
+  restoreSession: null,
+  // Ukrywanie lokalnego adresu IP w WebRTC (WEBRTC_IP_HANDLING_POLICY) - patrz
+  // stosujWebRtc() w session.js. Wlaczone domyslnie, bo to czysta higiena bez
+  // realnego kosztu: strony i tak dostaja publiczny adres, gdy WebRTC
+  // faktycznie tego potrzebuje (np. rozmowa wideo), tylko nie widza juz
+  // adresow z Twojej sieci domowej/firmowej.
+  webrtcLeakProtection: true,
+  // DNS przez HTTPS - patrz DOH_PROVIDERS w constants.js i applySecureDns()
+  // w privacy.js. 'off' zostawia DNS systemowi, tak jak dzis.
+  secureDns: 'cloudflare',
+  // Utrudnianie rozpoznawania przegladarki po odczycie z canvasu, WebGL i
+  // Web Audio - patrz preload/web.js. Kazda strona (po swojej domenie)
+  // dostaje spojny, ale lekko przesuniety odczyt, wiec nie da sie po nim
+  // odrozniac Cie od innych ani sledzic miedzy stronami, a jednoczesnie ten
+  // sam odczyt nie skacze przy kazdym przeladowaniu tej samej strony.
+  fingerprintProtection: true
 };
 
 function init() {

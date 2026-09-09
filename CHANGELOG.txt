@@ -1,6 +1,41 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.52 - 9 września 2026
+------------------------
+
+Domykanie przecieków: WebRTC, DNS przez HTTPS i twardszy odcisk przeglądarki
+
+Druga rzecz z listy prywatności po usypianiu kart. Bez wbudowanego VPN-a
+(świadoma decyzja - patrz niżej) i tak da się domknąć kilka rzeczy, które
+zwyczajnie zdradzają więcej niż powinny:
+
+- WebRTC potrafi ujawnić adres IP z Twojej sieci domowej czy firmowej samą
+  próbą połączenia peer-to-peer, nawet bez pytania o kamerę czy mikrofon.
+  Teraz Nazuna ogranicza to do interfejsu używanego do wyjścia w internet -
+  prawdziwe połączenia (rozmowa wideo) dalej działają, tylko strona nie
+  widzi już adresów z Twojej lokalnej sieci. Włączone domyślnie, przełącznik
+  w Ustawieniach
+
+- DNS przez HTTPS szyfruje zapytania "jaki adres ma ta domena", żeby
+  dostawca internetu nie widział listy odwiedzanych stron - do wyboru
+  Cloudflare, Google albo Quad9, albo wyłączony (zostaje jak było). Domyślnie
+  Cloudflare
+
+- Utrudnianie rozpoznawania po odcisku przeglądarki (fingerprinting) - lekko
+  zaburza trzy klasyczne źródła, po których skrypty śledzące rozpoznają
+  jedno urządzenie bez ciasteczek: odczyt z canvasu, kartę graficzną przez
+  WebGL i próbkę dźwięku z Web Audio. Każda strona dostaje inny, ale spójny
+  (nie skaczący przy przeładowaniu) wynik, więc zwykłe strony działają
+  normalnie, a między różnymi stronami wynik już się różni, co utrudnia
+  łączenie wizyt w jedną osobę. Nowy, inny odcisk przy każdym uruchomieniu
+  Nazuny
+
+Uczciwa uwaga: to domykanie przecieków, nie prawdziwe ukrywanie IP ani Tor -
+strona nadal wie, jaki masz publiczny adres IP, tak jak w każdej zwykłej
+przeglądarce bez VPN-a. Chodzi o to, żeby nie zdradzać niepotrzebnie więcej
+niż to minimum.
+
 0.1.51 - 9 września 2026
 ------------------------
 

@@ -11,6 +11,7 @@ const catalog = require('./catalog.json');
 const widevine = require('./widevine');
 const updater = require('./updater');
 const security = require('./security');
+const privacy = require('./privacy');
 const { SEARCH_ENGINES, APP_NAME, rozstrzygnijMotyw } = require('./constants');
 const W = require('./window');
 
@@ -351,7 +352,9 @@ const handlers = {
     if ('adblockMode' in (p.patch || {})) adblock.setMode(p.patch.adblockMode, sessionList);
     if ('extensionsEnabled' in (p.patch || {})) reloadExtensions();
     if ('theme' in (p.patch || {})) W.repaintTheme();
-    if ('doNotTrack' in (p.patch || {}) || 'blockThirdPartyCookies' in (p.patch || {})) sessions.refreshFlags();
+    if ('doNotTrack' in (p.patch || {}) || 'blockThirdPartyCookies' in (p.patch || {}) || 'webrtcLeakProtection' in (p.patch || {})) sessions.refreshFlags();
+    if ('webrtcLeakProtection' in (p.patch || {})) sessions.applyWebRtcToAll();
+    if ('secureDns' in (p.patch || {})) privacy.applySecureDns();
     for (const w of W.windows) { w.layout(); w.scheduleSync(); }
     W.broadcastAll('settings:changed');
     return data.settings.data;

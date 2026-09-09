@@ -58,9 +58,30 @@ function setPermissionPrompt(fn) { permissionPrompt = fn; }
 
 let dntEnabled = true;
 let obceCiasteczka = true;   // czy blokujemy ciasteczka podmiotow trzecich
+let webrtcProtekcja = true;  // czy WebRTC ma ukrywac lokalny adres IP
 function refreshFlags() {
   dntEnabled = data.settings.get('doNotTrack', true) !== false;
   obceCiasteczka = data.settings.get('blockThirdPartyCookies', true) !== false;
+  webrtcProtekcja = data.settings.get('webrtcLeakProtection', true) !== false;
+}
+
+/* WebRTC potrafi ujawnic adres IP z Twojej lokalnej sieci nawet stronie,
+   ktora go w ogole nie potrzebuje - wystarczy ukryta proba polaczenia peer-to-peer,
+   a przegladarka sama zglasza kandydatow ICE ze wszystkich swoich interfejsow
+   sieciowych. "default_public_interface_only" ogranicza to do interfejsu
+   uzywanego do wyjscia w internet, wiec strona nadal moze nawiazac prawdziwe
+   polaczenie (rozmowa wideo dziala), tylko nie widzi juz adresow z sieci
+   domowej czy firmowej. Wylaczenie w Ustawieniach wraca do zachowania
+   Chromium bez zadnych ograniczen. */
+function stosujWebRtc(ses) {
+  try { ses.setWebRTCIPHandlingPolicy(webrtcProtekcja ? 'default_public_interface_only' : 'default'); } catch (_) {}
+}
+
+/* Wywolane z ipc.js po przelaczeniu ustawienia - dziala od razu, bez potrzeby
+   przeladowania karty czy restartu przegladarki, bo polityka WebRTC jest
+   sprawdzana przez Chromium przy kazdej nowej probie polaczenia. */
+function applyWebRtcToAll() {
+  for (const ses of prepared) stosujWebRtc(ses);
 }
 
 /* Domena strony, na ktorej jestesmy, dla kazdej karty. Trzymamy ja w pamieci,
@@ -230,6 +251,7 @@ function prepare(ses, efemeryczna) {
   });
 
   refreshFlags();
+  stosujWebRtc(ses);
   // Zapamietane wyjatki wczytujemy tylko do trwalych sesji - okno prywatne
   // startuje z czystym kontem i tak samo je zostawia.
   if (!efemeryczna) wczytajWyjatki(ses);
@@ -259,4 +281,4 @@ async function loadExtensions(ses) {
   return loaded;
 }
 
-module.exports = { forPartition, prepare, loadExtensions, setPermissionPrompt, refreshFlags, ustawDomeneKarty, zapomnijKarte, prepared };
+module.exports = { forPartition, prepare, loadExtensions, setPermissionPrompt, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, prepared };

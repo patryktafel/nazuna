@@ -50,6 +50,7 @@ const ipc = require('./ipc');
 const widevine = require('./widevine');
 const updater = require('./updater');
 const security = require('./security');
+const privacy = require('./privacy');
 const W = require('./window');
 
 protocolHelper.registerSchemes();
@@ -129,6 +130,7 @@ if (!gotLock) {
     // powstanie pierwsza karta, zeby ochrona dzialala juz od pierwszej
     // nawigacji. Swieza lista z sieci i tak dociagnie sie dopiero w tle.
     security.init();
+    privacy.applySecureDns();
     W.startTabSleep();
 
     const startUrls = process.argv.slice(1).filter((a) => /^https?:\/\//i.test(a));
