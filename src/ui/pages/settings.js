@@ -114,7 +114,10 @@ function render() {
       <h2>Zaawansowane</h2>
       ${toggleRow('hardwareAcceleration', 'Przyspieszenie sprzętowe', 'Renderowanie grafiki przez kartę graficzną. Zmiana zadziała po ponownym uruchomieniu')}
       ${toggleRow('spellcheckEnabled', 'Sprawdzanie pisowni', 'Podkreśla literówki w polach tekstowych. Domyślnie wyłączone - każda otwarta karta trzyma wtedy własny słownik w pamięci. Zmiana działa od nowej karty')}
-      ${toggleRow('tabSleepEnabled', 'Usypianie nieużywanych kart', 'Karta, z której nie korzystasz od 20 minut, zwalnia zajmowaną przez siebie pamięć. Wraca do życia (z krótkim przeładowaniem) w chwili, gdy znów w nią klikniesz')}
+      ${toggleRow('tabSleepEnabled', 'Usypianie nieużywanych kart', 'Karta w tle, z której jakiś czas nie korzystasz, zwalnia zajmowaną przez siebie pamięć - wraca do życia (z krótkim przeładowaniem) w chwili, gdy znów w nią klikniesz. Czas bezczynności potrzebny do uśpienia sam się skraca, gdy w systemie robi się mało wolnej pamięci, i wydłuża, gdy jest jej pod dostatkiem - tak samo jak Oszczędzanie pamięci w Chrome. Pojedynczą kartę można też uśpić ręcznie albo trwale z tego wyłączyć prawym przyciskiem na karcie')}
+      <div class="row">
+        <div class="body"><div class="title">Stan usypiania</div><div class="sub" id="tabSleepInfo">sprawdzam...</div></div>
+      </div>
       ${toggleRow('tabPrewarmEnabled', 'Szybsze otwieranie nowej karty', 'Trzyma w tle jedną gotową kartę, żeby kliknięcie "+" nie czekało na uruchomienie nowego procesu. Zajmuje trochę więcej pamięci - jedną dodatkową kartę na każde otwarte okno')}
       ${toggleRow('siteAccentEnabled', 'Kolor dopasowany do strony', 'Pasek Nazuny lekko przebarwia się na kolor wyliczony z ikonki aktywnej strony, zamiast trzymać cały czas jeden stały akcent')}
       <div class="row">
@@ -151,6 +154,7 @@ function render() {
     refreshFilterInfo();
   });
   refreshSecurityInfo();
+  refreshTabSleepInfo();
   document.getElementById('updateSecurity').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
@@ -181,6 +185,16 @@ async function refreshSecurityInfo() {
   if (!st) { node.textContent = 'brak informacji'; return; }
   if (!st.ready) { node.textContent = 'lista nie jest jeszcze wczytana - potrzebne połączenie z internetem'; return; }
   node.textContent = `${st.count} znanych złośliwych domen. Ostatnia aktualizacja: ${new Date(st.updatedAt).toLocaleString('pl-PL')}. Lista odświeża się sama co kilka godzin.`;
+}
+
+async function refreshTabSleepInfo() {
+  const node = document.getElementById('tabSleepInfo');
+  if (!node) return;
+  const st = await api.invoke('app.tabSleepStatus').catch(() => null);
+  if (!st) { node.textContent = 'brak informacji'; return; }
+  const progMin = Math.round(st.progMs / 60000);
+  const wolnegoProc = Math.round(st.wolnaPamiecUlamek * 100);
+  node.textContent = `${st.sleeping} z ${st.total} otwartych kart śpi teraz w tle. Obecny próg bezczynności: ${progMin} min (wolnej pamięci w systemie: ${wolnegoProc}%).`;
 }
 
 async function save(patch) {

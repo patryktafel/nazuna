@@ -127,6 +127,23 @@ const handlers = {
   // sam przelacznik i tak sie zapamietuje, a Tab.wake() dopilnuje wyciszenia
   // na nowo zbudowanym widoku, gdy karta sie obudzi.
   'tab.mute': (win, p) => { const t = win.tabById(p.id) || win.activeTab(); if (t) { t.muted = !t.muted; if (t.wc) t.wc.setAudioMuted(t.muted); win.scheduleSync(); } },
+  // Reczne usypianie z menu karty (patrz tabMenu w shell.js) - dziala tylko
+  // na karcie w tle, usypianie aktywnej, wyswietlanej wlasnie karty nie ma
+  // sensu (i tak trzeba by ja czyms zaslonic).
+  'tab.sleep': (win, p) => {
+    const t = win.tabById(p.id);
+    if (t && t.id !== win.activeTabId) { t.sleep(); win.scheduleSync(); }
+  },
+  // Wlacza/wylacza dla hosta biezacej karty wyjatek od automatycznego
+  // usypiania (patrz data.isSleepExempt / usypianieCheck w window.js).
+  'tab.toggleSleepExempt': (win, p) => {
+    const t = win.tabById(p.id);
+    if (!t) return;
+    const host = urls.hostOf(t.url);
+    if (!host) return;
+    data.setSleepExempt(host, !data.isSleepExempt(host));
+    win.scheduleSync();
+  },
   'tab.reopen': (win) => win.reopenClosedTab(),
   'tab.closeOthers': (win, p) => { for (const t of [...win.tabs]) if (t.id !== p.id) win.closeTab(t.id); },
   'tab.closeRight': (win, p) => {
@@ -385,6 +402,7 @@ const handlers = {
     win.reload();
     win.scheduleSync();
   },
+  'app.tabSleepStatus': () => W.tabSleepStatus(),
   'app.updateAvailable': () => updater.dostepny(),
   'app.updateStatus': () => updater.stan(),
   'app.updateCheck': async () => updater.sprawdz('reczne'),

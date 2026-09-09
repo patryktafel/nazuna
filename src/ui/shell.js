@@ -212,7 +212,8 @@ function ensureTabTip() {
 function fillTabTip(node) {
   const tip = ensureTabTip();
   tip.querySelector('b').textContent = node.dataset.tipTitle || 'Nowa karta';
-  tip.querySelector('span').textContent = node.dataset.tipUrl || '';
+  const url = node.dataset.tipUrl || '';
+  tip.querySelector('span').textContent = node.dataset.tipSleeping ? `${url} · uśpiona` : url;
 }
 
 function hideTabTip() {
@@ -315,7 +316,9 @@ function renderTabs() {
     if (label.textContent !== text) label.textContent = text;
     node.dataset.tipTitle = text;
     node.dataset.tipUrl = tab.url || '';
+    node.dataset.tipSleeping = tab.sleeping ? '1' : '';
     if (tabTipNode === node) fillTabTip(node);
+    node.classList.toggle('sleeping', !!tab.sleeping);
     node.classList.toggle('narrow', state.tabs.length > 11);
   });
 }
@@ -452,6 +455,9 @@ function tabMenu(id, event) {
     { id: 'doNowegoOkna', label: 'Przenieś do nowego okna', icon: 'window', enabled: state.tabs.length > 1 },
     { id: 'mute', label: tab.muted ? 'Włącz dźwięk' : 'Wycisz kartę', icon: tab.muted ? 'volume' : 'volumeOff' },
     { type: 'separator' },
+    { id: 'sleepNow', label: tab.sleeping ? 'Karta już uśpiona' : 'Uśpij kartę teraz', icon: 'moon', enabled: !tab.sleeping && !tab.active },
+    { id: 'sleepExempt', label: tab.sleepExempt ? 'Zezwól na usypianie tej strony' : 'Nie usypiaj tej strony', icon: 'pin', enabled: !tab.internal },
+    { type: 'separator' },
     { id: 'close', label: 'Zamknij kartę', icon: 'x', accel: 'Ctrl+W' },
     { id: 'closeOthers', label: 'Zamknij pozostałe', enabled: state.tabs.length > 1 },
     { id: 'closeRight', label: 'Zamknij karty po prawej', enabled: state.tabs.findIndex((t) => t.id === id) < state.tabs.length - 1 }
@@ -467,6 +473,8 @@ function tabMenu(id, event) {
       duplicate: () => api.send('tab.duplicate', { id }),
       doNowegoOkna: () => api.send('tab.doNowegoOkna', { id }),
       mute: () => api.send('tab.mute', { id }),
+      sleepNow: () => api.send('tab.sleep', { id }),
+      sleepExempt: () => api.send('tab.toggleSleepExempt', { id }),
       close: () => api.send('tab.close', { id }),
       closeOthers: () => api.send('tab.closeOthers', { id }),
       closeRight: () => api.send('tab.closeRight', { id })

@@ -188,6 +188,12 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
   animation: spin .7s linear infinite;
 }
 .tab .audio { width: 14px; height: 14px; flex: none; color: var(--accent); }
+/* Uspiona karta w tle (patrz Tab.sleep w window.js) - favicona przygaszona
+   i w odcieniach szarosci, zeby na pierwszy rzut oka bylo widac, ktore karty
+   nie zajmuja juz pamieci. Aktywna karta nigdy nie usypia, wiec ten styl
+   nigdy nie nachodzi na .tab.active. */
+.tab.sleeping .favicon { filter: grayscale(1); opacity: .5; }
+.tab.sleeping .label { opacity: .6; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .tab-add {

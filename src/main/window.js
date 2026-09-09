@@ -466,6 +466,7 @@ class Tab {
       active: !!active,
       internal: /^nazuna:/.test(this.displayUrl),
       sleeping: !!this.sleeping,
+      sleepExempt: data.isSleepExempt(urls.hostOf(this.displayUrl)),
       siteAccent: this.siteAccent,
       canGoBack: wc ? wc.navigationHistory.canGoBack() : false,
       canGoForward: wc ? wc.navigationHistory.canGoForward() : false
@@ -1466,15 +1467,50 @@ function createWindow(opts = {}) {
 
 /* -------------------------------------------------------- usypianie kart */
 
-// Karta w tle dluzej niz tyle usypia sama (patrz Tab.sleep/Tab.wake wyzej).
-// Sprawdzamy co minute - i tak dosc czesto, zeby nikt nie zauwazyl opoznienia,
-// a nie ma sensu robic tego czesciej.
-const TAB_SLEEP_MS = 20 * 60 * 1000;
+// Karta w tle dluzej niz ten prog usypia sama (patrz Tab.sleep/Tab.wake
+// wyzej). Sprawdzamy co minute - i tak dosc czesto, zeby nikt nie zauwazyl
+// opoznienia, a nie ma sensu robic tego czesciej.
+//
+// Prog nie jest stały jak dawniej - dostosowuje sie do tego, ile wolnej
+// pamieci zostalo w systemie (dokladnie to robi Chromowy Memory Saver: im
+// mniej wolnej pamieci, tym szybciej usypia karty w tle). Gdy pamieci jest
+// pod dostatkiem, nie ma po co ruszac kart wczesniej niz trzeba - kazde
+// usniecie to pelne przeladowanie strony przy powrocie.
 const TAB_SLEEP_CHECK_MS = 60 * 1000;
+const TAB_SLEEP_TIERS = [
+  // Mniej niz 15% wolnej pamieci - realna presja, usypiaj agresywnie.
+  { wolnegoNiezej: 0.15, poMs: 3 * 60 * 1000 },
+  // Mniej niz 35% wolnej - umiarkowana presja, posredni prog.
+  { wolnegoNiezej: 0.35, poMs: 10 * 60 * 1000 },
+  // Pamieci pod dostatkiem - dotychczasowy, spokojny prog.
+  { wolnegoNiezej: 1, poMs: 20 * 60 * 1000 }
+];
+
+/* Ulamek wolnej pamieci fizycznej w systemie (0-1). process.getSystemMemoryInfo()
+   liczy w KB i jest dostepne tylko w procesie glownym - dokladnie tu, gdzie
+   trzeba. Gdy sie nie uda (np. platforma tego nie wspiera), zwracamy 1, czyli
+   "pamieci pod dostatkiem" - bezpieczny domysl, bo wtedy dzialamy tak jak
+   dotychczasowa, stala wersja usypiania. */
+function wolnaPamiecUlamek() {
+  try {
+    const info = process.getSystemMemoryInfo();
+    if (info && info.total > 0) return info.free / info.total;
+  } catch (_) {}
+  return 1;
+}
+
+function progUsypiania() {
+  const wolnego = wolnaPamiecUlamek();
+  for (const tier of TAB_SLEEP_TIERS) {
+    if (wolnego <= tier.wolnegoNiezej) return tier.poMs;
+  }
+  return TAB_SLEEP_TIERS[TAB_SLEEP_TIERS.length - 1].poMs;
+}
 
 function usypianieCheck() {
   if (!data.settings.get('tabSleepEnabled', true)) return;
   const now = Date.now();
+  const prog = progUsypiania();
   for (const win of windows) {
     if (win.tabs.length <= 1) continue;
     for (const tab of win.tabs) {
@@ -1489,7 +1525,10 @@ function usypianieCheck() {
       // sa tanie - nie ma czego tu oszczedzac, a usypianie panelu, ktory
       // zyje z odswiezania na biezaco (np. pobrane), tylko by przeszkadzalo.
       if (/^nazuna:/.test(tab.url)) continue;
-      if (now - tab.lastActiveAt < TAB_SLEEP_MS) continue;
+      // Strony reczne wylaczone z usypiania (patrz data.isSleepExempt) -
+      // uzytkownik sam zdecydowal, ze ta karta ma zyc dalej w tle.
+      if (data.isSleepExempt(urls.hostOf(tab.url))) continue;
+      if (now - tab.lastActiveAt < prog) continue;
       tab.sleep();
     }
   }
@@ -1497,6 +1536,20 @@ function usypianieCheck() {
 
 function startTabSleep() {
   setInterval(usypianieCheck, TAB_SLEEP_CHECK_MS);
+}
+
+/* Dla ekranu Ustawien - ile kart aktualnie spi i jaki prog bezczynnosci
+   obowiazuje teraz (patrz refreshTabSleepInfo() w settings.js). */
+function tabSleepStatus() {
+  let sleeping = 0;
+  let total = 0;
+  for (const win of windows) {
+    for (const tab of win.tabs) {
+      total++;
+      if (tab.sleeping) sleeping++;
+    }
+  }
+  return { sleeping, total, progMs: progUsypiania(), wolnaPamiecUlamek: wolnaPamiecUlamek() };
 }
 
 /* Po zmianie motywu trzeba przemalowac to, co maluje sie poza stronami:
@@ -1541,4 +1594,4 @@ function broadcastAll(channel, payload) {
   }
 }
 
-module.exports = { AppWindow, createWindow, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep };
+module.exports = { AppWindow, createWindow, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus };

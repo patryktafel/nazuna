@@ -55,7 +55,8 @@ const ICON_PATHS = {
   screen: 'M4 6a1 1 0 011-1h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1zM9 20h6M12 16v4',
   usb: 'M12 20V6M12 6l-2.5 3h5L12 6zM8 12l-2 2v3M16 10l2 2v5',
   window2: 'M4 6a1 1 0 011-1h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1z',
-  flower: 'M12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM12 8.5V3M12 15.5V21M8.5 12H3M15.5 12H21'
+  flower: 'M12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM12 8.5V3M12 15.5V21M8.5 12H3M15.5 12H21',
+  moon: 'M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z'
 };
 
 function iconSvg(name, extraClass = '') {

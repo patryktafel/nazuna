@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS = {
   spellcheckEnabled: false,
   // Karta w tle, o ktorej uzytkownik zapomnial na dluzej, usypia sama -
   // zamyka jej proces renderujacy, a budzi go z powrotem (przeladowaniem)
-  // dopiero gdy karta znow stanie sie aktywna. Patrz TAB_SLEEP_MS w window.js.
+  // dopiero gdy karta znow stanie sie aktywna. Patrz progUsypiania() w window.js.
   tabSleepEnabled: true,
   // Gdy wlaczone, kazde okno trzyma w tle jedna gotowa, juz zaladowana karte
   // nowej karty - klikniecie "+" bierze ja od razu zamiast czekac na budowe
@@ -54,7 +54,7 @@ function init() {
   history = new Store(path.join(dir, 'history.json'), { items: [] });
   downloads = new Store(path.join(dir, 'downloads.json'), { items: [] });
   extensionsStore = new Store(path.join(dir, 'extensions.json'), { installed: [] });
-  siteStore = new Store(path.join(dir, 'sites.json'), { adblockOff: [], zoom: {}, permissions: {}, skroty: [], skrotyUkryte: [], httpZaakceptowane: [] });
+  siteStore = new Store(path.join(dir, 'sites.json'), { adblockOff: [], zoom: {}, permissions: {}, skroty: [], skrotyUkryte: [], httpZaakceptowane: [], sleepExempt: [] });
 }
 
 /* ------------------------------------------------------------------ history */
@@ -209,6 +209,22 @@ function setAdblockForSite(hostname, enabled) {
   if (!enabled && i < 0) list.push(hostname);
   siteStore.save();
 }
+/* Strony recznie wylaczone z usypiania w tle (patrz tabMenu w shell.js,
+   "Nie usypiaj tej strony") - np. web-owy komunikator, ktory ma dalej
+   dostawac powiadomienia mimo ze karta stoi bezczynnie. UsypianieCheck()
+   w window.js pomija takie hosty, ale reczne "Usnij karte teraz" i tak
+   dziala - to reczna akcja uzytkownika, nie automat. */
+function isSleepExempt(hostname) {
+  return !!hostname && siteStore.data.sleepExempt.includes(hostname);
+}
+function setSleepExempt(hostname, exempt) {
+  if (!hostname) return;
+  const list = siteStore.data.sleepExempt;
+  const i = list.indexOf(hostname);
+  if (!exempt && i >= 0) list.splice(i, 1);
+  if (exempt && i < 0) list.push(hostname);
+  siteStore.save();
+}
 function siteZoom(hostname) { return siteStore.data.zoom[hostname]; }
 function setSiteZoom(hostname, factor) {
   if (!hostname) return;
@@ -285,6 +301,7 @@ module.exports = {
   addHistory, updateHistoryTitle, searchHistory, clearHistory, removeHistory,
   bookmarkList, isBookmarked, addBookmark, addFolder, addSeparator, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
   adblockAllowed, setAdblockForSite, siteZoom, setSiteZoom, permissionFor, setPermission,
+  isSleepExempt, setSleepExempt,
   httpZaakceptowany, zaakceptujHttp,
   skrotyStan, dodajSkrot, usunSkrot,
   DEFAULT_SETTINGS

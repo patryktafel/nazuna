@@ -1,6 +1,26 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.51 - 9 września 2026
+------------------------
+
+Usypianie kart dostosowuje się do wolnej pamięci
+
+Do tej pory karta w tle usypiała zawsze po tych samych 20 minutach
+bezczynności, bez względu na to, ile pamięci akurat zostało w systemie.
+Teraz ten czas sam się skraca, gdy w systemie robi się mało wolnej
+pamięci (do 3 minut przy naprawdę mocnej presji), i wydłuża z powrotem,
+gdy pamięci jest pod dostatkiem - dokładnie tak jak działa Oszczędzanie
+pamięci w Chrome. W Ustawieniach, pod przełącznikiem usypiania, widać
+teraz na bieżąco ile kart aktualnie śpi i jaki próg akurat obowiązuje.
+
+Kartę można też uśpić ręcznie z menu pod prawym przyciskiem myszy, oraz
+trwale wyłączyć dla niej automatyczne usypianie ("Nie usypiaj tej
+strony") - przydatne dla stron typu komunikator, które mają dalej
+dostawać powiadomienia mimo bezczynności. Uśpiona karta na pasku ma
+teraz też przygaszoną, czarno-białą faviconę, żeby na pierwszy rzut oka
+było widać, które karty nie zajmują już pamięci.
+
 0.1.50 - 9 września 2026
 ------------------------
 
