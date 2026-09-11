@@ -27,6 +27,28 @@ if (internal) {
   });
 }
 
+/* Kliknięcie środkowym przyciskiem myszy w link ma otwierać go w nowej karcie
+   w tle, tak jak w każdej innej przeglądarce - Chromium samo tak robi tylko
+   dla linków z target="_blank" (patrz setWindowOpenHandler w window.js), a
+   zwykły link (bez target, czyli zdecydowana większość linków w sieci) po
+   środkowym kliknięciu nie robi nic. Dopinamy więc to sami, na poziomie
+   DOM-u strony - preload widzi ten sam dokument co strona, mimo izolacji
+   kontekstu, więc nasłuch tutaj łapie kliknięcia nawet w osadzonych ramkach
+   (nodeIntegrationInSubFrames w window.js). */
+try {
+  document.addEventListener('auxclick', (event) => {
+    if (event.button !== 1) return;
+    const link = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+    if (!link) return;
+    let href = '';
+    try { href = new URL(link.getAttribute('href'), location.href).href; } catch (_) { return; }
+    if (!/^https?:\/\//i.test(href)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    ipcRenderer.send('nazuna:send', 'link.middleClick', { url: href });
+  }, true);
+} catch (_) {}
+
 /* ------------------------------------------------------------------ tozsamosc
    Nazuna jest przegladarka zbudowana na Chromium i tak sie przedstawia. Problem
    w tym, ze Electron wycina czesc standardowego wyposazenia Chromium, przez co

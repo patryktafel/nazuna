@@ -1,6 +1,29 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.54 - 11 września 2026
+--------------------------
+
+Kursor od razu w pasku adresu, środkowy klik otwiera link w nowej karcie
+
+Trzy drobne poprawki zgłoszone po testach.
+
+- Nowa, pusta karta ustawiała kursor w wyszukiwarce na środku strony, więc
+  żeby zacząć pisać adres, trzeba było najpierw kliknąć w górny pasek.
+  Teraz kursor stoi od razu w pasku adresu na górze, tak jak w Chrome i
+  Firefoksie - można pisać bez klikania. Wyszukiwarka na środku nowej karty
+  zostaje, dla kogoś kto woli kliknąć tam
+
+- Ta wyszukiwarka na środku nowej karty przyjmowała też adresy stron, tak
+  jak górny pasek. Teraz służy wyłącznie do wyszukiwania - cokolwiek się
+  tam wpisze, trafia do wyszukiwarki, nawet jeśli wygląda jak adres. Adres
+  strony wpisuje się w górnym pasku
+
+- Kliknięcie linku środkowym przyciskiem myszy (kółkiem) otwiera go teraz w
+  nowej karcie w tle, bez przełączania się na nią - do tej pory działało to
+  tylko dla linków otwierających się domyślnie w nowej karcie, zwykłe linki
+  (większość w sieci) nie robiły nic
+
 0.1.53 - 9 września 2026
 ------------------------
 

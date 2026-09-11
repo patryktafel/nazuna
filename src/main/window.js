@@ -729,6 +729,12 @@ class AppWindow {
     if (tab.view) this.win.contentView.addChildView(tab.view, 0);
     if (!background || this.activeTabId === null) this.selectTab(tab.id);
     else this.layout();
+    // Pusta nowa karta w tle nie ma czego pokazywac, wiec od razu przenosimy
+    // kursor do paska adresu na gorze - tak samo jak Chrome i Firefox, zeby
+    // dalo sie od razu pisac. Dla kart z konkretnym adresem (zakladki,
+    // historia, link otwarty w nowej karcie) tego nie robimy - tam ma sens
+    // patrzec na strone, nie na pasek.
+    if (!background && resolved === NEW_TAB) this.send('focus:address');
     this.scheduleSync();
     this._prepareSpare();
     return tab;
@@ -829,11 +835,15 @@ class AppWindow {
 
   /* ----------------------------------------------------------- navigation */
 
-  navigate(input, tabId = null) {
+  navigate(input, tabId = null, forceSearch = false) {
+    // forceSearch: dla wyszukiwarki na srodku nowej karty - tam, w
+    // przeciwienstwie do gornego paska adresu, kazdy wpisany tekst ma isc
+    // do wyszukiwarki, nawet jesli wyglada jak adres (np. "jakas domena.pl"
+    // wpisana jako pytanie, a nie jako adres do odwiedzenia).
     const tab = tabId ? this.tabById(tabId) : this.activeTab();
-    if (!tab) return this.newTab({ url: input });
-    const target = urls.resolve(input);
+    const target = forceSearch ? urls.searchUrl(input) : urls.resolve(input);
     if (!target) return;
+    if (!tab) return this.newTab({ url: target });
     tab.errorUrl = null;
     tab.otworz(target);
   }

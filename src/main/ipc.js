@@ -124,6 +124,13 @@ const handlers = {
   'tab.reload': (win, p = {}) => win.reload(!!p.hard),
   'tab.stop': (win) => win.stop(),
   'tab.duplicate': (win, p) => { const t = win.tabById(p.id); if (t) win.newTab({ url: t.url }); },
+  // Srodkowy przycisk myszy na linku (patrz auxclick w preload/web.js) -
+  // nowa karta w tle, bez przelaczania sie na nia, tak jak w kazdej innej
+  // przegladarce.
+  'link.middleClick': (win, p) => {
+    const url = String((p && p.url) || '');
+    if (/^https?:\/\//i.test(url)) win.newTab({ url, background: true });
+  },
   // t.wc moze byc null, gdy karta spi w tle (patrz Tab.sleep w window.js) -
   // sam przelacznik i tak sie zapamietuje, a Tab.wake() dopilnuje wyciszenia
   // na nowo zbudowanym widoku, gdy karta sie obudzi.
@@ -157,6 +164,10 @@ const handlers = {
   'nav.forward': (win) => win.goForward(),
   'nav.home': (win) => win.goHome(),
   'nav.go': (win, p) => win.navigate(p.input, p.tabId || null),
+  // Wyszukiwarka na srodku nowej karty - w odroznieniu od gornego paska
+  // adresu, tutaj kazdy wpisany tekst ma trafic do wyszukiwarki, nawet
+  // jesli wyglada jak adres strony (patrz forceSearch w navigate()).
+  'nav.search': (win, p) => win.navigate(p.input, p.tabId || null, true),
 
   /* Przycisk "przejdz mimo to" na nazuna://warning. Uzytkownik swiadomie
      omija ostrzezenie, wiec ladujemy prawdziwy adres wprost, bez ponownego

@@ -15,10 +15,13 @@
 const api = window.nazuna;
 document.getElementById('searchIcon').innerHTML = iconSvg('search');
 
+// Ten pasek to wylacznie wyszukiwarka, nie ogolny pasek adresu - wpisany
+// tekst zawsze idzie do wyszukiwarki (nav.search), nawet jesli wyglada jak
+// adres strony. Kto chce od razu wpisac adres, ma do tego gorny pasek.
 document.getElementById('form').addEventListener('submit', (e) => {
   e.preventDefault();
   const value = document.getElementById('q').value.trim();
-  if (value) api.send('nav.go', { input: value });
+  if (value) api.send('nav.search', { input: value });
 });
 
 document.querySelectorAll('[data-go]').forEach((b) => {
@@ -139,4 +142,6 @@ const zabezpieczenie = setTimeout(pokazStrone, 400);
 render().catch(() => {}).finally(() => { clearTimeout(zabezpieczenie); pokazStrone(); });
 if (api.on) api.on('skroty:zmiana', render);
 
-window.addEventListener('load', () => document.getElementById('q').focus());
+/* Kursor domyslnie stoi w pasku adresu na gorze (patrz newTab() w window.js,
+   wysyla 'focus:address'), tak jak w Chrome i Firefoksie - to okienko
+   wyszukiwania na srodku jest tylko dla kogos, kto woli kliknac tutaj. */
