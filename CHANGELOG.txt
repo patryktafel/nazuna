@@ -1,6 +1,29 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.55 - 12 września 2026
+--------------------------
+
+Naprawa: pasek adresu na nowej karcie i po Ctrl+L nie przyjmował klawiatury
+
+Po zgłoszeniu z nagraniem: 0.1.54 miało wyglądać na to, że kursor jest w
+pasku adresu na nowej karcie, ale w praktyce klawiatura i tak zostawała
+przy stronie - trzeba było kliknąć pasek myszką, żeby cokolwiek napisać. Do
+tego przy szybkim otwieraniu kilku nowych kart pasek przez chwilę pokazywał
+adres poprzedniej karty zamiast być pusty.
+
+- Powód: przełączenie karty (selectTab) zawsze przekazuje klawiaturę do
+  widoku strony, a samo zaznaczenie pola w pasku adresu (el.address.focus()
+  w powłoce) tego nie cofa - to dwie różne warstwy w Electronie. Teraz przy
+  pustej nowej karcie i po Ctrl+L klawiatura jest jawnie przekazywana z
+  powrotem do paska (shell.focus()), więc pisanie działa od razu, bez
+  klikania. Dotyczy to też pierwszej karty przy starcie programu, jeśli
+  strona domowa to pusta nowa karta
+
+- Pasek adresu na nowej karcie czyści się teraz natychmiast, zamiast czekać
+  na kolejną synchronizację stanu - stąd nie widać już przez moment adresu
+  poprzednio otwartej karty
+
 0.1.54 - 11 września 2026
 --------------------------
 

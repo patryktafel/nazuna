@@ -1548,7 +1548,17 @@ api.on('find:focus', () => setTimeout(() => { el.findInput.focus(); el.findInput
 api.on('find:result', (r) => {
   el.findCount.textContent = r && r.matches ? `${r.active}/${r.matches}` : (el.findInput.value ? '0/0' : '');
 });
-api.on('focus:address', () => { el.address.focus(); el.address.select(); });
+api.on('focus:address', (payload) => {
+  addressDirty = false;
+  // Gdy to pusta nowa karta (payload.clear), czyscimy pasek od razu, zamiast
+  // czekac na nastepny sync() ze stanem - renderToolbar() i tak nie
+  // nadpisze wartosci pola, ktore ma fokus (zeby nie kasowac tego, co ktos
+  // sam wpisuje), wiec bez tego przez chwile widac tam adres poprzedniej
+  // karty. Dla zwyklego Ctrl+L wartosc zostaje, ma sie dac od razu edytowac.
+  if (payload && payload.clear) el.address.value = '';
+  el.address.focus();
+  el.address.select();
+});
 api.on('download-started', (d) => { upsertDownload(d); flashDownloads(); });
 api.on('download-updated', upsertDownload);
 api.on('download-done', (d) => { upsertDownload(d); flashDownloads(); });

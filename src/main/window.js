@@ -598,7 +598,18 @@ class AppWindow {
       // ta karta i tak od razu sie budzi w tej samej linijce, wiec dla niej
       // nic sie nie zmienia.
       for (const url of list) this.newTab({ url, background: true, lazy: true });
-      if (this.tabs.length) this.selectTab(this.tabs[0].id);
+      if (this.tabs.length) {
+        this.selectTab(this.tabs[0].id);
+        // Wszystkie karty przy starcie ida przez background:true (patrz
+        // newTab() wyzej), wiec normalny mechanizm "pusta karta = kursor od
+        // razu w pasku adresu" sie tu nie odpala. Gdy domowa strona to
+        // wlasnie pusta nowa karta, doganiamy to recznie - tak samo jak
+        // Chrome i Firefox robia przy pierwszym oknie.
+        if (this.tabs[0].url === NEW_TAB) {
+          try { this.shell.focus(); } catch (_) {}
+          this.send('focus:address', { clear: true });
+        }
+      }
       this.layout();
       this._prepareSpare();
       /* Okno "puste" czeka na karte i pokazuje sie dopiero, gdy ja dostanie.
@@ -734,7 +745,20 @@ class AppWindow {
     // dalo sie od razu pisac. Dla kart z konkretnym adresem (zakladki,
     // historia, link otwarty w nowej karcie) tego nie robimy - tam ma sens
     // patrzec na strone, nie na pasek.
-    if (!background && resolved === NEW_TAB) this.send('focus:address');
+    //
+    // Samo selectTab() wyzej juz przelaczylo klawiature na widok karty
+    // (tab.wc.focus()) - el.address.focus() w renderer to tylko DOM w
+    // powloce, bez shell.focus() klawisze i tak leciałyby dalej do (pustej)
+    // strony, nie do paska. Stad shell.focus() TUTAJ, po selectTab().
+    // Payload clear:true czysci pasek natychmiast, zamiast czekac na
+    // nastepny sync() - inaczej przez chwile widac tam jeszcze adres
+    // poprzedniej aktywnej karty, bo renderToolbar() celowo nie nadpisuje
+    // wartosci pola, ktore ma akurat fokus (zeby nie kasowac tego, co ktos
+    // sam wpisuje).
+    if (!background && resolved === NEW_TAB) {
+      try { this.shell.focus(); } catch (_) {}
+      this.send('focus:address', { clear: true });
+    }
     this.scheduleSync();
     this._prepareSpare();
     return tab;
@@ -1137,7 +1161,10 @@ class AppWindow {
         case 't': this.newTab({ url: NEW_TAB }); return stop();
         case 'w': this.closeTab(this.activeTabId); return stop();
         case 'n': createWindow({ isPrivate: false }); return stop();
-        case 'l': this.send('focus:address'); return stop();
+        // shell.focus() jest tu konieczne z tego samego powodu co w newTab():
+        // bez niego klawiatura zostaje przy stronie, a pasek tylko WYGLADA
+        // na aktywny.
+        case 'l': try { this.shell.focus(); } catch (_) {} this.send('focus:address'); return stop();
         case 'f': this.openFind(); return stop();
         case 'r': this.reload(false); return stop();
         case 'd': this.toggleBookmark(); return stop();
