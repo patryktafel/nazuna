@@ -871,13 +871,16 @@ el.address.addEventListener('blur', () => {
   if (popover && popover.name === 'omni') setTimeout(() => { if (popover && popover.name === 'omni') closePopover(); }, 120);
 });
 let suggestTimer = null;
-el.address.addEventListener('input', () => {
+el.address.addEventListener('input', (e) => {
   addressDirty = true;
   clearTimeout(suggestTimer);
   const value = el.address.value;
   if (!value.trim()) { suggestToken++; omniItems = []; closePopover(); return; }
+  // Kasowanie (Backspace/Delete) nigdy nie ma dopisywac autouzupelnienia z
+  // powrotem - inaczej nie daloby sie nic skasowac, bo samo by wracalo.
+  const dopisywanie = !e.inputType || !/delete/i.test(e.inputType);
   // Krotka zwloka: przy szybkim pisaniu nie strzelamy zapytaniem po kazdej literze.
-  suggestTimer = setTimeout(() => requestSuggestions(value), 70);
+  suggestTimer = setTimeout(() => requestSuggestions(value, dopisywanie), 70);
 });
 el.address.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -929,7 +932,24 @@ function onOmniMouseDown(e) {
   el.address.blur();
 }
 
-async function requestSuggestions(query) {
+/* Autouzupelnianie "w locie" w samym pasku, tak jak w Chrome/Firefoksie - do
+   tego, co ktos napisal, dopisujemy najlepsze dopasowanie z historii albo
+   zakladek (nigdy z podpowiedzi wyszukiwarki - to nie sa adresy) i od razu
+   zaznaczamy dopisany kawalek, zeby dalsze pisanie go nadpisalo, a Enter
+   poszedl pod caly, uzupelniony adres. */
+function autoUzupelnij(typed) {
+  if (el.address.value !== typed) return; // wartosc juz sie zmienila, nie doganiamy
+  if (el.address.selectionStart !== typed.length || el.address.selectionEnd !== typed.length) return; // kursor nie na koncu
+  const lower = typed.toLowerCase();
+  const match = omniItems.find((it) => (it.kind === 'history' || it.kind === 'bookmark') &&
+    typeof it.subtitle === 'string' && it.subtitle.toLowerCase().startsWith(lower) && it.subtitle.toLowerCase() !== lower);
+  if (!match) return;
+  const pelny = typed + match.subtitle.slice(typed.length);
+  el.address.value = pelny;
+  el.address.setSelectionRange(typed.length, pelny.length);
+}
+
+async function requestSuggestions(query, dopisywanie = false) {
   const token = ++suggestToken;
   if (!query.trim()) { omniItems = []; closePopover(); return; }
   const results = await api.invoke('app.suggest', { query }).catch(() => []);
@@ -937,6 +957,7 @@ async function requestSuggestions(query) {
   omniItems = results || [];
   omniIndex = -1;
   omniQuery = query;
+  if (dopisywanie) autoUzupelnij(query);
   if (!omniItems.length) { closePopover(); return; }
 
   // Okienko powstaje raz. Potem podmieniamy sama liste, zeby nic nie mrugalo.

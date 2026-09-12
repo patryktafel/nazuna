@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.57 - 12 września 2026
+--------------------------
+
+Autouzupełnianie w pasku adresu
+
+Podpowiedzi pod paskiem (historia, zakładki, wyszukiwarka) już działały -
+tego brakowało, to dopisywanie reszty adresu wprost w pasku, tak jak w
+Chrome i Firefoksie.
+
+- Podczas pisania w górnym pasku adresu Nazuna dopisuje teraz od razu
+  resztę najlepiej pasującego adresu ze znanej historii albo zakładek
+  (np. "you" dopisze się do "youtube.com"), z zaznaczoną dopisaną częścią.
+  Enter przechodzi od razu pod cały, uzupełniony adres, dalsze pisanie
+  nadpisuje podpowiedź, a Backspace ją kasuje bez podstawiania z powrotem
+
 0.1.56 - 12 września 2026
 --------------------------
 
