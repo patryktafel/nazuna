@@ -1,7 +1,7 @@
 Nazuna - dziennik zmian
 =======================
 
-0.1.57 - 12 września 2026
+0.1.58 - 12 września 2026
 --------------------------
 
 Autouzupełnianie w pasku adresu; dokończenie naprawy fokusu przy starcie
