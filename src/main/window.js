@@ -598,24 +598,28 @@ class AppWindow {
       // ta karta i tak od razu sie budzi w tej samej linijce, wiec dla niej
       // nic sie nie zmienia.
       for (const url of list) this.newTab({ url, background: true, lazy: true });
-      if (this.tabs.length) {
-        this.selectTab(this.tabs[0].id);
-        // Wszystkie karty przy starcie ida przez background:true (patrz
-        // newTab() wyzej), wiec normalny mechanizm "pusta karta = kursor od
-        // razu w pasku adresu" sie tu nie odpala. Gdy domowa strona to
-        // wlasnie pusta nowa karta, doganiamy to recznie - tak samo jak
-        // Chrome i Firefox robia przy pierwszym oknie.
-        if (this.tabs[0].url === NEW_TAB) {
-          try { this.shell.focus(); } catch (_) {}
-          this.send('focus:address', { clear: true });
-        }
-      }
+      // Wszystkie karty przy starcie ida przez background:true (patrz
+      // newTab() wyzej), wiec normalny mechanizm "pusta karta = kursor od
+      // razu w pasku adresu" sie tu nie odpala. Gdy domowa strona to wlasnie
+      // pusta nowa karta, doganiamy to recznie - tak samo jak Chrome i
+      // Firefox robia przy pierwszym oknie.
+      const pustaNaStarcie = this.tabs.length > 0 && this.tabs[0].url === NEW_TAB;
+      if (this.tabs.length) this.selectTab(this.tabs[0].id);
       this.layout();
       this._prepareSpare();
       /* Okno "puste" czeka na karte i pokazuje sie dopiero, gdy ja dostanie.
          Inaczej mignelo by najpierw jako pusta rama, a przy okazji drugie
          pokazanie gubilo je pod oknem, z ktorego karta wyszla. */
       if (!puste) this.win.show();
+      // Fokus paska adresu musi isc PO show() - webContentsView niewidocznego
+      // jeszcze okna nie dostaje prawdziwego fokusu klawiatury (to samo okno
+      // co show() zaraz i tak by przestawilo), wiec wolanie tego wyzej, przed
+      // show(), nie dzialalo: karta wygladala na wybrana, ale klawiatura
+      // dalej nie trafiala do paska.
+      if (pustaNaStarcie) {
+        try { this.shell.focus(); } catch (_) {}
+        this.send('focus:address', { clear: true });
+      }
       /* Ile minelo od startu PROCESU do pokazania okna. Nie obejmuje czasu,
          ktory Windows spedza na rozpakowaniu jednoplikowej wersji, i wlasnie
          dlatego jest przydatne: gdy tu jest 400 ms, a od klikniecia ikony

@@ -1,6 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.56 - 12 września 2026
+--------------------------
+
+Naprawa: pasek adresu przy starcie programu dalej nie przyjmował klawiatury
+
+Dokończenie poprawki z 0.1.55 - tam zadziałało to dla nowej karty otwartej
+w trakcie pracy, ale nie dla samego uruchomienia Nazuny od nowa.
+
+- Powód: fokus paska adresu był ustawiany, zanim okno w ogóle się pokazało
+  (show()) - w tym momencie przekazanie klawiatury do konkretnego widoku
+  jeszcze się nie utrzymywało. Teraz dzieje się to dopiero po pokazaniu
+  okna, więc jeśli strona domowa to pusta nowa karta, da się pisać w pasku
+  adresu od razu po odpaleniu programu, bez klikania
+
 0.1.55 - 12 września 2026
 --------------------------
 
