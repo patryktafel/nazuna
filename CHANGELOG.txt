@@ -4,17 +4,27 @@ Nazuna - dziennik zmian
 0.1.57 - 12 września 2026
 --------------------------
 
-Autouzupełnianie w pasku adresu
+Autouzupełnianie w pasku adresu; dokończenie naprawy fokusu przy starcie
 
 Podpowiedzi pod paskiem (historia, zakładki, wyszukiwarka) już działały -
 tego brakowało, to dopisywanie reszty adresu wprost w pasku, tak jak w
-Chrome i Firefoksie.
+Chrome i Firefoksie. Do tego druga część poprawki z 0.1.56 - tamta pomogła
+za mało.
 
 - Podczas pisania w górnym pasku adresu Nazuna dopisuje teraz od razu
   resztę najlepiej pasującego adresu ze znanej historii albo zakładek
   (np. "you" dopisze się do "youtube.com"), z zaznaczoną dopisaną częścią.
   Enter przechodzi od razu pod cały, uzupełniony adres, dalsze pisanie
   nadpisuje podpowiedź, a Backspace ją kasuje bez podstawiania z powrotem
+
+- 0.1.56 przenosiło fokus paska adresu na po pokazaniu okna (show()), ale
+  to dalej nie wystarczało przy pierwszym oknie programu i przy nowym
+  oknie (Ctrl+N) - w obu przypadkach Windows/Electron finalizuje
+  rzeczywiste przekazanie klawiatury do świeżo pokazanego okna dopiero
+  chwilę później, więc wywołanie fokusu w tym samym momencie co show()
+  wciąż ginęło. Teraz to wywołanie jest odroczone, z dodatkową próbą
+  zabezpieczającą chwilę później. Nowa karta w już otwartym oknie miała to
+  dobrze od razu, bo tam nie ma żadnego okna do aktywowania
 
 0.1.56 - 12 września 2026
 --------------------------

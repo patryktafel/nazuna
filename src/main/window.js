@@ -610,15 +610,30 @@ class AppWindow {
       /* Okno "puste" czeka na karte i pokazuje sie dopiero, gdy ja dostanie.
          Inaczej mignelo by najpierw jako pusta rama, a przy okazji drugie
          pokazanie gubilo je pod oknem, z ktorego karta wyszla. */
-      if (!puste) this.win.show();
-      // Fokus paska adresu musi isc PO show() - webContentsView niewidocznego
-      // jeszcze okna nie dostaje prawdziwego fokusu klawiatury (to samo okno
-      // co show() zaraz i tak by przestawilo), wiec wolanie tego wyzej, przed
-      // show(), nie dzialalo: karta wygladala na wybrana, ale klawiatura
-      // dalej nie trafiala do paska.
+      if (!puste) { this.win.show(); try { this.win.focus(); } catch (_) {} }
+      // Fokus paska adresu musi isc PO show(), ale samo "po" w tym samym
+      // takcie kodu (0.1.56) dalej nie wystarczalo - Windows/Electron
+      // najwyrazniej finalizuje realne, systemowe przekazanie klawiatury do
+      // dopiero co pokazanego okna dopiero w kolejnym przebiegu petli
+      // zdarzen, wiec wolanie shell.focus() w tym samym miejscu co show()
+      // wciaz bywalo za wczesne i ginelo. Std stad odroczenie o jeden takt
+      // (setTimeout 0 - i tak czeka na petle zdarzen Electrona, nie na
+      // uplyw czasu) - dopiero wtedy okno faktycznie jest aktywne i
+      // przekazanie klawiatury do paska sie utrzymuje. Dotyczy to zarowno
+      // pierwszego okna przy starcie programu, jak i kazdego kolejnego
+      // (Ctrl+N) - oba ida przez ta sama sciezke.
       if (pustaNaStarcie) {
-        try { this.shell.focus(); } catch (_) {}
-        this.send('focus:address', { clear: true });
+        const dogonFokus = () => {
+          if (!this.win || this.win.isDestroyed()) return;
+          try { this.shell.focus(); } catch (_) {}
+          this.send('focus:address', { clear: true });
+        };
+        // Druga proba pare klatek pozniej to zabezpieczenie - gdyby Windows
+        // akurat na tym komputerze aktywowal okno wolniej niz jeden takt
+        // petli zdarzen, pierwsza proba nic nie zepsuje (ponowne "wejscie"
+        // do juz pustego, juz aktywnego paska to tylko ponowny focus+select).
+        setTimeout(dogonFokus, 0);
+        setTimeout(dogonFokus, 150);
       }
       /* Ile minelo od startu PROCESU do pokazania okna. Nie obejmuje czasu,
          ktory Windows spedza na rozpakowaniu jednoplikowej wersji, i wlasnie
