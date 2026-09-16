@@ -11,6 +11,7 @@ dist/
 resources/adblock.bin
 
 # robocze/tymczasowe
+build/release-notes.md
 build/nsis-work/
 *.log
 *.zip

@@ -39,6 +39,13 @@ module.exports = {
      wydanie: domyslnie electron-builder tworzylby szkic (releaseType
      "draft"), ktorego autoUpdater by nie widzial, wiec wymuszamy
      "release". */
+  /* Opis wydania na GitHubie - bez tego electron-builder sam z siebie nic
+     sensownego nie wpisuje, wiec kazda wersja miala ten sam, przypadkowy
+     tekst. Plik jest generowany tuz przed builda (patrz tools/generuj-notatki-wydania.js
+     w skryptach npm run dist*) na podstawie biezacego wpisu w CHANGELOG.txt. */
+  releaseInfo: {
+    releaseNotesFile: 'build/release-notes.md'
+  },
   publish: {
     provider: 'github',
     owner: 'patryktafel',

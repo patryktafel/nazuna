@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.61 - 16 września 2026
+--------------------------
+
+Sensowne opisy wydan na GitHubie
+
+Kazde wydanie na GitHubie mialo dotad ten sam, przypadkowy opis
+("Poczatek repo aktualizacji"), bo electron-builder nie mial skad wziac
+niczego lepszego.
+
+- Opis kazdego wydania jest teraz automatycznie wyciagany z odpowiedniego
+  wpisu w tym pliku (CHANGELOG.txt) tuz przed publikacja - nie trzeba nic
+  dodatkowo wpisywac recznie, wystarczy ze wpis w dzienniku zmian istnieje
+
 0.1.60 - 16 września 2026
 --------------------------
 

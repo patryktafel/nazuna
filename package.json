@@ -1,7 +1,7 @@
 {
   "name": "nazuna",
   "productName": "Nazuna",
-  "version": "0.1.60",
+  "version": "0.1.61",
   "description": "Nazuna - smukla, przenosna przegladarka internetowa",
   "main": "src/main/index.js",
   "author": "Tafel",
@@ -9,13 +9,13 @@
   "scripts": {
     "start": "electron .",
     "pobierz-silnik": "node tools/pobierz-electron-wv.js",
-    "dist": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && electron-builder --config electron-builder.config.js --win nsis",
-    "dist:publish": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && electron-builder --config electron-builder.config.js --win nsis --publish always",
-    "dist:portable": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && electron-builder --config electron-builder.config.js --win portable",
+    "dist": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --win nsis",
+    "dist:publish": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --win nsis --publish always",
+    "dist:portable": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --win portable",
     "pobierz-silnik-mac": "node tools/pobierz-electron-wv.js --mac",
-    "dist:mac": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js --mac && electron-builder --config electron-builder.config.js --mac dir",
+    "dist:mac": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js --mac && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --mac dir",
     "pobierz-silnik-linux": "node tools/pobierz-electron-wv.js --linux",
-    "dist:linux": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js --linux && electron-builder --config electron-builder.config.js --linux deb --x64"
+    "dist:linux": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js --linux && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --linux deb --x64"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "^2.18.2",
