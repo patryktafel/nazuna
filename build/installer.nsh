@@ -1,4 +1,5 @@
-; Nazuna - dodatkowa strona instalatora z wyborem skrótów.
+; Nazuna - dodatkowa strona instalatora z wyborem skrótów, plus automatyczne
+; zaufanie wlasnemu certyfikatowi podpisujacemu.
 ;
 ; electron-builder zawsze tworzy skrót na pulpicie i w menu Start (macra
 ; addStartMenuLink/addDesktopLink w jego szablonie). Nie ma gotowej opcji,
@@ -9,6 +10,7 @@
 ;   customHeader             - na samym początku skryptu (zmienne, deklaracje)
 ;   customPageAfterChangeDir - własna strona zaraz po wyborze folderu instalacji
 ;   customInstall             - kod odpalany tuż po skopiowaniu plików i skrótów
+;   customUnInstall           - kod odpalany przy deinstalacji
 
 ; Caly ten plik jest dolaczany bardzo wczesnie (przed wlasnymi !include
 ; instalatora electron-buildera), wiec zanim ponizsze funkcje skorzystaja z
@@ -36,6 +38,22 @@ Var Nazuna_ChcStartMenu
 !macroend
 
 !macro customInstall
+  ; Wlasny certyfikat, ktorym podpisujemy Nazune (patrz resources/nazuna-cert.cer),
+  ; nie pochodzi z prawdziwego urzedu certyfikacji, wiec Windows nie zna go z
+  ; gory. Doklejamy go tutaj do zaufanych certyfikatow tego komputera (magazyn
+  ; "Root"), zeby kazda kolejna, cicho aktualizowana wersja Nazuny byla juz
+  ; rozpoznawana jako podpisana przez znanego, tego samego wydawce - bez tego
+  ; kazda wersja od zera wygladalaby dla SmartScreena jak nowy, nieznany plik.
+  ; Dzieje sie to cicho, w ramach tych samych uprawnien administratora, ktore
+  ; instalator i tak juz ma w tym miejscu do zapisu w Program Files - uzytkownik
+  ; nie widzi zadnego dodatkowego okienka. Gdyby certutil sie nie powiodl (np.
+  ; plik .cer nie dojechal), instalacja i tak ma sie dokonczyc normalnie -
+  ; to tylko udogodnienie, nie ma prawa wywrocic calej instalacji.
+  ${if} ${FileExists} "$INSTDIR\resources\nazuna-cert.cer"
+    nsExec::ExecToLog 'certutil -addstore -f "Root" "$INSTDIR\resources\nazuna-cert.cer"'
+    Pop $0
+  ${endif}
+
   ${if} $Nazuna_ChcPulpit == 0
     ${if} ${FileExists} "$newDesktopLink"
       Delete "$newDesktopLink"
@@ -46,6 +64,14 @@ Var Nazuna_ChcStartMenu
       Delete "$newStartMenuLink"
     ${endif}
   ${endif}
+!macroend
+
+!macro customUnInstall
+  ; Sprzatanie po sobie - usuwamy z zaufanych certyfikat dodany przy instalacji.
+  ; Dopasowanie po nazwie (CN=Nazuna) zamiast po odcisku, zeby nie trzeba bylo
+  ; tu nic aktualizowac, gdyby certyfikat kiedys zostal odnowiony.
+  nsExec::ExecToLog 'certutil -delstore "Root" "Nazuna"'
+  Pop $0
 !macroend
 
 ; electron-builder kompiluje ten skrypt dwa razy - raz zeby zbudowac sam

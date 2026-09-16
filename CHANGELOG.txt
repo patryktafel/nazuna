@@ -1,6 +1,26 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.60 - 16 września 2026
+--------------------------
+
+Wlasny certyfikat podpisujacy wydania (mniej ostrzezen Windowsa)
+
+Nazuna nie byla dotad w zaden sposob podpisana, wiec dla Windowsa kazda
+kolejna aktualizacja wygladala jak zupelnie nowy, nieznany plik - stad
+powtarzajace sie ostrzezenia SmartScreena przy kazdej wersji, bez wzgledu
+na to, ile razy ktos juz wczesniej uruchamial Nazune.
+
+- Kazde wydanie jest teraz podpisywane wlasnym certyfikatem, ktory instalator
+  automatycznie i cicho dodaje do zaufanych certyfikatow komputera (przy tym
+  samym podniesieniu uprawnien, ktorego instalator i tak juz potrzebuje) -
+  bez zadnej dodatkowej konsoli czy klikania ze strony uzytkownika
+- Dzieki temu kolejne, cicho pobierane aktualizacje beda rozpoznawane jako
+  ten sam, znany wydawca, zamiast za kazdym razem zaczynac od zera
+- To nie rozwiazuje osobnej sprawy z Smart App Control (opisanej przy okazji
+  diagnozy wolnego startu u jednego z testerow) - ten mechanizm ignoruje
+  wlasne certyfikaty niezaleznie od tego, czy sa zaufane lokalnie
+
 0.1.59 - 16 września 2026
 --------------------------
 

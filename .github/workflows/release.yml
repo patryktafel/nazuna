@@ -31,7 +31,18 @@ jobs:
       # z obsluga DRM, sklada instalator i publikuje go na nazuna-updates.
       # RELEASE_TOKEN to sekret repozytorium (Settings -> Secrets and
       # variables -> Actions) z dostepem do zapisu w nazuna-updates.
+      #
+      # CSC_LINK / CSC_KEY_PASSWORD to nasz wlasny certyfikat podpisujacy
+      # (patrz resources/nazuna-cert.cer, instalowany automatycznie do
+      # zaufanych przez build/installer.nsh) - electron-builder sam go
+      # wykrywa po tych dwoch zmiennych srodowiskowych i podpisuje nim
+      # kazdy plik .exe (instalator i sam program w srodku), signtoolem
+      # wbudowanym w windows-latest. CSC_LINK to zawartosc pliku .pfx
+      # zakodowana w base64 (nie sciezka do pliku), CSC_KEY_PASSWORD to
+      # haslo ustawione przy generowaniu certyfikatu.
       - name: Zbuduj i opublikuj instalator
         run: npm run dist:publish
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          CSC_LINK: ${{ secrets.NAZUNA_CERT_PFX_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.NAZUNA_CERT_PASSWORD }}
