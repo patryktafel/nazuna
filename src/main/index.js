@@ -3,6 +3,11 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const { app, session, dialog, Menu } = require('electron');
+// Wymagane jak najwyzej, zeby zlapac t0 mozliwie najblizej faktycznego
+// startu procesu - ale sam pierwszy zapis (znacznik) czeka az nizej, po
+// wybraniu folderu danych (chooseProfileDir), inaczej ladowalby do innego
+// pliku niz reszta dziennika.
+const starttrace = require('./starttrace');
 
 app.setName('Nazuna');
 
@@ -41,6 +46,8 @@ app.userAgentFallback = require('./constants').chromeUserAgent();
     app.setPath('userData', dir);
   } catch (_) { /* keep Electron's default if that folder is not writable */ }
 })();
+
+starttrace.znacznik('index.js: start (po wybraniu folderu danych)');
 
 const protocolHelper = require('./protocol');
 const adblock = require('./adblock');
@@ -81,6 +88,7 @@ if (!gotLock) {
   });
 
   app.whenReady().then(async () => {
+    starttrace.znacznik('app.whenReady');
     // Aktualizacje (tylko spakowana wersja dla Windows - patrz updater.js).
     // Tak jak Chrome: sprawdzamy zanim pokaze sie cokolwiek. Jesli jest nowa
     // wersja, pobieramy ja i instalujemy po cichu, zanim uzytkownik zobaczy
@@ -89,7 +97,9 @@ if (!gotLock) {
     // przegladarka i tak ma sie otworzyc, aktualizacja doleci pozniej w tle.
     updater.init((stan) => W.broadcastAll('update:status', stan));
     if (updater.dostepny()) {
+      starttrace.znacznik('przed sprawdzeniem aktualizacji (limit 60s)');
       const zainstalowano = await updater.sprawdzPrzedStartem(60 * 1000);
+      starttrace.znacznik('po sprawdzeniu aktualizacji, zainstalowano=' + zainstalowano);
       if (zainstalowano) {
         updater.zainstalujCicho();
         return; // program zaraz sie zamknie i otworzy na nowo - nie budujemy juz okna
@@ -132,6 +142,7 @@ if (!gotLock) {
     security.init();
     privacy.applySecureDns();
     W.startTabSleep();
+    starttrace.znacznik('po ipc.register/sessions.forPartition/security.init/privacy/tabSleep');
 
     const startUrls = process.argv.slice(1).filter((a) => /^https?:\/\//i.test(a));
     if (process.env.NAZUNA_START) startUrls.push(...process.env.NAZUNA_START.split('|'));
@@ -143,7 +154,9 @@ if (!gotLock) {
     }
     if (!initial.length && startup === 'homepage') initial = [data.settings.get('homepage', W.NEW_TAB)];
 
+    starttrace.znacznik('przed createWindow');
     const win = W.createWindow({ urls: initial });
+    starttrace.znacznik('po createWindow (okno jeszcze niewidoczne - buduje sie async)');
     sessions.loadExtensions(win.session).catch((err) => console.warn('[ext]', err.message));
 
     // Modul odszyfrowywania DRM dociaga sie z serwerow Google przy pierwszym

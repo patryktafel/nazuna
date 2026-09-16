@@ -9,6 +9,7 @@ const sessions = require('./session');
 const adblock = require('./adblock');
 const extensions = require('./extensions');
 const security = require('./security');
+const starttrace = require('./starttrace');
 
 const windows = new Set();
 let nextWindowId = 1;
@@ -641,6 +642,7 @@ class AppWindow {
          mijaja sekundy, wiadomo, ze wolne jest rozpakowywanie, nie program. */
       if (czasStartu === null) czasStartu = Math.round(process.uptime() * 1000);
       if (process.env.NAZUNA_DEBUG) console.log('[start] okno widoczne po', czasStartu, 'ms');
+      starttrace.znacznik('okno widoczne (shell zaladowany)');
       this.scheduleSync();
     });
   }

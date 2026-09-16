@@ -1,6 +1,26 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.59 - 16 września 2026
+--------------------------
+
+Dziennik czasu startu (diagnostyka wolnego odpalania)
+
+Dochodzenie w sprawie zgłoszenia, że u kolegi program odpala się nawet 30
+sekund, mimo że ma najnowszą wersję - dziennik aktualizacji (aktualizacje.log)
+pokazał, że sprawdzanie nowej wersji trwa u niego normalnie, około sekundy,
+więc to nie jest przyczyna. Żeby znaleźć prawdziwy powód bez zgadywania,
+doszedł drugi dziennik.
+
+- Nowy plik start.log (obok aktualizacje.log, w tym samym miejscu - nazuna://about
+  -> "Ta instalacja" -> "Otwórz") zapisuje teraz dokładne znaczniki czasu
+  kolejnych etapów startu programu: gotowość aplikacji, sprawdzenie
+  aktualizacji, budowa okna, moment w którym okno faktycznie się pokazuje.
+  Jeśli suma tych etapów wychodzi na kilka sekund, a cały start i tak trwa
+  30, będzie wiadomo, że opóźnienie siedzi przed uruchomieniem naszego kodu
+  (najpewniej antywirus albo Windows skanujące plik przy starcie), nie w
+  samym programie
+
 0.1.58 - 12 września 2026
 --------------------------
 
