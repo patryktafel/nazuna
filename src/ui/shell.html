@@ -10,8 +10,13 @@
 <body>
   <header id="chrome">
     <div class="tabstrip" id="tabstrip">
-      <div class="tabs" id="tabs"></div>
-      <button class="tab-add" id="newtab" title="Nowa karta (Ctrl+T)"></button>
+      <!-- Przycisk "+" siedzi na stale wewnatrz #tabs (nie obok, patrz shell.js
+           renderTabs/miejsceWstawienia), zeby zawsze stac tuz przy ostatniej
+           karcie, a nie przy prawej krawedzi calego, elastycznego pudelka
+           #tabs, ktore przy malej liczbie kart bywa od nich szersze. -->
+      <div class="tabs" id="tabs">
+        <button class="tab-add" id="newtab" title="Nowa karta (Ctrl+T)"></button>
+      </div>
       <div class="strip-spacer"></div>
       <div class="private-badge" id="privateBadge" hidden></div>
       <div class="wincontrols">

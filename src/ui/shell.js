@@ -261,7 +261,7 @@ function renderTabs() {
   // Karty w trakcie znikania (patrz wyzej) zostaja fizycznie w #tabs jeszcze
   // przez chwile - pomijamy je tutaj, zeby nie przesuwaly numeracji
   // prawdziwych, aktualnych kart przy wstawianiu/przestawianiu ponizej.
-  const zywe = () => [...el.tabs.children].filter((n) => !n.classList.contains('tab-leave'));
+  const zywe = () => [...el.tabs.children].filter((n) => n.classList.contains('tab') && !n.classList.contains('tab-leave'));
   state.tabs.forEach((tab, index) => {
     let node = tabNodes.get(tab.id);
     if (!node) {
@@ -290,7 +290,7 @@ function renderTabs() {
       tabNodes.set(tab.id, node);
     }
     const kids = zywe();
-    if (kids[index] !== node) el.tabs.insertBefore(node, kids[index] || null);
+    if (kids[index] !== node) el.tabs.insertBefore(node, kids[index] || el.newtab);
 
     node.classList.toggle('active', tab.active);
     const lead = node.querySelector('.lead');
@@ -337,7 +337,7 @@ let ciagniete = null;
 let ostatniRuch = 0;
 
 function miejsceWstawienia(x) {
-  const nodes = [...el.tabs.children];
+  const nodes = [...el.tabs.children].filter((n) => n.classList.contains('tab'));
   for (let i = 0; i < nodes.length; i++) {
     const r = nodes[i].getBoundingClientRect();
     if (x < r.left + r.width / 2) return i;
@@ -353,7 +353,7 @@ function pokazWskaznik(clientX) {
     w.className = 'wskaznik-karty';
     el.tabstrip.appendChild(w);
   }
-  const nodes = [...el.tabs.children];
+  const nodes = [...el.tabs.children].filter((n) => n.classList.contains('tab'));
   const i = miejsceWstawienia(clientX);
   const pas = el.tabstrip.getBoundingClientRect();
   let lewo;

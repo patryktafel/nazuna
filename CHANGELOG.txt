@@ -1,6 +1,18 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.65 - 20 września 2026
+--------------------------
+
+Przycisk nowej karty przyklejony do ostatniej karty
+
+Skutek uboczny poprawki paska kart z 0.1.62: przy malej liczbie otwartych
+kart (1-3) plusik do otwierania nowej karty potrafil wisiec daleko na prawo
+od ostatniej karty, zamiast stac tuz przy niej, bo caly pasek kart rosl do
+dostepnego miejsca, a same karty (majac wlasny limit szerokosci) nie
+wypelnialy go do konca. Plusik przeniesiono do srodka paska kart, wiec
+zawsze trzyma sie ostatniej karty, tak jak powinien.
+
 0.1.64 - 20 września 2026
 --------------------------
 
