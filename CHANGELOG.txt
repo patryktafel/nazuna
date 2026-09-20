@@ -1,6 +1,54 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.62 - 20 września 2026
+--------------------------
+
+Poprawki paska kart oraz dodatkowe zabezpieczenia spakowanej wersji
+
+Pasek kart
+
+Dwie oddzielne rzeczy zglosone przy testowaniu.
+
+- Pasek kart (.tabs) w ogole nie probowal rosnac i zajmowac wolnego miejsca
+  w oknie - cala nadwyzke zabieral sobie sasiedni element (spacer), a karty
+  trzymaly sie ciasnego minimum nawet gdy obok bylo mnostwo pustej
+  przestrzeni. Najbardziej widac to bylo przy przejsciu z 1 na 2 karty (nagly
+  spadek szerokosci mimo wolnego miejsca) - teraz pasek kart naprawde
+  wykorzystuje dostepne miejsce (do tego samego limitu co wczesniej), wiec
+  kilka kart rozklada sie podobnie szeroko jak jedna, dopoki naprawde nie
+  zabraknie miejsca
+- Karta w trakcie zamykania przestaje teraz od razu zajmowac miejsce w
+  ukladzie (zamiast robic to plynnie przez ~150ms w tle) - jesli ktos otwieral
+  nowa karte dokladnie w momencie zamykania innej, oba przejscia nakladaly
+  sie na siebie i caly pasek na chwile "podskakiwal" (wszystkie karty robily
+  sie chwilowo za waskie, zaraz potem wracaly do wlasciwej szerokosci)
+
+Zabezpieczenia (Electron Fuses)
+
+Przeglad pod katem nowych/brakujacych zabezpieczen. Reszta (izolacja
+kontekstu, sandbox, CSP na stronach wewnetrznych, blokada file://,
+walidacja nadawcy w komunikacji miedzyprocesowej, ostrzezenia o zlosliwych
+i niezaszyfrowanych stronach) juz byla na miejscu - Electron w wersji
+uzywanej przez Nazune (43.5.0) jest tez nowszy niz wszystkie znalezione
+w 2026 roku CVE dla Electrona, wiec nic pilnego do zalatania.
+
+Jedno realnie brakowalo: tzw. Electron Fuses, czyli przelaczniki wypalane
+na stale w gotowej, spakowanej wersji (nie da sie ich obejsc podmieniajac
+pliki po instalacji, w odroznieniu od zwyklych ustawien w kodzie):
+
+- wylaczone uruchamianie Nazuny jako golego interpretera Node.js
+  (ELECTRON_RUN_AS_NODE) i zdalne podpinanie debuggera (--inspect,
+  NODE_OPTIONS) - znane sztuczki do przemycania obcego kodu pod
+  plaszczykiem zaufanej aplikacji
+- gotowa wersja sprawdza teraz integralnosc wlasnego kodu (app.asar) przy
+  starcie i odmawia wczytania czegokolwiek spoza niej, gdyby ktos probowal
+  go podmienic na dysku
+- strony otwierane z dysku (file://) dostaja teraz dokladnie tyle
+  uprawnien co w zwyklej przegladarce, nie wiecej
+- ciasteczka na dysku sa teraz szyfrowane kluczem systemowym Windows,
+  zamiast leżeć plaskim tekstem
+
 0.1.61 - 16 września 2026
 --------------------------
 

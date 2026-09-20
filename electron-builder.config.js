@@ -55,6 +55,42 @@ module.exports = {
   },
   productName: 'Nazuna',
   asar: true,
+  /* Electron Fuses - przelaczniki wypalane na stale w spakowanej wersji
+     (dzialaja inaczej niz zwykle ustawienia w kodzie, ktore ktos mogliby
+     obejsc podmieniajac pliki po instalacji). Kazdy dotyka innej,
+     konkretnej dziury:
+
+     runAsNode: false - bez tego samo Nazuna.exe, odpalone ze zmienna
+       srodowiskowa ELECTRON_RUN_AS_NODE=1, zamienia sie w zwykly interpreter
+       Node.js z pelnym dostepem do systemu - znana sztuczka do przemycania
+       zlosliwego kodu pod plaszczykiem zaufanej, podpisanej aplikacji.
+       Nazuna tej zdolnosci nigdy nie potrzebuje.
+     enableNodeOptionsEnvironmentVariable / enableNodeCliInspectArguments:
+       false - to samo w duchu co powyzej, tylko przez zmienna NODE_OPTIONS
+       albo flagi --inspect/--inspect-brk (zdalny debugger z pelnym dostepem
+       do JS aplikacji). Bez zadnego legalnego zastosowania w gotowej wersji.
+     enableEmbeddedAsarIntegrityValidation + onlyLoadAppFromAsar: true -
+       Electron sprawdza przy starcie, czy paczka z kodem (app.asar) nie
+       zostala podmieniona/zmodyfikowana na dysku po instalacji, i odmawia
+       wczytania kodu spoza niej. Bez tego ktokolwiek z dostepem do plikow
+       mogby po cichu podmienic kod Nazuny na wlasny, a program dalej
+       wygladalby i uruchamial sie identycznie.
+     grantFileProtocolExtraPrivileges: false - strony otwierane z dysku
+       (file://) dostaja teraz dokladnie tyle uprawnien co w zwyklej
+       przegladarce, a nie wiecej - tak jak powinno byc w przegladarce.
+     enableCookieEncryption: true - ciasteczka na dysku sa teraz szyfrowane
+       kluczem systemowym (Windows DPAPI), a nie trzymane plaskim tekstem -
+       ktos z samym dostepem do plikow (bez uprawnien tego konta Windows)
+       nie odczyta z nich sesji logowania. */
+  electronFuses: {
+    runAsNode: false,
+    enableNodeOptionsEnvironmentVariable: false,
+    enableNodeCliInspectArguments: false,
+    enableEmbeddedAsarIntegrityValidation: true,
+    onlyLoadAppFromAsar: true,
+    grantFileProtocolExtraPrivileges: false,
+    enableCookieEncryption: true
+  },
   /* Sprawdzone pomiarem, zeby nikt nie probowal tego ponownie: przy tej
      zawartosci 'normal' i 'maximum' daja plik tej samej wielkosci (okolo
      92 MB), wiec i rozpakowuja sie tak samo dlugo. 'store' rozpakowuje sie

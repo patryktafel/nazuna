@@ -117,7 +117,17 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
   background: var(--accent-strong); pointer-events: none; z-index: 5;
 }
 .tabs {
-  display: flex; align-items: flex-end; gap: 2px; flex: 0 1 auto;
+  /* flex-grow:1 (zamiast 0) tutaj jest kluczowe - bez tego .tabs dopasowywal
+     sie tylko do sumy swoich kart, a cale wolne miejsce obok zabieral sobie
+     .strip-spacer. Efekt: przy 1 karcie nic jej nie ograniczalo (rosla do
+     wlasnego max-width), ale przy 2+ kartach .tabs mial dokladnie tyle
+     miejsca ile same karty "poprosily" o siebie (ich flex-basis), wiec w
+     srodku nie bylo juz zadnej nadwyzki do rozdzielenia - karty siedzialy
+     przy wlasnym minimum, mimo pustej przestrzeni tuz obok. Teraz .tabs
+     naprawde probuje wypelnic dostepne miejsce (do tego samego limitu
+     max-width co wczesniej), wiec kilka kart rozklada sie podobnie szeroko
+     jak jedna, dopoki naprawde nie zabraknie miejsca. */
+  display: flex; align-items: flex-end; gap: 2px; flex: 1 1 auto;
   min-width: 0; max-width: calc(100% - 220px); height: 100%; padding-top: 7px;
   -webkit-app-region: no-drag; overflow: hidden;
 }
@@ -156,13 +166,26 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
    plynnie wchodza w zwolnione miejsce (patrz renderTabs() w shell.js -
    filtruje takie "znikajace" karty przy liczeniu pozycji, wiec nie mieszaja
    kolejnosci prawdziwych kart). */
-@keyframes tabLeave {
-  from { opacity: 1; flex-grow: 1; flex-basis: 220px; min-width: 106px; max-width: 252px; padding: 0 9px 0 13px; }
-  to   { opacity: 0; flex-grow: 0; flex-basis: 0; min-width: 0; max-width: 0; padding: 0 0 0 0; transform: scale(.9); }
-}
+/* Karta znika: przestaje od razu zajmowac miejsce w pasku (min/max-width i
+   padding spadaja na zero natychmiast, bez przejscia - stad "transition:
+   none" ponizej, zeby nie kolidowalo z ogolnym "transition: flex-basis" z
+   .tab), a sama sobie tylko przygasa i kurczy sie wizualnie przez
+   opacity/transform. Sasiednie karty plynnie "wchodza" na zwolnione miejsce
+   dzieki swojemu wlasnemu przejsciu flex-basis (patrz .tab wyzej) - to sie
+   nie zmienia. Bez tego rozdzielenia karta znikajaca nadal czesciowo
+   zajmowala miejsce w ukladzie przez ~150ms, a jesli w tym czasie ktos
+   otworzyl nowa karte, oba przejscia nakladaly sie na siebie i caly pasek na
+   chwile "podskakiwal" (wszystkie karty robily sie chwilowo za waskie,
+   zaraz potem wracaly do wlasciwej szerokosci). */
 .tab.tab-leave {
+  flex: 0 0 0; min-width: 0; max-width: 0; padding: 0 0 0 0;
+  transition: none;
   animation: tabLeave .15s var(--ease) forwards;
   pointer-events: none; overflow: hidden;
+}
+@keyframes tabLeave {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(.9); }
 }
 .tab .favicon {
   width: 16px; height: 16px; flex: none; border-radius: 3px;
