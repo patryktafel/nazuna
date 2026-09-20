@@ -1569,6 +1569,15 @@ api.on('find:focus', () => setTimeout(() => { el.findInput.focus(); el.findInput
 api.on('find:result', (r) => {
   el.findCount.textContent = r && r.matches ? `${r.active}/${r.matches}` : (el.findInput.value ? '0/0' : '');
 });
+/* Patrz komentarz przy wc.on('focus', ...) w main/window.js - to naprawia
+   pasek adresu zostajacy pusty na stale po nawigacji zainicjowanej
+   kliknieciem w strone (nie w sam pasek), gdy pole adresu bylo akurat
+   aktywne z wczesniej. */
+api.on('address:blur', () => {
+  addressDirty = false;
+  if (document.activeElement === el.address) el.address.blur();
+  renderToolbar();
+});
 api.on('focus:address', (payload) => {
   addressDirty = false;
   // Gdy to pusta nowa karta (payload.clear), czyscimy pasek od razu, zamiast

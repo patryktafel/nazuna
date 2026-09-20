@@ -326,6 +326,14 @@ class Tab {
     });
     wc.on('did-start-loading', () => { this.loading = true; sync(); });
     wc.on('did-stop-loading', () => { this.loading = false; sync(); });
+    /* Klikniecie w strone (np. skrot na nowej karcie) przenosi systemowy
+       fokus do widoku karty, ale samo pole adresu w powloce o tym nie wie -
+       jesli bylo akurat aktywne (np. po otwarciu pustej nowej karty, ktora
+       sama je fokusuje), renderToolbar() dalej traktuje je jako "ktos w nim
+       cos pisze" i nie nadpisuje jego wartosci, mimo ze naprawde nikt juz w
+       nim nie pisze. Efekt: pasek zostaje pusty na stale po takiej nawigacji,
+       mimo ze karta poprawnie przechodzi na nowy adres. */
+    wc.on('focus', () => { if (this.owner.activeTabId === this.id) this.owner.send('address:blur'); });
     wc.on('will-navigate', (event, target) => {
       if (/^nazuna:/i.test(target) && !/^nazuna:/i.test(wc.getURL())) { event.preventDefault(); return; }
       const zagrozenie = security.sprawdz(target);

@@ -1,6 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.66 - 20 września 2026
+--------------------------
+
+Pasek adresu zostajacy pusty po nawigacji
+
+Zgloszone przy testowaniu: po otwarciu nowej, pustej karty (pasek adresu sam
+sie wtedy czysci i ustawia kursor, zeby od razu dalo sie pisac) klikniecie w
+skrot na stronie (np. YouTube na nowej karcie) zamiast wpisania adresu
+recznie powodowalo, ze pasek zostawal pusty na stale, mimo ze karta
+poprawnie przechodzila na nowy adres. Powod: pole adresu w powloce nie
+wiedzialo, ze uzytkownik kliknal w strone, wiec dalej myslalo, ze ktos w nim
+cos pisze, i nie nadpisywalo pustej wartosci prawdziwym adresem. Teraz
+klikniecie w strone od razu o tym informuje pasek.
+
 0.1.65 - 20 września 2026
 --------------------------
 
