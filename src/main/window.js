@@ -10,6 +10,7 @@ const adblock = require('./adblock');
 const extensions = require('./extensions');
 const security = require('./security');
 const starttrace = require('./starttrace');
+const diagnostics = require('./diagnostics');
 
 const windows = new Set();
 let nextWindowId = 1;
@@ -268,6 +269,7 @@ class Tab {
      kliknieciu (patrz wake() i AppWindow.selectTab). */
   sleep() {
     if (this.sleeping || !this.wc || this.wc.isDestroyed()) return;
+    diagnostics.usypianie(this.id);
     try { this.owner.win.contentView.removeChildView(this.view); } catch (_) {}
     this.destroy();
     this.view = null;
@@ -282,6 +284,7 @@ class Tab {
      oczekiwane (tak samo dzieje sie w Chrome/Edge przy ich usypianiu kart). */
   wake() {
     if (!this.sleeping) return;
+    diagnostics.budzenie(this.id);
     this.sleeping = false;
     this._createView();
     // Wyciszenie to preferencja, nie stan strony - nowy widok rodzi sie
@@ -313,6 +316,10 @@ class Tab {
   wire() {
     const wc = this.wc;
     const sync = () => this.owner.scheduleSync();
+    // Dziennik diagnostyczny (patrz diagnostics.js) - osobne nasluchiwanie
+    // zdarzen tej karty, niezalezne od reszty wire() ponizej, zeby ewentualny
+    // blad w nim nigdy nie ruszal prawdziwej logiki przegladarki.
+    diagnostics.sledzKarte(this);
 
     wc.on('page-title-updated', (_e, title) => {
       this.title = title;
@@ -842,6 +849,7 @@ class AppWindow {
     if (tab.sleeping) tab.wake();
     tab.lastActiveAt = Date.now();
     this.activeTabId = id;
+    diagnostics.przelaczenieKarty(this, id);
     this.closePopover();
     this.closeExtensionPopup();
     if (this.findOpen) this.findOpen = false;
@@ -1623,6 +1631,13 @@ function startTabSleep() {
   setInterval(usypianieCheck, TAB_SLEEP_CHECK_MS);
 }
 
+/* Odpala watchdog diagnostyczny (patrz diagnostics.js) - osobno od reszty
+   startu, zeby dalo sie go wywolac z index.js w tym samym miejscu, co
+   startTabSleep(). */
+function startDiagnostics() {
+  diagnostics.start(() => windows);
+}
+
 /* Dla ekranu Ustawien - ile kart aktualnie spi i jaki prog bezczynnosci
    obowiazuje teraz (patrz refreshTabSleepInfo() w settings.js). */
 function tabSleepStatus() {
@@ -1679,4 +1694,4 @@ function broadcastAll(channel, payload) {
   }
 }
 
-module.exports = { AppWindow, createWindow, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus };
+module.exports = { AppWindow, createWindow, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics };

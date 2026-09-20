@@ -1,6 +1,24 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.67 - 20 września 2026
+--------------------------
+
+Wewnetrzna diagnostyka zawieszonego ladowania stron
+
+Zdarzajace sie sporadycznie zawieszenie ladowania strony (pasek ladowania
+wypelnia sie i zaczyna od nowa, bez konca) jest zbyt rzadkie i zbyt krotkie,
+zeby dalo sie je zlapac recznie podczas testow. Nazuna prowadzi teraz w tle
+wlasny, niewidoczny dziennik zdarzen kazdej karty (ladowanie, nawigacje,
+przelaczenia, usypianie i budzenie kart) i sama, automatycznie zapisuje
+pelny zrzut stanu programu w chwili, gdy jakas karta faktycznie utknie w
+ladowaniu na dluzej niz 20 sekund, albo gdy jej proces przestanie
+odpowiadac. Zrzuty ladu sie w folderze danych programu (nazuna://about ->
+"Ta instalacja" -> "Otworz", podfolder diagnostyka), trzymanych jest
+tylko ostatnich 30, starsze kasuja sie same. To nic nie zmienia w dzialaniu
+przegladarki na co dzien, zapisuje sie wylacznie wtedy, gdy cos faktycznie
+wyglada na problem.
+
 0.1.66 - 20 września 2026
 --------------------------
 

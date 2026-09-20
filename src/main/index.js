@@ -142,6 +142,7 @@ if (!gotLock) {
     security.init();
     privacy.applySecureDns();
     W.startTabSleep();
+    W.startDiagnostics();
     starttrace.znacznik('po ipc.register/sessions.forPartition/security.init/privacy/tabSleep');
 
     const startUrls = process.argv.slice(1).filter((a) => /^https?:\/\//i.test(a));
