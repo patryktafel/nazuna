@@ -75,9 +75,14 @@ module.exports = {
        wczytania kodu spoza niej. Bez tego ktokolwiek z dostepem do plikow
        mogby po cichu podmienic kod Nazuny na wlasny, a program dalej
        wygladalby i uruchamial sie identycznie.
-     grantFileProtocolExtraPrivileges: false - strony otwierane z dysku
-       (file://) dostaja teraz dokladnie tyle uprawnien co w zwyklej
-       przegladarce, a nie wiecej - tak jak powinno byc w przegladarce.
+     grantFileProtocolExtraPrivileges: true - w 0.1.62 bylo tu false (strony
+       z dysku maja dokladnie tyle uprawnien co w zwyklej przegladarce), ale
+       to zepsulo wlasny pasek Nazuny (karty/adres/przyciski) - on tez laduje
+       sie przez file:// (shell.html), a bez tych uprawnien traci mozliwosc
+       normalnego wczytania wlasnego CSS/JS lezacego obok. Wraca do true,
+       bo caly widoczny interfejs stron internetowych i tak idzie przez
+       osobny, wlasny protokol (nazuna://), a nie przez file:// - tej
+       przegladarki file:// praktycznie nikt oprocz samej Nazuny nie uzywa.
      enableCookieEncryption: true - ciasteczka na dysku sa teraz szyfrowane
        kluczem systemowym (Windows DPAPI), a nie trzymane plaskim tekstem -
        ktos z samym dostepem do plikow (bez uprawnien tego konta Windows)
@@ -88,7 +93,7 @@ module.exports = {
     enableNodeCliInspectArguments: false,
     enableEmbeddedAsarIntegrityValidation: true,
     onlyLoadAppFromAsar: true,
-    grantFileProtocolExtraPrivileges: false,
+    grantFileProtocolExtraPrivileges: true,
     enableCookieEncryption: true
   },
   /* Sprawdzone pomiarem, zeby nikt nie probowal tego ponownie: przy tej

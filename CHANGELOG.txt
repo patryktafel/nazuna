@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.63 - 20 września 2026
+--------------------------
+
+Awaryjna poprawka pustego paska (karty, adres, przyciski)
+
+Jedna z blokad dodanych w 0.1.62 (grantFileProtocolExtraPrivileges) zabrala
+wlasnemu paskowi Nazuny prawo do normalnego wczytania swojego CSS i JS - w
+efekcie caly pasek (karty, pasek adresu, przyciski) zostawal pusty i czarny
+zaraz po starcie. Strony internetowe i reszta interfejsu dzialaly bez zmian,
+bo ida przez osobny, wewnetrzny protokol Nazuny, ktorego ta blokada nie
+dotyczyla. Cofnieto ta jedna blokade, reszta zabezpieczen z 0.1.62 zostaje
+bez zmian.
+
 0.1.62 - 20 września 2026
 --------------------------
 
