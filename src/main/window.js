@@ -2,7 +2,7 @@
 const path = require('path');
 const crypto = require('crypto');
 const { BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme, net } = require('electron');
-const { LAYOUT, UI_DIR, PRELOAD_DIR, ASSETS_DIR, APP_NAME, rozstrzygnijMotyw, TLA } = require('./constants');
+const { LAYOUT, PRELOAD_DIR, ASSETS_DIR, APP_NAME, rozstrzygnijMotyw, TLA } = require('./constants');
 const data = require('./data');
 const urls = require('./urls');
 const sessions = require('./session');
@@ -567,7 +567,15 @@ class AppWindow {
     this.shellView.setBackgroundColor('#00000000');
     this.shell = this.shellView.webContents;
     this.win.contentView.addChildView(this.shellView);   // stays on top; pages are inserted below it
-    this.shell.loadFile(path.join(UI_DIR, 'shell.html'), { query: { win: String(this.id), private: String(isPrivate) } });
+    /* Pasek (shell.html) ladowal sie kiedys przez zwykle file://, jako
+       jedyny element calej Nazuny - reszta wewnetrznych stron (nowa
+       karta, historia, ustawienia...) od dawna chodzi przez wlasny
+       protokol nazuna://. Trasa 'ui' w protocol.js wskazuje dokladnie
+       na ten sam folder co UI_DIR, wiec relatywne odwolania w samym
+       shell.html (theme.css, shell.css, icons.js, shell.js) dzialaja
+       bez zadnych zmian. */
+    const shellParams = new URLSearchParams({ win: String(this.id), private: String(isPrivate) });
+    this.shell.loadURL(`nazuna://ui/shell.html?${shellParams.toString()}`);
 
     this.shell.on('before-input-event', (event, input) => this.handleShortcut(event, input, true));
 

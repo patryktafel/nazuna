@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.64 - 20 września 2026
+--------------------------
+
+Wlasny pasek Nazuny przeniesiony na wewnetrzny protokol
+
+Doprowadzenie do konca poprawki z 0.1.63. Pasek (karty, adres, przyciski)
+byl jedynym elementem calej Nazuny, ktory wczytywal sie przez zwykle
+file:// z dysku - cala reszta wewnetrznych stron (nowa karta, historia,
+zakladki, ustawienia) od dawna chodzi przez wlasny, bezpieczniejszy
+protokol Nazuny. Teraz pasek robi to samo. Dzieki temu mozna bylo przywrocic
+blokade grantFileProtocolExtraPrivileges (ta z 0.1.62, ktora w 0.1.63
+tymczasowo cofnieto) - strony wczytywane z dysku maja teraz dokladnie tyle
+uprawnien co w zwyklej przegladarce, a pasek Nazuny w ogole juz na to nie
+jest narazony, bo z file:// przestal korzystac.
+
 0.1.63 - 20 września 2026
 --------------------------
 
