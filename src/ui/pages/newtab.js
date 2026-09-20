@@ -46,6 +46,13 @@ function tile(site, onRemove) {
   btn.appendChild(glyph);
   btn.appendChild(label);
   btn.addEventListener('click', () => api.send('nav.go', { input: site.origin }));
+  // Srodkowy przycisk myszy - otwiera kafelek w nowej karcie w tle, tak jak
+  // w kazdej innej przegladarce, zamiast podmieniac ta strone startowa.
+  btn.addEventListener('mousedown', (e) => {
+    if (e.button !== 1) return;
+    e.preventDefault();
+    api.send('tab.new', { url: site.origin, background: true });
+  });
   // Delikatny "reflektorek" podazajacy za kursorem (patrz .tile::before w
   // pages.css) - drobiazg, ale to wlasnie takie detale odrozniaja dopracowany
   // interfejs od plaskiego.

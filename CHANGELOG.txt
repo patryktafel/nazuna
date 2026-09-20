@@ -1,6 +1,18 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.68 - 20 września 2026
+--------------------------
+
+Srodkowy przycisk myszy na zakladkach i kafelkach strony glownej
+
+Klikniecie kolkiem myszy (srodkowym przyciskiem) w zakladke na pasku, w
+menu zakladek albo w kafelek na stronie glownej nowej karty teraz otwiera
+ja w nowej karcie w tle, zamiast nic nie robic - dokladnie tak, jak w
+kazdej innej przegladarce. Dziala to na pasku zakladek, w rozwijanym menu
+zakladek (razem z podmenu folderow) oraz na kafelkach szybkiego dostepu
+na nowej karcie.
+
 0.1.67 - 20 września 2026
 --------------------------
 

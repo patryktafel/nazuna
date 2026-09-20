@@ -673,6 +673,17 @@ el.bookmarksbar.addEventListener('click', (e) => {
   api.send('nav.go', { input: node.dataset.url });
 });
 
+// Srodkowy przycisk myszy (kolko) na zakladce z paska - otwiera w nowej
+// karcie w tle, tak jak w kazdej innej przegladarce. Foldery i separatory
+// pomijamy, bo klikniecie w nie i tak nie nawiguje (otwiera podmenu).
+el.bookmarksbar.addEventListener('mousedown', (e) => {
+  if (e.button !== 1) return;
+  const node = e.target.closest('.bm');
+  if (!node || node.dataset.type !== 'link') return;
+  e.preventDefault();
+  api.send('tab.new', { url: node.dataset.url, background: true });
+});
+
 function startBmRename(node) {
   const span = node.querySelector('span:not(.fav)');
   if (!span) return;
@@ -1018,6 +1029,18 @@ function attachFavicons(root) {
   });
 }
 
+// Wspolna obsluga srodkowego przycisku myszy dla wierszy .bm-row - uzywana
+// zarowno w glownym panelu zakladek (wireBookmarksPanel), jak i w podmenu
+// rozwijanego folderu (openBmSubmenu), bo oba renderuja te same wiersze.
+function middleOpenBmRow(e) {
+  if (e.button !== 1) return;
+  const row = e.target.closest('.bm-row');
+  if (!row || row.dataset.type === 'folder') return;
+  e.preventDefault();
+  api.send('tab.new', { url: row.dataset.url, background: true });
+  closePopover();
+}
+
 function bookmarksPanel() {
   const bar = bookmarkChildren('bar');
   const other = bookmarkChildren('other');
@@ -1057,6 +1080,7 @@ function wireBookmarksPanel(node) {
   node.addEventListener('mousedown', (e) => {
     if (!e.target.closest('.bm-ctx')) el.layer.querySelectorAll('.bm-ctx').forEach((n) => n.remove());
   });
+  node.addEventListener('mousedown', middleOpenBmRow);
 
   node.addEventListener('mouseover', (e) => {
     const row = e.target.closest('.bm-row');
@@ -1104,6 +1128,7 @@ function openBmSubmenu(row) {
     e.preventDefault();
     bmContextMenu(item, e.clientX, e.clientY);
   });
+  sub.addEventListener('mousedown', middleOpenBmRow);
 }
 
 function bmContextMenu(row, x, y) {
