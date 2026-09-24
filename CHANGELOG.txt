@@ -1,6 +1,25 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.69 - 24 września 2026
+--------------------------
+
+Okno przestajace odpowiadac przy wolnym starcie
+
+Zgloszone przy testowaniu: czasem cale okno Nazuny pojawialo sie szare i
+'zamrozone' na kilkanascie-kilkadziesiat sekund zaraz po starcie, tak jak
+wyglada w Windows kazdy program, ktory przestal odpowiadac. Powod: wlasny
+protokol nazuna://, przez ktory laduje sie caly pasek programu, sprawdzal
+obecnosc kazdego pliku na dysku funkcjami synchronicznymi - jesli taki
+odczyt trafil na cos wolnego po drodze (np. antywirus skanujacy swiezo
+odpalona aplikacje), blokowalo to caly glowny proces, nie tylko wczytanie
+samego paska. Te odczyty sa teraz asynchroniczne, wiec program zostaje
+responsywny nawet wtedy, gdy pojedyncza strona faktycznie czeka dluzej na
+dysk. Dodatkowo kazde zadanie tego protokolu trwajace dluzej niz 150 ms
+trafia teraz do start.log (nazuna://about), z dokladnym plikiem i czasem -
+gdyby to sie kiedys jeszcze zdarzylo, bedzie widac dokladnie co sie wtedy
+wlokło.
+
 0.1.68 - 20 września 2026
 --------------------------
 
