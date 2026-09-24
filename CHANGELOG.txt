@@ -1,6 +1,23 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.70 - 24 wrzesnia 2026
+--------------------------
+
+Porzadki w nazuna://settings i nazuna://about
+
+Karta "Prywatnosc i tresci" w ustawieniach urosla z czasem do dziesieciu
+roznych przelacznikow z zupelnie innych kategorii i zrobil sie z tego syf.
+Podzielona na "Bezpieczenstwo" (ostrzezenia o niebezpiecznych stronach,
+lista zlosliwych domen, klucze dostepu) i "Blokowanie tresci" (bloker
+reklam, sila blokowania, listy filtrow, ciasteczka podmiotow trzecich,
+Do Not Track, rozszerzenia). W karcie "Zaawansowane" wiersze pogrupowane
+tak, zeby wydajnosciowe byly razem, a akcje typu wyczysc dane/przywroc
+domyslne na koncu. Na stronie nazuna://about diagnostyczne wskazniki
+(DRM, czas uruchomienia, bloker tresci) wydzielone z karty "Ta instalacja"
+do osobnej karty "Diagnostyka", zeby fakty o instalacji nie mieszaly sie
+z biezacym stanem programu. Sama logika dzialania niczego sie nie zmienila.
+
 0.1.69 - 24 września 2026
 --------------------------
 

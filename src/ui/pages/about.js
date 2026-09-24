@@ -60,6 +60,9 @@ api.invoke('app.info').then((info) => {
       <div class="row"><div class="body"><div class="title">Tryb</div><div class="sub">${info.portable ? 'Uruchomiona z pliku przenośnego' : 'Uruchomiona z rozpakowanego folderu'}</div></div></div>
       <div class="row"><div class="body"><div class="title">Folder danych</div><div class="sub">${esc(info.userData)}</div></div>
         <div class="ctl"><button class="btn" id="open">Otwórz</button></div></div>
+    </div>
+    <div class="card">
+      <h2>Diagnostyka</h2>
       <div class="row"><div class="body"><div class="title">Odtwarzanie serwisów z DRM</div>
         <div class="sub">${info.widevine && info.widevine.supported
           ? (info.widevine.ready

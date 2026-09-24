@@ -72,12 +72,17 @@ function render() {
     </div>
 
     <div class="card">
-      <h2>Prywatność i treści</h2>
+      <h2>Bezpieczeństwo</h2>
       ${toggleRow('securityWarningsEnabled', 'Ostrzeżenia o niebezpiecznych stronach', 'Blokuje strony z listy znanych złośliwych domen i ostrzega przed połączeniem bez szyfrowania (http). Wyłączenie usuwa też etykietę "Niezabezpieczona" w pasku adresu')}
       <div class="row">
         <div class="body"><div class="title">Lista złośliwych domen</div><div class="sub" id="securityInfo">sprawdzam...</div></div>
         <div class="ctl"><button class="btn" id="updateSecurity">Zaktualizuj teraz</button></div>
       </div>
+      ${toggleRow('passkeys', 'Klucze dostępu (passkeys)', 'Logowanie odciskiem palca, PIN-em albo kodem z telefonu, zamiast hasła. Gdy wyłączone, przeglądarka mówi stronom, że nie ma czym, i okno zabezpieczeń Windows przestaje wyskakiwać. Zmiana działa od nowej karty')}
+    </div>
+
+    <div class="card">
+      <h2>Blokowanie treści</h2>
       ${toggleRow('adblockEnabled', 'Bloker reklam i skryptów śledzących', 'Wbudowany, działa bez rozszerzeń. Pojedyncze strony można wyłączyć tarczą w pasku adresu')}
       <div class="row">
         <div class="body"><div class="title">Siła blokowania</div>
@@ -93,12 +98,7 @@ function render() {
       </div>
       ${toggleRow('blockThirdPartyCookies', 'Blokuj ciasteczka podmiotów trzecich', 'Odcina ciasteczka wysyłane do domen innych niż ta w pasku adresu. Tędy płynie śledzenie między stronami')}
       ${toggleRow('doNotTrack', 'Wysyłaj nagłówek Do Not Track', 'Prośba, żeby strony nie śledziły. Nie każda ja uszanuje')}
-      ${toggleRow('passkeys', 'Klucze dostępu (passkeys)', 'Logowanie odciskiem palca, PIN-em albo kodem z telefonu, zamiast hasła. Gdy wyłączone, przeglądarka mówi stronom, że nie ma czym, i okno zabezpieczeń Windows przestaje wyskakiwać. Zmiana działa od nowej karty')}
       ${toggleRow('extensionsEnabled', 'Rozszerzenia', 'Wyłączenie odłącza wszystkie naraz, bez usuwania')}
-      <div class="row">
-        <div class="body"><div class="title">Wyczyść dane przeglądania</div><div class="sub">Historia, ciasteczka, pamięć podręczna i dane stron</div></div>
-        <div class="ctl"><button class="btn danger" id="clearData">Wyczyść...</button></div>
-      </div>
     </div>
 
     <div class="card">
@@ -128,16 +128,20 @@ function render() {
     <div class="card">
       <h2>Zaawansowane</h2>
       ${toggleRow('hardwareAcceleration', 'Przyspieszenie sprzętowe', 'Renderowanie grafiki przez kartę graficzną. Zmiana zadziała po ponownym uruchomieniu')}
-      ${toggleRow('spellcheckEnabled', 'Sprawdzanie pisowni', 'Podkreśla literówki w polach tekstowych. Domyślnie wyłączone - każda otwarta karta trzyma wtedy własny słownik w pamięci. Zmiana działa od nowej karty')}
       ${toggleRow('tabSleepEnabled', 'Usypianie nieużywanych kart', 'Karta w tle, z której jakiś czas nie korzystasz, zwalnia zajmowaną przez siebie pamięć - wraca do życia (z krótkim przeładowaniem) w chwili, gdy znów w nią klikniesz. Czas bezczynności potrzebny do uśpienia sam się skraca, gdy w systemie robi się mało wolnej pamięci, i wydłuża, gdy jest jej pod dostatkiem - tak samo jak Oszczędzanie pamięci w Chrome. Pojedynczą kartę można też uśpić ręcznie albo trwale z tego wyłączyć prawym przyciskiem na karcie')}
       <div class="row">
         <div class="body"><div class="title">Stan usypiania</div><div class="sub" id="tabSleepInfo">sprawdzam...</div></div>
       </div>
       ${toggleRow('tabPrewarmEnabled', 'Szybsze otwieranie nowej karty', 'Trzyma w tle jedną gotową kartę, żeby kliknięcie "+" nie czekało na uruchomienie nowego procesu. Zajmuje trochę więcej pamięci - jedną dodatkową kartę na każde otwarte okno')}
+      ${toggleRow('spellcheckEnabled', 'Sprawdzanie pisowni', 'Podkreśla literówki w polach tekstowych. Domyślnie wyłączone - każda otwarta karta trzyma wtedy własny słownik w pamięci. Zmiana działa od nowej karty')}
       ${toggleRow('siteAccentEnabled', 'Kolor dopasowany do strony', 'Pasek Nazuny lekko przebarwia się na kolor wyliczony z ikonki aktywnej strony, zamiast trzymać cały czas jeden stały akcent')}
       <div class="row">
         <div class="body"><div class="title">Folder z danymi przeglądarki</div><div class="sub">Profil, zakładki, historia i rozszerzenia</div></div>
         <div class="ctl"><button class="btn" id="openData">Otwórz folder</button></div>
+      </div>
+      <div class="row">
+        <div class="body"><div class="title">Wyczyść dane przeglądania</div><div class="sub">Historia, ciasteczka, pamięć podręczna i dane stron</div></div>
+        <div class="ctl"><button class="btn danger" id="clearData">Wyczyść...</button></div>
       </div>
       <div class="row">
         <div class="body"><div class="title">Przywróć ustawienia domyślne</div><div class="sub">Nie usuwa zakładek ani historii</div></div>
