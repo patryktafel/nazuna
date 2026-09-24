@@ -271,7 +271,7 @@ function renderTabs() {
       node.className = 'tab tab-enter';
       node.addEventListener('animationend', () => node.classList.remove('tab-enter'), { once: true });
       node.dataset.id = String(tab.id);
-      node.innerHTML = '<span class="lead"></span><span class="label"></span><button class="tab-close"></button>';
+      node.innerHTML = '<span class="lead"></span><span class="label"></span><button class="audio"></button><button class="tab-close"></button>';
       node.querySelector('.tab-close').innerHTML = iconSvg('close');
       node.addEventListener('mousedown', (e) => {
         hideTabTip();
@@ -283,6 +283,14 @@ function renderTabs() {
         e.stopPropagation(); e.preventDefault();
         hideTabTip();
         api.send('tab.close', { id: tab.id });
+      });
+      // Glosniczek - widoczny tylko gdy karta faktycznie gra dzwiek albo jest
+      // recznie wyciszona (patrz petla renderujaca nizej). Klik przelacza
+      // wyciszenie bez zaznaczania/przeciagania karty, tak samo jak X obok.
+      node.querySelector('.audio').addEventListener('mousedown', (e) => {
+        e.stopPropagation(); e.preventDefault();
+        hideTabTip();
+        api.send('tab.mute', { id: tab.id });
       });
       node.addEventListener('mouseenter', () => scheduleTabTip(node));
       node.addEventListener('mouseleave', () => hideTabTip());
@@ -320,6 +328,21 @@ function renderTabs() {
     if (tabTipNode === node) fillTabTip(node);
     node.classList.toggle('sleeping', !!tab.sleeping);
     node.classList.toggle('narrow', state.tabs.length > 11);
+    // Glosniczek: pokazujemy go tylko gdy jest o czym informowac (karta
+    // faktycznie gra dzwiek w tym momencie, albo jest recznie wyciszona) -
+    // inaczej wisialby na kazdej karcie na zapas. Ikona i tytul mowia, co
+    // klikniecie zrobi.
+    const audioBtn = node.querySelector('.audio');
+    const showAudio = tab.audible || tab.muted;
+    audioBtn.classList.toggle('shown', showAudio);
+    if (showAudio) {
+      const want = tab.muted ? 'volumeOff' : 'volume';
+      if (audioBtn.dataset.icon !== want) {
+        audioBtn.dataset.icon = want;
+        audioBtn.innerHTML = iconSvg(want);
+      }
+      audioBtn.title = tab.muted ? 'Włącz dźwięk' : 'Wycisz kartę';
+    }
   });
 }
 

@@ -1,6 +1,25 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.71 - 24 wrzesnia 2026
+--------------------------
+
+Poprawki po testach w oknie prywatnym
+
+Klodka w pasku adresu potrafila pokazywac "polaczenie bezpieczne" nawet gdy
+strona wcale sie nie zaladowala - np. przy wygasnietym certyfikacie albo
+bledzie DNS na adresie https, mimo ze Nazuna pokazywala wtedy wlasna strone
+ostrzegawcza. Klodka liczyla sie samym sprawdzeniem "https" w adresie, bez
+sprawdzenia czy jestesmy na tej stronie bledu. Poprawione.
+
+Panel Pobranych czasem nie zamykal sie klawiszem Escape, jesli fokus byl
+akurat na stronie a nie w pasku - trzeba bylo klikac obok niego. Ujednolicone
+sprawdzanie stanu przy Escape, zeby taki panel zamykal sie zawsze.
+
+Karty grajace dzwiek w tle nie mialy zadnego oznaczenia - teraz na karcie
+pojawia sie glosniczek, w ktory mozna od razu kliknac, zeby wyciszyc albo
+wlaczyc dzwiek z powrotem, bez szukania w menu.
+
 0.1.70 - 24 wrzesnia 2026
 --------------------------
 

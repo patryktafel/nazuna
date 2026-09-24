@@ -1190,8 +1190,13 @@ class AppWindow {
     if (key === 'escape') {
       if (fromChrome) {
         // Interfejs obsluguje wlasny Escape, ale warstwa ma sie zwinac tak czy siak.
+        // Sprawdzamy i popover, i expanded (nie tylko expanded) - to dwie osobne
+        // flagi, ktore w rzadkich przypadkach (np. przebudowanie zawartosci
+        // panelu po kliknieciu w nim) moga sie na chwile rozjechac, a wtedy
+        // samo "expanded" potrafilo zostawic panel Pobranych czy inny
+        // wiszacy na ekranie mimo Escape.
         if (this.extensionPopup) this.closeExtensionPopup();
-        else if (this.expanded) this.closePopover();
+        else if (this.popover || this.expanded) this.closePopover();
         return;
       }
       if (this.extensionPopup) { this.closeExtensionPopup(); return stop(); }
@@ -1299,7 +1304,12 @@ class AppWindow {
       activeTabId: this.activeTabId,
       url: active ? active.displayUrl : '',
       host,
-      secure: active ? /^https:/.test(active.displayUrl) : false,
+      // errorUrl ustawiony oznacza, ze wyswietlamy wewnetrzna strone bledu
+      // (nazuna://error) pod adresem, ktory sie nie zaladowal - nie mozemy
+      // wtedy pokazywac zamknietej klodki, bo zadne polaczenie nie doszlo do
+      // skutku (dotyczy tez bledow certyfikatu, ktore i tak zaczynaja sie od
+      // https:).
+      secure: active ? (!active.errorUrl && /^https:/.test(active.displayUrl)) : false,
       // Etykieta "Niezabezpieczona" idzie razem z przelacznikiem ostrzezen w
       // Ustawieniach - wylaczona ochrona, wylaczona i etykieta, zeby jedno
       // nie przeczylo drugiemu.

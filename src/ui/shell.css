@@ -210,7 +210,15 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
   border: 1.8px solid rgba(var(--tint), 0.16); border-top-color: var(--accent);
   animation: spin .7s linear infinite;
 }
-.tab .audio { width: 14px; height: 14px; flex: none; color: var(--accent); }
+.tab .audio {
+  width: 19px; height: 19px; flex: none; border-radius: 5px;
+  display: none; align-items: center; justify-content: center; color: var(--accent);
+  transition: background .12s var(--ease), color .12s var(--ease);
+}
+.tab .audio.shown { display: flex; }
+.tab .audio .icon { width: 13px; height: 13px; stroke-width: 2; }
+.tab .audio:hover { background: rgba(var(--tint), 0.12); }
+.tab.narrow .audio.shown { display: none; }
 /* Uspiona karta w tle (patrz Tab.sleep w window.js) - favicona przygaszona
    i w odcieniach szarosci, zeby na pierwszy rzut oka bylo widac, ktore karty
    nie zajmuja juz pamieci. Aktywna karta nigdy nie usypia, wiec ten styl
