@@ -1,6 +1,25 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.72 - 25 wrzesnia 2026
+--------------------------
+
+Poprawka falszywego odcisku karty graficznej (fingerprint protection)
+
+Ustawienie "Utrudnianie rozpoznawania po odcisku przegladarki" podstawialo
+pod WebGL falszywy opis karty graficznej "SwiftShader driver" - czyli
+renderer softwareowy, jakiego uzywa Chrome w trybie headless/bez glowy, gdy
+nie ma prawdziwej karty graficznej. To jeden z najbardziej rozpoznawalnych
+sygnalow dla systemow antybotowych (hCaptcha, Cloudflare i inne), ze
+odwiedzajacy to bot albo automatyzacja - Nazuna sama zglaszala taki sygnal
+na kazdej stronie sprawdzajacej WebGL, co dawalo w efekcie ciagle "kolowanie"
+captchy albo strona nie doladowywala sie do konca (zlapane na suno.com, ale
+mechanizm dotyczyl kazdej strony z tego typu zabezpieczeniem). Falszywy
+odcisk karty graficznej jest teraz losowany (stabilnie per-domena, tak jak
+wczesniej) z puli prawdziwie wygladajacych, pospolitych opisow realnych kart
+(Intel, NVIDIA, AMD w trybie Direct3D11) zamiast jednego, ktory wygladal jak
+podpis automatu.
+
 0.1.71 - 24 wrzesnia 2026
 --------------------------
 

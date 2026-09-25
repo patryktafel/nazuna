@@ -324,12 +324,31 @@ if (!internal) {
     } catch (_) {}
 
     // --- WebGL: karta graficzna to jeden z najbardziej "gadatliwych" o Twoim
-    // sprzecie odczytow - dokladny model i sterownik. Podmieniamy na ten sam,
-    // szeroko rozpowszechniony, generyczny opis co przegladarki bez wlasnej
-    // karty graficznej (np. wirtualki), zamiast prawdziwego modelu Twojego GPU. ---
+    // sprzecie odczytow - dokladny model i sterownik. Podmieniamy na inny,
+    // pospolity, ale PRAWDZIWIE wygladajacy opis realnego GPU zamiast
+    // Twojego prawdziwego modelu (patrz pula i uzasadnienie nizej). ---
     try {
-      const FAKE_VENDOR = 'Google Inc. (Google)';
-      const FAKE_RENDERER = 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)';
+      // Prawdziwe, pospolite opisy kart graficznych na Windows (backend
+      // ANGLE/Direct3D11, tak jak faktycznie raportuje Chromium z wlaczona
+      // akceleracja) - NIE renderer softwareowy typu SwiftShader. SwiftShader
+      // to jeden z najbardziej rozpoznawalnych sygnalow "to bot/headless" dla
+      // systemow antybotowych (hCaptcha, Cloudflare i inne) - realne
+      // przegladarki uzytkownikow praktycznie nigdy go nie zglaszaja, wiec
+      // podstawiajac go sami wywolywalismy podejrzenie automatyzacji na
+      // kazdej stronie sprawdzajacej WebGL (obserwowane jako "wieczne
+      // ladowanie" / petle captchy na suno.com, prawdopodobnie tez gdzie
+      // indziej). Wybor z ponizszej puli jest stabilny per-domena (patrz
+      // originSeed wyzej), tak jak reszta tego mechanizmu.
+      const GPU_POOL = [
+        ['Google Inc. (Intel)', 'ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00003E92) Direct3D11 vs_5_0 ps_5_0, D3D11)'],
+        ['Google Inc. (Intel)', 'ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11)'],
+        ['Google Inc. (NVIDIA)', 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1650 (0x00001F82) Direct3D11 vs_5_0 ps_5_0, D3D11)'],
+        ['Google Inc. (NVIDIA)', 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 (0x00002504) Direct3D11 vs_5_0 ps_5_0, D3D11)'],
+        ['Google Inc. (AMD)', 'ANGLE (AMD, AMD Radeon(TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)'],
+      ];
+      const gpuPick = GPU_POOL[originSeed % GPU_POOL.length];
+      const FAKE_VENDOR = gpuPick[0];
+      const FAKE_RENDERER = gpuPick[1];
       function patchGl(proto) {
         if (!proto || !proto.getParameter) return;
         const orig = proto.getParameter;
