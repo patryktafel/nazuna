@@ -9,6 +9,7 @@ const downloads = require('./downloads');
 const sessions = require('./session');
 const catalog = require('./catalog.json');
 const widevine = require('./widevine');
+const defaultBrowser = require('./defaultBrowser');
 const updater = require('./updater');
 const security = require('./security');
 const privacy = require('./privacy');
@@ -417,6 +418,8 @@ const handlers = {
     win.scheduleSync();
   },
   'app.tabSleepStatus': () => W.tabSleepStatus(),
+  'app.defaultBrowserStatus': () => defaultBrowser.status(),
+  'app.setDefaultBrowser': () => defaultBrowser.otworzUstawienia(),
 
   /* Uzywane przez nazuna://pdf i nazuna://textview (patrz podmienNaPodglad()
      w session.js) - te strony nie moga pobrac oryginalnego pliku same przez

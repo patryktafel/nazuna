@@ -1,6 +1,27 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.75 - 25 wrzesnia 2026
+--------------------------
+
+Porzadki w "O programie" i nowy przycisk domyslnej przegladarki
+
+Strona nazuna://about pokazywala rzeczy, ktore juz nie byly prawda albo
+nikomu nie pomagaly: wiersz "Tryb" (przenosna kontra instalacja) w karcie
+"Ta instalacja", skoro od dawna wspieramy tylko wersje z instalatora;
+status modulu DRM/Widevine, ktory potrafil pokazywac "aktywny", a i tak
+nie wystarcza do odtworzenia Netfliksa (dolaczony jest tylko testowy
+modul); cala karta "Czego nie potrafi", zbudowana wokol tego samego,
+mylacego stanu DRM. Wszystko to usuniete, "Ta instalacja" i "Diagnostyka"
+polaczone w jedna, krotsza karte (folder danych, czas uruchomienia, stan
+blokera tresci).
+
+Dodany tez nowy przycisk "Ustaw jako domyslna" na gorze Ustawien. Windows
+od 8. nie pozwala programom cicho przejmowac tego wyboru (ochrona przed
+nachalnymi instalatorami) - Nazuna teraz rejestruje sie jako kandydat na
+liscie przegladarek (patrz build/installer.nsh) i przycisk od razu otwiera
+wlasciwa strone Ustawien Windows, gdzie zapada sam wybor. Ustawienia same
+tez pokazuja, czy Nazuna jest juz domyslna.
 0.1.74 - 25 wrzesnia 2026
 --------------------------
 

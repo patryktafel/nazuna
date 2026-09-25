@@ -28,6 +28,13 @@ function toggleRow(key, title, sub) {
 function render() {
   const v = cfg.values;
   page.innerHTML = head('Ustawienia', 'settings') + `
+    <div class="card" id="defaultBrowserCard">
+      <h2>Domyślna przeglądarka</h2>
+      <div class="row">
+        <div class="body"><div class="title">Otwieranie linków z innych programów</div><div class="sub" id="defaultBrowserInfo">sprawdzam...</div></div>
+        <div class="ctl"><button class="btn" id="setDefaultBrowser">Ustaw jako domyślną</button></div>
+      </div>
+    </div>
     <div class="card">
       <h2>Wyszukiwanie i start</h2>
       <div class="row">
@@ -174,6 +181,8 @@ function render() {
   });
   refreshSecurityInfo();
   refreshTabSleepInfo();
+  refreshDefaultBrowserInfo();
+  document.getElementById('setDefaultBrowser').addEventListener('click', () => api.send('app.setDefaultBrowser'));
   document.getElementById('updateSecurity').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
@@ -214,6 +223,17 @@ async function refreshTabSleepInfo() {
   const progMin = Math.round(st.progMs / 60000);
   const wolnegoProc = Math.round(st.wolnaPamiecUlamek * 100);
   node.textContent = `${st.sleeping} z ${st.total} otwartych kart śpi teraz w tle. Obecny próg bezczynności: ${progMin} min (wolnej pamięci w systemie: ${wolnegoProc}%).`;
+}
+
+async function refreshDefaultBrowserInfo() {
+  const node = document.getElementById('defaultBrowserInfo');
+  const card = document.getElementById('defaultBrowserCard');
+  if (!node || !card) return;
+  const st = await api.invoke('app.defaultBrowserStatus').catch(() => null);
+  if (!st || !st.obslugiwane) { card.style.display = 'none'; return; }
+  node.textContent = st.domyslna
+    ? 'Nazuna jest już domyślną przeglądarką w Windows.'
+    : 'Windows otworzy to okno Ustawień, gdzie trzeba samemu wybrać Nazunę - sam wybór zawsze zapada tam, żaden program nie może go przejąć po cichu.';
 }
 
 async function save(patch) {

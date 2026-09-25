@@ -64,6 +64,30 @@ Var Nazuna_ChcStartMenu
       Delete "$newStartMenuLink"
     ${endif}
   ${endif}
+
+  ; Rejestracja Nazuny jako KANDYDATA na domyslna przegladarke. Windows od 8.
+  ; celowo nie pozwala programom cicho, samemu przejmowac tego wyboru (ochrona
+  ; przed nachalnymi/zlosliwymi instalatorami) - jedyne co instalator moze
+  ; zrobic, to dopisac sie do listy w Ustawieniach (Ustawienia > Aplikacje >
+  ; Aplikacje domyslne), dokladnie tymi samymi kluczami, ktorych uzywaja
+  ; prawdziwe przegladarki. Sam wybor i tak zapada tylko tam, recznie.
+  ; HKCU (nie HKLM), zeby dzialalo bez wzgledu na to, czy ta konkretna
+  ; instalacja akurat miala uprawnienia administratora.
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna" "" "Nazuna"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\DefaultIcon" "" "$INSTDIR\Nazuna.exe,0"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\shell\open\command" "" '"$INSTDIR\Nazuna.exe"'
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities" "ApplicationName" "Nazuna"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities" "ApplicationIcon" "$INSTDIR\Nazuna.exe,0"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities" "ApplicationDescription" "Przegladarka internetowa na silniku Chromium, stawiajaca na prywatnosc i szybkosc."
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\URLAssociations" "http" "NazunaHTML"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\URLAssociations" "https" "NazunaHTML"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\FileAssociations" ".htm" "NazunaHTML"
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\FileAssociations" ".html" "NazunaHTML"
+  WriteRegStr HKCU "Software\RegisteredApplications" "Nazuna" "Software\Clients\StartMenuInternet\Nazuna\Capabilities"
+
+  WriteRegStr HKCU "Software\Classes\NazunaHTML" "" "Strona HTML (Nazuna)"
+  WriteRegStr HKCU "Software\Classes\NazunaHTML\DefaultIcon" "" "$INSTDIR\Nazuna.exe,0"
+  WriteRegStr HKCU "Software\Classes\NazunaHTML\shell\open\command" "" '"$INSTDIR\Nazuna.exe" "%1"'
 !macroend
 
 !macro customUnInstall
@@ -72,6 +96,12 @@ Var Nazuna_ChcStartMenu
   ; tu nic aktualizowac, gdyby certyfikat kiedys zostal odnowiony.
   nsExec::ExecToLog 'certutil -delstore "Root" "Nazuna"'
   Pop $0
+
+  ; Sprzatanie rejestracji "kandydata na domyslna przegladarke" - patrz
+  ; customInstall powyzej.
+  DeleteRegKey HKCU "Software\Clients\StartMenuInternet\Nazuna"
+  DeleteRegKey HKCU "Software\Classes\NazunaHTML"
+  DeleteRegValue HKCU "Software\RegisteredApplications" "Nazuna"
 !macroend
 
 ; electron-builder kompiluje ten skrypt dwa razy - raz zeby zbudowac sam
