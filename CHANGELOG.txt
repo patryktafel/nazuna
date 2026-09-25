@@ -1,6 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.76 - 26 wrzesnia 2026
+--------------------------
+
+Przycisk domyslnej przegladarki trafial na ogolna liste zamiast na Nazune
+
+Poprawka z 0.1.75 otwierala samo "ms-settings:defaultapps" - to zawsze
+byla ogolna lista kategorii w Ustawieniach Windows (przegladarka, poczta,
+...), z ktorej trzeba samemu znalezc i wybrac Nazune. Chrome czy Firefox
+od razu otwieraja WLASNA podstrone, z jednym przyciskiem "Ustaw jako
+domyslna" - robia to dopisujac do tego samego adresu parametr
+"registeredAppUser" z nazwa, jaka zarejestrowaly w Windows. Brakowalo go
+u nas. Dopisany (dokladnie ta sama nazwa co w build/installer.nsh), wiec
+przycisk teraz przechodzi od razu na podstrone samej Nazuny, tak jak
+u konkurencji.
 0.1.75 - 25 wrzesnia 2026
 --------------------------
 
