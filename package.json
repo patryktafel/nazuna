@@ -1,8 +1,8 @@
 {
   "name": "nazuna",
   "productName": "Nazuna",
-  "version": "0.1.73",
-  "description": "Nazuna - smukla, przenosna przegladarka internetowa",
+  "version": "0.1.74",
+  "description": "Nazuna - przegladarka internetowa stawiajaca na prywatnosc i szybkosc",
   "main": "src/main/index.js",
   "author": "Tafel",
   "license": "MIT",

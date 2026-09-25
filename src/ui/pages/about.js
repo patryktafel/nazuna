@@ -47,7 +47,7 @@ api.invoke('app.info').then((info) => {
     <div style="text-align:center;padding:44px 0 30px">
       <img src="nazuna://assets/mark.png" style="width:74px;height:74px" alt="">
       <div style="font-size:27px;font-weight:300;letter-spacing:6px;margin-top:14px">nazuna</div>
-      <div style="color:var(--text-faint);margin-top:8px;font-size:12.5px">Przenośna przeglądarka na silniku Chromium. Wersja ${esc(info.version)}</div>
+      <div style="color:var(--text-faint);margin-top:8px;font-size:12.5px">Przeglądarka na silniku Chromium, stawiająca na prywatność i szybkość. Wersja ${esc(info.version)}</div>
       <div style="color:var(--text-faint);margin-top:6px;font-size:12.5px">Stworzona przez Tafel &middot; <a href="https://github.com/patryktafel/nazuna-updates" id="linkRepo" style="color:inherit">repozytorium wydań na GitHubie</a></div>
     </div>
     <div class="card">

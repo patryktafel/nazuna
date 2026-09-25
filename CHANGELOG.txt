@@ -1,6 +1,17 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.74 - 25 wrzesnia 2026
+--------------------------
+
+Aktualny opis Nazuny w "O programie"
+
+Opis na stronie nazuna://about wciaz mowil "przenosna przegladarka", z
+czasow gdy jedyna forma dystrybucji byl pojedynczy plik .exe. Od dawna
+domyslna forma to instalator, wersja przenosna jest opcja na zadanie -
+opis teraz o tym nie wspomina i zamiast tego mowi wprost, co Nazuna
+faktycznie daje: prywatnosc i szybkosc. To samo poprawione w opisie
+pakietu i w metadanych buildu linuksowego.
 0.1.73 - 25 wrzesnia 2026
 --------------------------
 

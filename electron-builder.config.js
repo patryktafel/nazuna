@@ -164,8 +164,8 @@ module.exports = {
     target: [{ target: 'deb', arch: ['x64'] }],
     icon: 'build/icon.png',
     category: 'Network;WebBrowser',
-    synopsis: 'Przenośna przeglądarka oparta na Chromium',
-    description: 'Nazuna to lekka przeglądarka na silniku Chromium, z wbudowanym blokerem reklam i ciemnym motywem.',
+    synopsis: 'Przeglądarka na silniku Chromium, stawiająca na prywatność',
+    description: 'Nazuna to lekka przeglądarka na silniku Chromium, stawiająca na prywatność - wbudowany bloker reklam i skryptów śledzących, bez telemetrii, z ciemnym motywem.',
     desktop: { entry: { MimeType: 'text/html;x-scheme-handler/http;x-scheme-handler/https' } },
     artifactName: 'nazuna_${version}_${arch}.${ext}'
   },
