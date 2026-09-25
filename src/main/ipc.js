@@ -1,7 +1,9 @@
 'use strict';
 const path = require('path');
+const fs = require('fs');
 const { ipcMain, app, shell, net, clipboard, dialog, session } = require('electron');
 const data = require('./data');
+const localFiles = require('./localFiles');
 const urls = require('./urls');
 const adblock = require('./adblock');
 const extensions = require('./extensions');
@@ -426,9 +428,25 @@ const handlers = {
      fetch(), bo jako wlasny protokol nazuna:// zawsze trafialyby na CORS.
      Pobieramy wiec za nie tutaj, w procesie glownym (ktorego CORS nie
      dotyczy), przez WLASCIWA sesje danego okna - zeby dzialalo tez dla
-     plikow za logowaniem, ktorych ciasteczka trzyma ta sama sesja. */
+     plikow za logowaniem, ktorych ciasteczka trzyma ta sama sesja.
+
+     Adres "nazuna-local:<token>" to osobna sciezka dla lokalnego pliku PDF
+     otwartego z Eksploratora (patrz argToStartUrl w index.js i
+     localFiles.js) - token wskazuje na sciezke zarejestrowana wylacznie
+     przez main process, wiec zadna strona nie moze tedy wymusic odczytu
+     dowolnego pliku z dysku, podajac wprost "src=file:///...". */
   'viewer.fetch': async (win, p) => {
     const url = String((p && p.url) || '');
+    if (url.startsWith('nazuna-local:')) {
+      const sciezka = localFiles.pobierzSciezke(url.slice('nazuna-local:'.length));
+      if (!sciezka) return { ok: false, error: 'Nieprawidłowy albo nieaktualny odnośnik do pliku' };
+      try {
+        const buf = await fs.promises.readFile(sciezka);
+        return { ok: true, status: 200, contentType: 'application/pdf', bytes: new Uint8Array(buf) };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
     if (!/^https?:\/\//i.test(url)) return { ok: false, error: 'Zły adres' };
     try {
       const resp = await win.session.fetch(url);
@@ -445,9 +463,16 @@ const handlers = {
   },
   /* "Pobierz" w nazuna://pdf i nazuna://textview - zwykle wc.downloadURL(),
      dokladnie to samo, co "Zapisz link jako" z menu prawego przycisku (patrz
-     'save-link' w window.js), tylko wywolane z poziomu samego podgladu. */
+     'save-link' w window.js), tylko wywolane z poziomu samego podgladu.
+     Lokalny plik (patrz wyzej) juz lezy na dysku - zamiast go "pobierac"
+     jeszcze raz, po prostu pokazujemy go w Eksploratorze. */
   'viewer.download': (win, p, sender) => {
     const url = String((p && p.url) || '');
+    if (url.startsWith('nazuna-local:')) {
+      const sciezka = localFiles.pobierzSciezke(url.slice('nazuna-local:'.length));
+      if (sciezka) shell.showItemInFolder(sciezka);
+      return;
+    }
     if (url && sender && !sender.isDestroyed()) sender.downloadURL(url);
   },
   'app.updateAvailable': () => updater.dostepny(),

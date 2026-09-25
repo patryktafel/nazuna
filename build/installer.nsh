@@ -83,11 +83,18 @@ Var Nazuna_ChcStartMenu
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\URLAssociations" "https" "NazunaHTML"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\FileAssociations" ".htm" "NazunaHTML"
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\FileAssociations" ".html" "NazunaHTML"
+  ; .pdf ma wlasny ProgId (NazunaPDF), bo Nazuna otwiera go we wlasnej
+  ; przegladarce PDF (patrz src/ui/pages/pdf.js), nie jako zwykla strone.
+  WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\FileAssociations" ".pdf" "NazunaPDF"
   WriteRegStr HKCU "Software\RegisteredApplications" "Nazuna" "Software\Clients\StartMenuInternet\Nazuna\Capabilities"
 
   WriteRegStr HKCU "Software\Classes\NazunaHTML" "" "Strona HTML (Nazuna)"
   WriteRegStr HKCU "Software\Classes\NazunaHTML\DefaultIcon" "" "$INSTDIR\Nazuna.exe,0"
   WriteRegStr HKCU "Software\Classes\NazunaHTML\shell\open\command" "" '"$INSTDIR\Nazuna.exe" "%1"'
+
+  WriteRegStr HKCU "Software\Classes\NazunaPDF" "" "Dokument PDF (Nazuna)"
+  WriteRegStr HKCU "Software\Classes\NazunaPDF\DefaultIcon" "" "$INSTDIR\Nazuna.exe,0"
+  WriteRegStr HKCU "Software\Classes\NazunaPDF\shell\open\command" "" '"$INSTDIR\Nazuna.exe" "%1"'
 !macroend
 
 !macro customUnInstall
@@ -101,6 +108,7 @@ Var Nazuna_ChcStartMenu
   ; customInstall powyzej.
   DeleteRegKey HKCU "Software\Clients\StartMenuInternet\Nazuna"
   DeleteRegKey HKCU "Software\Classes\NazunaHTML"
+  DeleteRegKey HKCU "Software\Classes\NazunaPDF"
   DeleteRegValue HKCU "Software\RegisteredApplications" "Nazuna"
 !macroend
 

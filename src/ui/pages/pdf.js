@@ -28,7 +28,9 @@ el.zoomOut.innerHTML = iconSvg('zoomOut');
 el.download.innerHTML = iconSvg('download');
 
 /* Nazwa pliku do tytulu karty i zakladki - z ostatniego czlonu adresu, a nie
-   z samego adresu, zeby na pasku kart bylo "raport.pdf", nie caly url. */
+   z samego adresu, zeby na pasku kart bylo "raport.pdf", nie caly url. Dla
+   lokalnych plikow (src="nazuna-local:<token>", patrz index.js/ipc.js) sam
+   adres nic nie mowi, wiec main process dokleja gotowa nazwe w "name". */
 function nazwaPliku(url) {
   try {
     const u = new URL(url);
@@ -36,9 +38,9 @@ function nazwaPliku(url) {
     return ostatni ? decodeURIComponent(ostatni) : (u.hostname || 'dokument.pdf');
   } catch (_) { return 'dokument.pdf'; }
 }
-const nazwa = nazwaPliku(src);
+const nazwa = params.get('name') || nazwaPliku(src);
 el.title.textContent = nazwa;
-el.title.title = src;
+el.title.title = nazwa;
 document.title = nazwa;
 
 let scale = 1;

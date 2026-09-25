@@ -59,6 +59,7 @@ const updater = require('./updater');
 const security = require('./security');
 const privacy = require('./privacy');
 const W = require('./window');
+const localFiles = require('./localFiles');
 
 protocolHelper.registerSchemes();
 
@@ -71,13 +72,36 @@ const data = require('./data');
 data.init();
 if (!data.settings.get('hardwareAcceleration', true)) app.disableHardwareAcceleration();
 
+/* Argument uruchomienia zamieniony na adres, ktory da sie otworzyc w karcie.
+   Zwykly http(s)-owy link przechodzi bez zmian. Lokalny plik .pdf (tak
+   wlasnie wyglada argv, gdy ktos w Eksploratorze klika PDF-a skojarzonego
+   z Nazuna - patrz build/installer.nsh, ProgId "NazunaPDF") trafia od razu
+   do wlasnej przegladarki PDF pod nazuna://pdf - nie ma sensu wpierw
+   nawigowac na surowy plik://, skoro i tak zaraz mielibysmy go stamtad
+   przekierowac. existsSync to tylko zabezpieczenie przed potraktowaniem
+   jakiejs losowej flagi konczacej sie na ".pdf" jako sciezki do pliku. */
+function argToStartUrl(arg) {
+  if (/^https?:\/\//i.test(arg)) return arg;
+  if (/\.pdf$/i.test(arg)) {
+    try {
+      const pelna = path.resolve(arg);
+      if (fs.existsSync(pelna) && fs.statSync(pelna).isFile()) {
+        const token = localFiles.zarejestruj(pelna);
+        const nazwa = encodeURIComponent(path.basename(pelna));
+        return `nazuna://pdf?src=${encodeURIComponent('nazuna-local:' + token)}&name=${nazwa}`;
+      }
+    } catch (_) { /* nieprawidlowa sciezka - ignorujemy */ }
+  }
+  return null;
+}
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, argv) => {
     const win = W.focusedWindow() || W.allWindows()[0];
-    const url = argv.slice(1).find((a) => /^https?:\/\//i.test(a));
+    const url = argv.slice(1).map(argToStartUrl).find(Boolean);
     if (win) {
       if (win.win.isMinimized()) win.win.restore();
       win.win.focus();
@@ -145,7 +169,7 @@ if (!gotLock) {
     W.startDiagnostics();
     starttrace.znacznik('po ipc.register/sessions.forPartition/security.init/privacy/tabSleep');
 
-    const startUrls = process.argv.slice(1).filter((a) => /^https?:\/\//i.test(a));
+    const startUrls = process.argv.slice(1).map(argToStartUrl).filter(Boolean);
     if (process.env.NAZUNA_START) startUrls.push(...process.env.NAZUNA_START.split('|'));
     const startup = data.settings.get('startup', 'newtab');
     let initial = startUrls;

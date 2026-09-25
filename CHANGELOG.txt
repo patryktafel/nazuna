@@ -1,6 +1,30 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.78 - 26 wrzesnia 2026
+--------------------------
+
+Nazuna jako domyslny program dla plikow PDF
+
+Instalator zglaszal Nazune do Windows tylko jako kandydata na przegladarke
+(strony .htm/.html, http/https) - .pdf w ogole nie bylo na liscie typow,
+ktore da sie jej przypisac w Ustawieniach. Dopisany osobny wpis (ProgId
+"NazunaPDF"), wiec teraz PDF tez pojawia sie tam do wyboru.
+
+Samo dopisanie do rejestru by nie wystarczylo: program i tak ignorowal
+argument uruchomienia, jesli nie byl adresem http(s), wiec klikniecie
+PDF-a w Eksploratorze i tak nic by nie otworzylo. Teraz taki plik trafia
+prosto do wlasnej przegladarki PDF Nazuny (tej samej co przy PDF-ach z
+sieci) - dziala tak samo przy starcie programu, jak i przy kliknieciu
+plikiem, gdy Nazuna juz jest otwarta. Przycisk "Pobierz" w podgladzie dla
+lokalnego pliku pokazuje go teraz w Eksploratorze zamiast pobierac kopie
+- plik juz przeciez lezy na dysku.
+
+Lokalna sciezka pliku nigdy nie trafia bezposrednio do adresu strony
+podgladu - zamiast niej leci jednorazowy token, ktory zna tylko main
+process. Bez tego jakas strona moglaby wprost wskazac sciezke do
+dowolnego pliku na dysku i kazac Nazunie go odczytac.
+
 0.1.77 - 26 wrzesnia 2026
 --------------------------
 
