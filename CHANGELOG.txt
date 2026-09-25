@@ -1,6 +1,16 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.77 - 26 wrzesnia 2026
+--------------------------
+
+Krotszy opis przycisku domyslnej przegladarki w Ustawieniach
+
+Tekst pod przyciskiem "Ustaw jako domyslna" tlumaczyl caly mechanizm
+Windows (dlaczego wybor zapada w oknie Ustawien, ze zaden program nie
+moze go przejac po cichu). Skrocony do jednego zdania - co przycisk
+robi, i tyle.
+
 0.1.76 - 26 wrzesnia 2026
 --------------------------
 

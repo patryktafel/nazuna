@@ -233,7 +233,7 @@ async function refreshDefaultBrowserInfo() {
   if (!st || !st.obslugiwane) { card.style.display = 'none'; return; }
   node.textContent = st.domyslna
     ? 'Nazuna jest już domyślną przeglądarką w Windows.'
-    : 'Windows otworzy to okno Ustawień, gdzie trzeba samemu wybrać Nazunę - sam wybór zawsze zapada tam, żaden program nie może go przejąć po cichu.';
+    : 'Ten przycisk ustawia Nazunę jako domyślną przeglądarkę w Windows.';
 }
 
 async function save(patch) {
