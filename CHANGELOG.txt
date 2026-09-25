@@ -1,6 +1,26 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.73 - 25 wrzesnia 2026
+--------------------------
+
+Prawdziwa przyczyna "wiecznego ladowania" strony
+
+Zrzut z diagnostyka/ z tego wieczoru pokazal, ze zawieszenie wcale nie
+bylo od suno.com (to byla poprzednia, dobra w zamysle ale niepelna
+poprawka) - przeladowanie zwyklego youtube.com samo utknelo bez konca.
+Powod: dwa miejsca w kodzie sieciowym (dopisywanie naglowkow przegladarki
+i blokowanie obcych ciasteczek) nie mialy zabezpieczenia przed wlasnym
+bledem. Chromium czeka na odpowiedz z tych miejsc bez zadnego limitu
+czasu - jesli cokolwiek w nich rzucilo wyjatek zanim zdazylo odpowiedziec,
+to jedno zadanie sieciowe wisialo w nieskonczonosc, a gdy trafilo to na
+glowny dokument strony, cala karta wygladala jakby ladowala sie na zawsze.
+Nie zdarzalo sie to czesto, bo trzeba trafic na konkretny ksztalt
+naglowkow, ale mogla dotyczyc kazdej strony, nie tylko suno.com. Oba
+miejsca maja teraz taka sama siatke bezpieczenstwa jak reszta blokera
+reklam: blad w naszym kodzie nigdy juz nie zawiesi zadania na stale,
+w najgorszym razie strona przejdzie bez naszych modyfikacji zamiast utknac.
+
 0.1.72 - 25 wrzesnia 2026
 --------------------------
 

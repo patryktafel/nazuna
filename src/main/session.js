@@ -214,39 +214,56 @@ function prepare(ses, efemeryczna) {
   // Usuwamy naglowek, po ktorym niektore strony wyluskuja Electrona, i
   // dopisujemy Do Not Track, gdy uzytkownik go chce.
   ses.webRequest.onBeforeSendHeaders((details, callback) => {
-    const headers = details.requestHeaders;
-    const ua = headers['User-Agent'];
-    if (ua !== undefined && GIVEAWAY.test(ua)) headers['User-Agent'] = UA;
-    const hint = headers['sec-ch-ua'] !== undefined ? 'sec-ch-ua' : (headers['Sec-CH-UA'] !== undefined ? 'Sec-CH-UA' : null);
-    if (hint) headers[hint] = patchHint(headers[hint], CHROME_MAJOR);
-    const full = headers['sec-ch-ua-full-version-list'] !== undefined
-      ? 'sec-ch-ua-full-version-list'
-      : (headers['Sec-CH-UA-Full-Version-List'] !== undefined ? 'Sec-CH-UA-Full-Version-List' : null);
-    if (full) headers[full] = patchHint(headers[full], CHROME_FULL);
-    if (dntEnabled) headers['DNT'] = '1';
-    /* Global Privacy Control. W czesci stanow USA respektowanie go jest
-       obowiazkiem prawnym. W Europie nie zdejmuje banera, ale nic nie kosztuje
-       i mowi wprost: nie zgadzam sie na handel moimi danymi. */
-    headers['Sec-GPC'] = '1';
-    if (obceCiasteczka && obce(ses, details)) {
-      delete headers['Cookie'];
-      delete headers['cookie'];
+    // Chromium czeka na ten callback BEZ LIMITU CZASU - jesli cokolwiek tu
+    // rzuci wyjatek zanim go wywolamy, to jedno zadanie sieciowe wisi w
+    // nieskonczonosc, a jesli trafi to na glowny dokument strony, wyglada to
+    // dla uzytkownika jak "strona laduje sie w nieskonczonosc" (zlapane
+    // realnie w diagnostyce na zwyklym przeladowaniu youtube.com). Dlatego,
+    // tak jak w adblock.js, blad w naszym kodzie nigdy nie moze zablokowac
+    // zadania - w najgorszym razie puszczamy je z oryginalnymi naglowkami.
+    try {
+      const headers = details.requestHeaders;
+      const ua = headers['User-Agent'];
+      if (ua !== undefined && GIVEAWAY.test(ua)) headers['User-Agent'] = UA;
+      const hint = headers['sec-ch-ua'] !== undefined ? 'sec-ch-ua' : (headers['Sec-CH-UA'] !== undefined ? 'Sec-CH-UA' : null);
+      if (hint) headers[hint] = patchHint(headers[hint], CHROME_MAJOR);
+      const full = headers['sec-ch-ua-full-version-list'] !== undefined
+        ? 'sec-ch-ua-full-version-list'
+        : (headers['Sec-CH-UA-Full-Version-List'] !== undefined ? 'Sec-CH-UA-Full-Version-List' : null);
+      if (full) headers[full] = patchHint(headers[full], CHROME_FULL);
+      if (dntEnabled) headers['DNT'] = '1';
+      /* Global Privacy Control. W czesci stanow USA respektowanie go jest
+         obowiazkiem prawnym. W Europie nie zdejmuje banera, ale nic nie kosztuje
+         i mowi wprost: nie zgadzam sie na handel moimi danymi. */
+      headers['Sec-GPC'] = '1';
+      if (obceCiasteczka && obce(ses, details)) {
+        delete headers['Cookie'];
+        delete headers['cookie'];
+      }
+      callback({ requestHeaders: headers });
+    } catch (_) {
+      callback({});
     }
-    callback({ requestHeaders: headers });
   });
 
   /* Druga polowa blokowania obcych ciasteczek: nie dosc, ze ich nie wysylamy,
      to jeszcze nie pozwalamy ich sobie zakladac. */
   ses.webRequest.onHeadersReceived((details, callback) => {
-    if (podmienNaPodglad(details)) return callback({ cancel: true });
-    if (!obceCiasteczka || !obce(ses, details)) return callback({});
-    const h = details.responseHeaders;
-    if (!h) return callback({});
-    let ruszone = false;
-    for (const klucz of Object.keys(h)) {
-      if (klucz.toLowerCase() === 'set-cookie') { delete h[klucz]; ruszone = true; }
+    // Ta sama zasada co wyzej w onBeforeSendHeaders - callback musi zostac
+    // wywolany zawsze, inaczej to zadanie wisi w nieskonczonosc.
+    try {
+      if (podmienNaPodglad(details)) return callback({ cancel: true });
+      if (!obceCiasteczka || !obce(ses, details)) return callback({});
+      const h = details.responseHeaders;
+      if (!h) return callback({});
+      let ruszone = false;
+      for (const klucz of Object.keys(h)) {
+        if (klucz.toLowerCase() === 'set-cookie') { delete h[klucz]; ruszone = true; }
+      }
+      callback(ruszone ? { responseHeaders: h } : {});
+    } catch (_) {
+      callback({});
     }
-    callback(ruszone ? { responseHeaders: h } : {});
   });
 
   ses.setPermissionRequestHandler(async (webContents, permission, callback, details) => {
