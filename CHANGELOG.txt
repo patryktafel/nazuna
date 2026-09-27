@@ -1,6 +1,23 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.79 - 27 wrzesnia 2026
+--------------------------
+
+Karta na wierzchu czasem zostawala biala po dluzszej nieaktywnosci
+
+Po dluzszym czasie bez fokusu (przelaczenie na inny program na godziny,
+zminimalizowane okno, albo usypiony caly system) aktywna karta potrafila
+zostac pusta/biala mimo ze strona wcale nie padla - trzeba bylo recznie
+odswiezyc, zeby cokolwiek znowu sie pokazalo. Powod: sam kompozytor
+Chromium nie odmalowywal ostatniej klatki po odwieszeniu, a nic w
+programie o to nie prosilo. Teraz Nazuna wymusza takie przemalowanie przy
+powrocie fokusu do okna, przywroceniu z paska zadan i po wybudzeniu
+systemu/odblokowaniu ekranu - bez przeladowania strony i bez utraty
+stanu. To dobrze znana klasa buga w aplikacjach na Elektronie, wiec
+gdyby mimo to gdzies jeszcze wrocil, daj znac z jak najdokladniejszym
+opisem, co dokladnie dzialo sie z komputerem przed tym.
+
 0.1.78 - 26 wrzesnia 2026
 --------------------------
 

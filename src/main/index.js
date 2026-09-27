@@ -2,7 +2,7 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { app, session, dialog, Menu } = require('electron');
+const { app, session, dialog, Menu, powerMonitor } = require('electron');
 // Wymagane jak najwyzej, zeby zlapac t0 mozliwie najblizej faktycznego
 // startu procesu - ale sam pierwszy zapis (znacznik) czeka az nizej, po
 // wybraniu folderu danych (chooseProfileDir), inaczej ladowalby do innego
@@ -167,6 +167,15 @@ if (!gotLock) {
     privacy.applySecureDns();
     W.startTabSleep();
     W.startDiagnostics();
+
+    /* Po wybudzeniu z uspienia albo odblokowaniu ekranu karta na wierzchu
+       potrafi zostac biala, mimo ze nic w niej nie padlo - patrz szerszy
+       komentarz przy invalidateActiveTab() w window.js. Fokus okna (patrz
+       tam tez) lapie wiekszosc takich przypadkow, ale nie ten, gdy Nazuna
+       byla ostatnio aktywnym oknem PRZED usypieniem calego systemu -
+       wtedy po powrocie okno nigdy na nowo nie dostaje zdarzenia "focus". */
+    powerMonitor.on('resume', () => { for (const win of W.allWindows()) win.invalidateActiveTab(); });
+    powerMonitor.on('unlock-screen', () => { for (const win of W.allWindows()) win.invalidateActiveTab(); });
     starttrace.znacznik('po ipc.register/sessions.forPartition/security.init/privacy/tabSleep');
 
     const startUrls = process.argv.slice(1).map(argToStartUrl).filter(Boolean);

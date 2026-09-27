@@ -605,7 +605,16 @@ class AppWindow {
     this.win.on('unmaximize', () => { this.layout(); this.scheduleSync(); });
     this.win.on('enter-full-screen', () => { this.layout(); this.scheduleSync(); });
     this.win.on('leave-full-screen', () => { this.layout(); this.scheduleSync(); });
-    this.win.on('focus', () => this.scheduleSync());
+    /* Po dluzszej nieaktywnosci (okno bez fokusu godzinami, zminimalizowane,
+       albo caly system usypiony - patrz tez powerMonitor w index.js) karta
+       na wierzchu potrafi zostac pusta/biala, mimo ze jej proces wcale nie
+       padl (render-process-gone by to zlapalo, patrz nizej) - to sam
+       kompozytor Chromium nie odmalowal ostatniej klatki po odwieszeniu.
+       invalidate() to oficjalny sposob Electrona na wymuszenie takiego
+       przemalowania - tanie, bez przeladowania strony i bez utraty stanu. */
+    this.win.on('focus', () => { this.scheduleSync(); this.invalidateActiveTab(); });
+    this.win.on('restore', () => this.invalidateActiveTab());
+    this.win.on('show', () => this.invalidateActiveTab());
     this.win.on('close', () => this.rememberBounds());
     this.win.on('closed', () => this.dispose());
 
@@ -742,6 +751,17 @@ class AppWindow {
   /* ----------------------------------------------------------------- tabs */
 
   activeTab() { return this.tabs.find((t) => t.id === this.activeTabId) || null; }
+
+  /* Patrz komentarz przy this.win.on('focus', ...) w konstruktorze. Karta
+     usypiajaca (Tab.sleep) nie ma juz swojego widoku, wiec nie ma czego tu
+     odmalowywac - i tak zaraz dostanie swiezy widok od selectTab()/wake(). */
+  invalidateActiveTab() {
+    const tab = this.activeTab();
+    if (tab && !tab.sleeping && tab.wc && !tab.wc.isDestroyed()) {
+      try { tab.wc.invalidate(); } catch (_) {}
+    }
+  }
+
   tabById(id) { return this.tabs.find((t) => t.id === id) || null; }
 
   /* Buduje jedna karte "na zapas" - juz zaladowana strone nowej karty,
