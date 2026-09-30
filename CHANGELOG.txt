@@ -1,6 +1,23 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.80 - 30 wrzesnia 2026
+--------------------------
+
+Powrot do aplikacji po logowaniu SSO (np. Google) nic nie robil
+
+Strony logowania po zalogowaniu czesto koncza sie przyciskiem "otworz w
+aplikacji", ktory w praktyce jest linkiem do wlasnego protokolu tamtej
+aplikacji (nie http/https). Chrome i Firefox oddaja taki adres systemowi
+same z automatu - Electron (a wiec i Nazuna) tego nie robi, wiec
+klikniecie takiego przycisku nie dawalo zupelnie nic, bez zadnego bledu.
+Teraz Nazuna rozpoznaje nawigacje na nieznany jej protokol (sam wlasny
+adres nazuna://, http/https i kilka innych wewnetrznych zostaja bez
+zmian) i pyta, czy otworzyc to w powiazanej aplikacji - tak jak przy
+klikanym linku mailto: w innych przegladarkach. Pytanie to tez
+zabezpieczenie: bez niego dowolna strona moglaby po cichu odpalac
+zainstalowane w Windows programy.
+
 0.1.79 - 27 wrzesnia 2026
 --------------------------
 

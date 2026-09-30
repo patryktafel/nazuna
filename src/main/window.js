@@ -1,7 +1,7 @@
 'use strict';
 const path = require('path');
 const crypto = require('crypto');
-const { BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme, net } = require('electron');
+const { BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme, net, dialog } = require('electron');
 const { LAYOUT, PRELOAD_DIR, ASSETS_DIR, APP_NAME, rozstrzygnijMotyw, TLA } = require('./constants');
 const data = require('./data');
 const urls = require('./urls');
@@ -343,6 +343,7 @@ class Tab {
     wc.on('focus', () => { if (this.owner.activeTabId === this.id) this.owner.send('address:blur'); });
     wc.on('will-navigate', (event, target) => {
       if (/^nazuna:/i.test(target) && !/^nazuna:/i.test(wc.getURL())) { event.preventDefault(); return; }
+      if (urls.zewnetrznyProtokol(target)) { event.preventDefault(); this.owner.handleExternalProtocol(target); return; }
       const zagrozenie = security.sprawdz(target);
       if (zagrozenie) {
         event.preventDefault();
@@ -351,10 +352,12 @@ class Tab {
       }
     });
     // Przekierowanie po drodze (np. skrocony link prowadzacy na zlosliwa
-    // domene) - to samo sprawdzenie co przy zwyklej nawigacji, tylko zanim
-    // przekierowanie zdazy sie dokonac.
+    // domene, albo koncowka logowania SSO wracajaca do innej aplikacji
+    // przez jej wlasny protokol) - to samo sprawdzenie co przy zwyklej
+    // nawigacji, tylko zanim przekierowanie zdazy sie dokonac.
     wc.on('will-redirect', (event) => {
       if (!event.isMainFrame) return;
+      if (urls.zewnetrznyProtokol(event.url)) { event.preventDefault(); this.owner.handleExternalProtocol(event.url); return; }
       const zagrozenie = security.sprawdz(event.url);
       if (zagrozenie) {
         event.preventDefault();
@@ -1104,6 +1107,31 @@ class AppWindow {
       this._permissionResolvers.set(key, resolve);
       this.openPopover('permission', { key, permission, origin, strona, osadzona });
     });
+  }
+
+  /* Strona probuje przejsc na adres, ktorego Nazuna sama nie umie wyswietlic
+     (patrz urls.zewnetrznyProtokol) - najczesciej to koncowka logowania SSO
+     wracajaca do jakiejs aplikacji desktopowej jej wlasnym protokolem
+     (np. po zalogowaniu przez Google w przegladarce). Chrome i Firefox
+     oddaja to systemowi automatycznie, z krotkim potwierdzeniem - u nas
+     nikt tego nie robil, wiec klikniecie takiego linku nie dawalo nic.
+     Samo potwierdzenie to tez zabezpieczenie: bez niego dowolna strona
+     mogłaby po cichu odpalac zarejestrowane w Windows aplikacje. */
+  handleExternalProtocol(target) {
+    let schemat = target;
+    try { schemat = new URL(target).protocol.replace(/:$/, ''); } catch (_) { /* zostaw surowy adres */ }
+    dialog.showMessageBox(this.win, {
+      type: 'question',
+      buttons: ['Otwórz', 'Anuluj'],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+      title: 'Otworzyć w innej aplikacji?',
+      message: `Ta strona chce otworzyć aplikację obsługującą adresy "${schemat}:".`,
+      detail: target.length > 200 ? `${target.slice(0, 200)}…` : target
+    }).then((res) => {
+      if (res.response === 0) shell.openExternal(target).catch(() => {});
+    }).catch(() => {});
   }
 
   resolvePermission(key, answer, remember) {

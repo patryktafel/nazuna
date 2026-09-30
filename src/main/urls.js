@@ -63,4 +63,19 @@ function bezpieczneZewnetrzne(url) {
   try { return ZEWNETRZNE_SCHEMATY.has(new URL(url).protocol); } catch (_) { return false; }
 }
 
-module.exports = { resolve, searchUrl, looksLikeUrl, prettyHost, hostOf, engine, bezpieczneZewnetrzne };
+/* Schematy, ktore Nazuna umie wyswietlic sama, jako zwykla strone/karte.
+   Wszystko inne - mailto:, tel:, ale tez wlasne protokoly innych aplikacji,
+   takie jak te, ktorymi strony logowania (SSO) wracaja do aplikacji
+   desktopowej po zalogowaniu - trzeba oddac systemowi (patrz
+   handleExternalProtocol w window.js). Chrome i Firefox robia to same z
+   automatu; w Electronie main-frame nawigacja na nieznany protokol po
+   prostu nic nie robi, chyba ze ktos jawnie to obsluzy. */
+const PRZEGLADALNE_SCHEMATY = new Set([
+  'http:', 'https:', 'nazuna:', 'file:', 'about:', 'data:', 'blob:',
+  'filesystem:', 'devtools:', 'chrome-extension:', 'view-source:', 'javascript:'
+]);
+function zewnetrznyProtokol(url) {
+  try { return !PRZEGLADALNE_SCHEMATY.has(new URL(url).protocol); } catch (_) { return false; }
+}
+
+module.exports = { resolve, searchUrl, looksLikeUrl, prettyHost, hostOf, engine, bezpieczneZewnetrzne, zewnetrznyProtokol };
