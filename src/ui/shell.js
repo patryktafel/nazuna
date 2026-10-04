@@ -1075,7 +1075,7 @@ function bmRowHtml(b) {
   const icon = b.type === 'folder'
     ? iconSvg('folder')
     : `<span class="fav">${iconSvg('globe')}</span>`;
-  return `<div class="bm-row" data-id="${escapeHtml(b.id)}" data-type="${escapeHtml(b.type)}" data-url="${escapeHtml(b.url || '')}"${b.type === 'link' ? ` title="${escapeHtml(b.url || '')}"` : ''}>
+  return `<div class="bm-row" draggable="true" data-id="${escapeHtml(b.id)}" data-type="${escapeHtml(b.type)}" data-url="${escapeHtml(b.url || '')}"${b.type === 'link' ? ` title="${escapeHtml(b.url || '')}"` : ''}>
     ${icon}<span class="t">${escapeHtml(b.title)}</span>
     ${b.type === 'folder' ? iconSvg('chevronLeft', 'chev') : ''}
   </div>`;
@@ -1111,6 +1111,79 @@ function middleOpenBmRow(e) {
   api.send('tab.new', { url: row.dataset.url, background: true });
   closePopover();
 }
+
+/* Zmiana kolejnosci zakladek w menu (i w rozwinietym folderze) przez
+   przeciaganie - ta sama zasada co w nazuna://bookmarks: gorna polowa
+   wiersza = przed nim, dolna = za nim, srodek folderu = do folderu. */
+let bmCiagniety = null;
+
+function bmGdzieUpuscic(row, e) {
+  const r = row.getBoundingClientRect();
+  const wzgl = (e.clientY - r.top) / r.height;
+  if (row.dataset.type === 'folder' && wzgl > 0.25 && wzgl < 0.75) return 'do';
+  return wzgl < 0.5 ? 'przed' : 'po';
+}
+
+function bmWyczyscZnaczniki() {
+  el.layer.querySelectorAll('.drop-przed, .drop-po, .drop-do').forEach((n) => n.classList.remove('drop-przed', 'drop-po', 'drop-do'));
+}
+
+/* Po przeniesieniu przerysowujemy liste w juz otwartym okienku, zamiast je
+   zamykac i otwierac na nowo. */
+function odswiezPanelZakladek() {
+  if (!popover || popover.name !== 'bookmarks') return;
+  el.layer.querySelectorAll('.bm-sub').forEach((n) => n.remove());
+  const lista = popover.el.querySelector('.bm-list');
+  const menu = [...bookmarkChildren('menu'), ...bookmarkChildren('other')];
+  if (lista) { lista.innerHTML = bmListHtml(menu); attachFavicons(lista); }
+}
+
+el.layer.addEventListener('dragstart', (e) => {
+  const row = e.target.closest && e.target.closest('.bm-row');
+  if (!row) return;
+  bmCiagniety = row.dataset.id;
+  row.classList.add('ciagniety');
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', row.dataset.url || row.dataset.id); } catch (_) {}
+});
+el.layer.addEventListener('dragover', (e) => {
+  if (!bmCiagniety) return;
+  const row = e.target.closest && e.target.closest('.bm-row');
+  bmWyczyscZnaczniki();
+  if (!row || row.dataset.id === bmCiagniety) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  row.classList.add(`drop-${bmGdzieUpuscic(row, e)}`);
+});
+el.layer.addEventListener('drop', async (e) => {
+  if (!bmCiagniety) return;
+  const row = e.target.closest && e.target.closest('.bm-row');
+  bmWyczyscZnaczniki();
+  const id = bmCiagniety;
+  bmCiagniety = null;
+  if (!row || row.dataset.id === id) return;
+  e.preventDefault();
+  const cel = (state.bookmarks || []).find((b) => b.id === row.dataset.id);
+  if (!cel) return;
+  const tryb = bmGdzieUpuscic(row, e);
+  let parent = cel.parent;
+  let beforeId = cel.id;
+  if (tryb === 'do') { parent = cel.id; beforeId = null; }
+  else if (tryb === 'po') {
+    const rodzenstwo = (state.bookmarks || []).filter((b) => b.parent === cel.parent && b.id !== id);
+    const i = rodzenstwo.findIndex((b) => b.id === cel.id);
+    beforeId = rodzenstwo[i + 1] ? rodzenstwo[i + 1].id : null;
+  }
+  await api.invoke('bookmarks.move', { id, parent, beforeId });
+  const swiezy = await api.invoke('app.state').catch(() => null);
+  if (swiezy) state = swiezy;
+  odswiezPanelZakladek();
+});
+el.layer.addEventListener('dragend', () => {
+  bmCiagniety = null;
+  bmWyczyscZnaczniki();
+  el.layer.querySelectorAll('.ciagniety').forEach((n) => n.classList.remove('ciagniety'));
+});
 
 function bookmarksPanel() {
   // Tylko menu zakladek - pasek pod adresem ma osobne zakladki i tu ich nie

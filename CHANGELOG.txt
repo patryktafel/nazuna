@@ -1,6 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.84 - 4 pazdziernika 2026
+-----------------------------
+
+Zmiana kolejnosci zakladek przeciaganiem
+
+- W menedzerze zakladek (nazuna://bookmarks) i w menu pod przyciskiem
+  zakladek zakladki mozna przeciagac mysza, zeby zmienic ich kolejnosc.
+  Kreska pokazuje, gdzie zakladka wyladuje.
+- Zakladka upuszczona na srodek folderu trafia do tego folderu.
+- Nowa kolejnosc od razu widac w menu, na pasku i w menedzerze.
+- Menedzer pokazuje, w ktorym folderze lezy zakladka.
+- Folderu nie da sie przez pomylke wlozyc do niego samego ani do jego
+  podfolderu.
+
 0.1.83 - 4 pazdziernika 2026
 -----------------------------
 

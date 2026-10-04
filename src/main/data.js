@@ -228,6 +228,16 @@ function moveBookmark(id, parent, beforeId) {
   const items = bookmarks.data.items;
   const idx = items.findIndex((b) => b.id === id);
   if (idx < 0) return;
+  if (!parent) return;
+  if (beforeId === id) return;
+  /* Folder nie moze trafic do samego siebie ani do swojego podfolderu -
+     przy przeciaganiu myszka latwo go upuscic na wlasne dziecko, a wtedy
+     cala galaz odcinalaby sie od paska i menu i znikala z widoku. */
+  for (let p = parent, i = 0; p && i < 50; i++) {
+    if (p === id) return;
+    const nad = items.find((b) => b.id === p);
+    p = nad ? nad.parent : null;
+  }
   const [item] = items.splice(idx, 1);
   item.parent = parent;
   const at = beforeId ? items.findIndex((b) => b.id === beforeId) : -1;

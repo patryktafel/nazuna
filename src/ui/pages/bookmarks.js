@@ -46,11 +46,12 @@ function miejsce(b) {
 function rowHtml(b) {
   const isFolder = b.type === 'folder';
   const doMenu = miejsce(b) === 'bar';
-  return `<div class="list-item" data-id="${esc(b.id)}" data-url="${esc(b.url || '')}" data-type="${b.type}">
+  const folder = b.parent && !['bar', 'menu', 'other'].includes(b.parent) ? items.find((x) => x.id === b.parent) : null;
+  return `<div class="list-item" draggable="true" data-id="${esc(b.id)}" data-url="${esc(b.url || '')}" data-type="${b.type}">
     ${isFolder ? iconSvg('folder') : `<img class="fav" src="${esc(favicon(b.url))}">`}
     <div class="main">
       <div class="name" contenteditable="false" data-title>${esc(b.title)}</div>
-      ${isFolder ? '<div class="url">Folder</div>' : `<div class="url">${esc(b.url)}</div>`}
+      ${isFolder ? `<div class="url">Folder${folder ? ` w: ${esc(folder.title)}` : ''}</div>` : `<div class="url">${folder ? `${iconSvg('folder')} ${esc(folder.title)} · ` : ''}${esc(b.url)}</div>`}
     </div>
     <div class="acts">
       ${isFolder ? '' : `<button class="btn ghost" data-przenies="${esc(b.id)}" data-cel="${doMenu ? 'menu' : 'bar'}" title="${doMenu ? 'Przenieś do menu zakładek' : 'Przenieś na pasek zakładek'}">${doMenu ? 'Do menu' : 'Na pasek'}</button>`}
@@ -68,7 +69,11 @@ page.addEventListener('click', async (e) => {
   const rn = e.target.closest('[data-rename]');
   if (rn) {
     e.stopPropagation();
-    const node = rn.closest('.list-item').querySelector('[data-title]');
+    const wiersz = rn.closest('.list-item');
+    const node = wiersz.querySelector('[data-title]');
+    // Przy zmianie nazwy wiersz nie moze sie przeciagac - inaczej zaznaczanie
+    // tekstu myszka zaczynaloby przenoszenie zakladki.
+    wiersz.draggable = false;
     node.contentEditable = 'true';
     node.focus();
     document.execCommand('selectAll', false, null);
@@ -84,6 +89,72 @@ page.addEventListener('click', async (e) => {
   }
   const row = e.target.closest('.list-item');
   if (row && row.dataset.type === 'link') api.send('nav.go', { input: row.dataset.url });
+});
+
+/* ------------------------------------------------- zmiana kolejnosci myszka
+   Wiersz upuszczony na gorna polowe innego wiersza laduje przed nim, na dolna -
+   za nim, w tym samym miejscu (pasek, menu albo folder) co tamten. Na srodek
+   folderu - do srodka folderu. Kolejnosc w pliku zakladek to kolejnosc na
+   pasku i w menu, wiec zmiane widac od razu wszedzie. */
+let ciagniety = null;
+
+function gdzieUpuscic(wiersz, e) {
+  const r = wiersz.getBoundingClientRect();
+  const wzgl = (e.clientY - r.top) / r.height;
+  if (wiersz.dataset.type === 'folder' && wzgl > 0.25 && wzgl < 0.75) return 'do';
+  return wzgl < 0.5 ? 'przed' : 'po';
+}
+
+function wyczyscZnaczniki() {
+  page.querySelectorAll('.drop-przed, .drop-po, .drop-do').forEach((n) => n.classList.remove('drop-przed', 'drop-po', 'drop-do'));
+}
+
+page.addEventListener('dragstart', (e) => {
+  const wiersz = e.target.closest && e.target.closest('.list-item');
+  if (!wiersz || !wiersz.draggable) return;
+  ciagniety = wiersz.dataset.id;
+  wiersz.classList.add('ciagniety');
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', wiersz.dataset.url || wiersz.dataset.id); } catch (_) {}
+});
+
+page.addEventListener('dragover', (e) => {
+  if (!ciagniety) return;
+  const wiersz = e.target.closest && e.target.closest('.list-item');
+  wyczyscZnaczniki();
+  if (!wiersz || wiersz.dataset.id === ciagniety) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  wiersz.classList.add(`drop-${gdzieUpuscic(wiersz, e)}`);
+});
+
+page.addEventListener('drop', async (e) => {
+  if (!ciagniety) return;
+  const wiersz = e.target.closest && e.target.closest('.list-item');
+  wyczyscZnaczniki();
+  if (!wiersz || wiersz.dataset.id === ciagniety) return;
+  e.preventDefault();
+  const id = ciagniety;
+  ciagniety = null;
+  const cel = items.find((b) => b.id === wiersz.dataset.id);
+  if (!cel) return;
+  const tryb = gdzieUpuscic(wiersz, e);
+  let parent = cel.parent;
+  let beforeId = cel.id;
+  if (tryb === 'do') { parent = cel.id; beforeId = null; }
+  else if (tryb === 'po') {
+    const rodzenstwo = items.filter((b) => b.parent === cel.parent && b.id !== id);
+    const i = rodzenstwo.findIndex((b) => b.id === cel.id);
+    beforeId = rodzenstwo[i + 1] ? rodzenstwo[i + 1].id : null;
+  }
+  await api.invoke('bookmarks.move', { id, parent, beforeId });
+  load();
+});
+
+page.addEventListener('dragend', () => {
+  ciagniety = null;
+  wyczyscZnaczniki();
+  page.querySelectorAll('.ciagniety').forEach((n) => n.classList.remove('ciagniety'));
 });
 
 async function load() {
