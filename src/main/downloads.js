@@ -16,6 +16,14 @@ let broadcast = () => {};
 
 function setBroadcaster(fn) { broadcast = fn; }
 
+/* Okno Nazuny, z ktorego wyszlo pobieranie (ustawiane z index.js). Okno
+   "Zapisz jako" dostaje je jako rodzica, dzieki czemu Windows pokazuje je
+   nad Nazuna, na tym samym monitorze. Domyslne okno Electrona dla kart w
+   WebContentsView nie mialo rodzica i potrafilo wyskoczyc na innym ekranie,
+   a nawet schowac sie pod oknem przegladarki. */
+let oknoDla = () => null;
+function ustawOknoDla(fn) { oknoDla = fn; }
+
 function defaultDir() {
   const custom = data.settings.get('downloadDir', '');
   if (custom && fs.existsSync(custom)) return custom;
@@ -104,6 +112,21 @@ function attach(session) {
     if (!risky && !data.settings.get('askWhereToSave', false)) {
       try { fs.mkdirSync(dir, { recursive: true }); } catch (_) {}
       item.setSavePath(uniquePath(dir, filename));
+    } else {
+      let rodzic = null;
+      try { rodzic = oknoDla(webContents); } catch (_) {}
+      if (rodzic) {
+        const ext = path.extname(filename).replace(/^\./, '');
+        const wybor = dialog.showSaveDialogSync(rodzic, {
+          title: 'Zapisz plik',
+          defaultPath: path.join(dir, filename),
+          filters: ext ? [{ name: ext.toUpperCase(), extensions: [ext] }, { name: 'Wszystkie pliki', extensions: ['*'] }] : []
+        });
+        // Anulowane okno zapisu = brak pobierania, tak jak w Chrome.
+        if (!wybor) { event.preventDefault(); return; }
+        item.setSavePath(wybor);
+      }
+      // Bez znanego okna zostaje domyslne okno zapisu Electrona.
     }
 
     const record = {
@@ -229,4 +252,4 @@ async function chooseDir(parentWindow) {
   return res.filePaths[0];
 }
 
-module.exports = { attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir };
+module.exports = { ustawOknoDla, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir };

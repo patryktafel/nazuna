@@ -1,6 +1,39 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.83 - 4 pazdziernika 2026
+-----------------------------
+
+Lepsza praca na kilku monitorach i pewniejsze aktualizacje
+
+Kilka monitorow (Windows 11, rozne skale ekranow):
+- Okno otwierane albo przenoszone na monitor o innej skali niz glowny
+  (np. laptop 150% i monitor 100%) dostawalo okolo 2/3 wlasciwego
+  rozmiaru. Teraz ma taki rozmiar, jaki powinno.
+- Okno zmaksymalizowane na drugim monitorze wraca po uruchomieniu na ten
+  sam monitor. Pozycja okna zapisuje sie tez w trakcie pracy, a nie tylko
+  przy zamknieciu.
+- Okno zapamietane na monitorze, ktorego juz nie ma, otwiera sie na
+  ekranie glownym zamiast poza ekranem. Za duze okno jest przycinane do
+  ekranu.
+- Po odlaczeniu monitora albo zmianie ukladu ekranow okna, ktore zostaly
+  poza ekranem, wracaja na widoczny monitor.
+- Nowe okno (Ctrl+N, okno prywatne) otwiera sie na tym samym monitorze co
+  okno, z ktorego je otwarto, lekko przesuniete.
+- Karta wyrwana do nowego okna laduje na monitorze, nad ktorym ja
+  puszczono, w calosci na nim i we wlasciwym rozmiarze. Przeciaganie kart
+  miedzy oknami na roznych monitorach trafia w wlasciwe miejsce.
+- Okienka logowania (np. Google) otwieraja sie na srodku okna Nazuny, na
+  tym samym monitorze, a nie na ekranie glownym.
+- Okno "Zapisz jako" przy pobieraniu pokazuje sie nad Nazuna, na tym samym
+  monitorze.
+
+Aktualizacje:
+- Sprawdzanie podpisu pobranej aktualizacji mialo tylko 20 sekund. Gdy
+  Windows Defender dluzej skanowal instalator, aktualizacja byla
+  odrzucana i przegladarka zostawala na starej wersji. Teraz limit jest
+  dluzszy i jest druga proba.
+
 0.1.82 - 4 pazdziernika 2026
 -----------------------------
 

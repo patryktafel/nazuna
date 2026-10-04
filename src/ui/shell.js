@@ -471,8 +471,7 @@ function wireTabDrag(node) {
 }
 
 /* Trzymana karta, rysowana pod kursorem. Systemowe przenoszenie rysowalo ja
-   samo, ale go nie uzywamy, wiec robimy to sami. Wspolrzedne przychodza
-   ekranowe, przeliczamy je na wlasne odejmujac polozenie okna. */
+   samo, ale go nie uzywamy, wiec robimy to sami. */
 function duch(p) {
   let d = document.getElementById('duchKarty');
   if (!p || !p.on) { if (d) d.hidden = true; return; }
@@ -483,18 +482,19 @@ function duch(p) {
     document.body.appendChild(d);
   }
   d.textContent = String(p.tytul || 'Karta');
-  d.style.left = `${Number(p.x) - (window.screenX || 0) + 12}px`;
-  d.style.top = `${Number(p.y) - (window.screenY || 0) + 10}px`;
+  // Wspolrzedne przychodza juz przeliczone na to okno (patrz tab.dragRuch).
+  d.style.left = `${Number(p.x) + 12}px`;
+  d.style.top = `${Number(p.y) + 10}px`;
   d.hidden = false;
 }
 api.on('pasek:duch', duch);
 
-/* Podswietlenie paska, gdy karta jest nad nim. Wspolrzedna przychodzi ekranowa,
-   wiec przeliczamy ja na wlasna, odejmujac polozenie okna. */
+/* Podswietlenie paska, gdy karta jest nad nim. Wspolrzedna jest juz
+   przeliczona na to okno przez proces glowny. */
 api.on('pasek:podswietl', (p) => {
   if (!p || !p.on) { el.tabstrip.classList.remove('przyjmuje'); schowajWskaznik(); return; }
   el.tabstrip.classList.add('przyjmuje');
-  pokazWskaznik(Number(p.x) - (window.screenX || 0));
+  pokazWskaznik(Number(p.x));
 });
 
 /* Karta upuszczona na naszym pasku. Tylko my wiemy, gdzie leza nasze karty,
@@ -503,7 +503,7 @@ api.on('pasek:upusc', (p) => {
   el.tabstrip.classList.remove('przyjmuje');
   schowajWskaznik();
   if (!p || !p.id) return;
-  const clientX = Number(p.x) - (window.screenX || 0);
+  const clientX = Number(p.x);
   api.send('tab.przenies', { id: p.id, zeton: (state && state.zeton) || '', index: miejsceWstawienia(clientX) });
 });
 

@@ -18,6 +18,17 @@ const privacy = require('./privacy');
 const { SEARCH_ENGINES, APP_NAME, rozstrzygnijMotyw } = require('./constants');
 const W = require('./window');
 
+/* Polozenie kursora przy przeciaganiu karty. Bierzemy je z procesu glownego,
+   w tym samym ukladzie co pozycje okien. Wspolrzedne ekranu z paska (strony)
+   przy monitorach o roznej skali (np. laptop 150% i monitor 100%) potrafily
+   wskazywac inne miejsce niz to, gdzie naprawde byl kursor - karta wpadala
+   wtedy do zlego okna albo wyrwana ladowala obok. */
+function gdzieKursor(p) {
+  const k = W.kursor();
+  if (k && Number.isFinite(k.x) && Number.isFinite(k.y)) return { x: k.x, y: k.y };
+  return { x: Number(p.x), y: Number(p.y) };
+}
+
 /* Srodek okna, gdy karta trafia do osobnego okna z menu, a nie z przeciagania. */
 function srodekOkna(win) {
   try {
@@ -320,21 +331,23 @@ const handlers = {
      w trzecie. Tutaj proces glowny wie, gdzie stoja wszystkie okna, wiec sam
      rozstrzyga, nad ktorym jestes. */
   'tab.dragRuch': (win, p) => {
-    const x = Number(p.x); const y = Number(p.y);
+    const { x, y } = gdzieKursor(p);
     const cel = (Number.isFinite(x) && Number.isFinite(y)) ? W.oknoPodPunktem(x, y) : null;
     const nadPaskiem = cel && W.wPasku(cel, y);
     const karta = win ? win.tabById(Number(p.id)) : null;
     const tytul = karta ? (karta.title || 'Nowa karta') : 'Karta';
     for (const w of W.windows) {
       const moje = nadPaskiem && w === cel;
-      w.send('pasek:podswietl', { on: !!moje, x });
+      // Wspolrzedne juz wewnatrz danego okna (W.punktWOknie), nie ekranowe.
+      const wOknie = W.punktWOknie(w, x, y);
+      w.send('pasek:podswietl', { on: !!moje, x: wOknie.x });
       // Trzymana karta rysuje sie w tym oknie, nad ktorym akurat jestes.
-      w.send('pasek:duch', w === cel ? { on: true, x, y, tytul } : { on: false });
+      w.send('pasek:duch', w === cel ? { on: true, x: wOknie.x, y: wOknie.y, tytul } : { on: false });
     }
   },
 
   'tab.dragKoniecP': (win, p) => {
-    const x = Number(p.x); const y = Number(p.y);
+    const { x, y } = gdzieKursor(p);
     for (const w of W.windows) {
       w.send('pasek:podswietl', { on: false });
       w.send('pasek:duch', { on: false });
@@ -361,7 +374,7 @@ const handlers = {
     if (cel && W.wPasku(cel, y)) {
       // Pasek docelowego okna sam policzy miejsce wstawienia, bo tylko on wie,
       // gdzie dokladnie leza jego karty.
-      cel.send('pasek:upusc', { id: Number(p.id), x });
+      cel.send('pasek:upusc', { id: Number(p.id), x: W.punktWOknie(cel, x, y).x });
       return;
     }
     // Poza jakimkolwiek paskiem: osobne okno w tym miejscu.

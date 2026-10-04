@@ -33,6 +33,52 @@ function dostepny() {
 }
 
 let autoUpdater = null;
+
+/* Sprawdzenie podpisu pobranego instalatora - to samo, co robi electron-updater
+   (PowerShell, Get-AuthenticodeSignature, porownanie wystawcy), tylko z
+   dluzszym limitem czasu i druga proba. electron-updater daje PowerShellowi
+   na sztywno 20 sekund, a Windows Defender skanuje wtedy swiezo pobrany,
+   prawie 100-megabajtowy instalator - przy 0.1.82 nie zdazyl i aktualizacja
+   zostala po cichu odrzucona ("Command failed" w aktualizacje.log), a Nazuna
+   zostala na starej wersji. Zwraca null, gdy podpis jest dobry, albo opis
+   bledu (tak jak oryginal). */
+function uruchomPowerShell(plik, limitMs) {
+  const { execFile } = require('child_process');
+  const bezpieczny = plik.replace(/'/g, "''");
+  return new Promise((resolve) => {
+    execFile('set "PSModulePath=" & chcp 65001 >NUL & powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-InputFormat', 'None', '-Command', `"Get-AuthenticodeSignature -LiteralPath '${bezpieczny}' | ConvertTo-Json -Compress"`],
+      { shell: true, timeout: limitMs, windowsHide: true },
+      (error, stdout, stderr) => resolve({ error, stdout: String(stdout || ''), stderr: String(stderr || '') }));
+  });
+}
+
+async function sprawdzPodpis(wystawcy, plik) {
+  const { parseDn } = require('builder-util-runtime');
+  let ostatni = '';
+  for (let proba = 1; proba <= 2; proba++) {
+    const start = Date.now();
+    const { error, stdout, stderr } = await uruchomPowerShell(plik, 120 * 1000);
+    log('info', `sprawdzPodpis: proba ${proba}, ${Date.now() - start} ms`);
+    if (error || stderr || !stdout.trim()) {
+      ostatni = `nie udalo sie odczytac podpisu: ${(error && (error.killed ? 'przekroczony limit czasu' : error.message)) || stderr}`;
+      log('warn', 'sprawdzPodpis:', ostatni);
+      continue;
+    }
+    let dane;
+    try { dane = JSON.parse(stdout); } catch (e) { ostatni = `nieczytelna odpowiedz PowerShell: ${e.message}`; continue; }
+    if (dane.Status !== 0) return `podpis instalatora jest nieprawidlowy (Status ${dane.Status})`;
+    if (dane.Path && path.normalize(dane.Path) !== path.normalize(plik)) return 'sprawdzono inny plik niz pobrany';
+    const podmiot = parseDn((dane.SignerCertificate && dane.SignerCertificate.Subject) || '');
+    const pasuje = wystawcy.some((nazwa) => {
+      const dn = parseDn(nazwa);
+      if (dn.size) return [...dn.keys()].every((k) => dn.get(k) === podmiot.get(k));
+      return nazwa === podmiot.get('CN');
+    });
+    return pasuje ? null : `instalator podpisany innym certyfikatem (${dane.SignerCertificate && dane.SignerCertificate.Subject})`;
+  }
+  return ostatni || 'nie udalo sie sprawdzic podpisu';
+}
 let stanAktualizacji = { status: 'niedostepna' };
 let nasluchujacy = null;
 
@@ -73,6 +119,8 @@ function init(onZmiana) {
     error: (...a) => log('eu:error', ...a),
     debug: (...a) => log('eu:debug', ...a)
   };
+
+  try { autoUpdater.verifyUpdateCodeSignature = sprawdzPodpis; } catch (err) { log('warn', 'verifyUpdateCodeSignature:', err && err.message); }
 
   autoUpdater.on('checking-for-update', () => { log('info', 'checking-for-update'); ustaw({ status: 'sprawdzanie', komunikat: null }); });
   autoUpdater.on('update-available', (info) => { log('info', 'update-available', info && info.version); ustaw({ status: 'dostepna', wersja: info.version, komunikat: null }); });

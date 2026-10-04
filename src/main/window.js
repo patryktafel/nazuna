@@ -11,6 +11,7 @@ const extensions = require('./extensions');
 const security = require('./security');
 const starttrace = require('./starttrace');
 const diagnostics = require('./diagnostics');
+const monitory = require('./monitory');
 
 const windows = new Set();
 let nextWindowId = 1;
@@ -436,12 +437,27 @@ class Tab {
       if (disposition === 'save-to-disk') return { action: 'allow' };
       const wantsPopup = disposition === 'new-window' && /width=|height=|popup/i.test(features || '');
       if (wantsPopup) {
+        /* Okienko (np. logowanie przez Google) na srodku okna Nazuny, na tym
+           samym monitorze. Bez podanej pozycji Electron stawial je na
+           glownym ekranie - przy Nazunie na drugim monitorze logowanie
+           wyskakiwalo na laptopie. Rozmiar, o ktory prosi strona, w
+           rozsadnych granicach. */
+        const liczba = (klucz, domyslna) => {
+          const m = new RegExp('(?:^|,)\\s*' + klucz + '\\s*=\\s*(\\d+)', 'i').exec(features || '');
+          return m ? Math.max(300, Math.min(1400, parseInt(m[1], 10))) : domyslna;
+        };
+        let nad;
+        try { nad = this.owner.win.getBounds(); } catch (_) { nad = monitory.domyslne(); }
+        const cel = monitory.naSrodku(nad, liczba('width', 520), liczba('height', 640));
+        this._granicePopupu = cel;
         return {
           action: 'allow',
           outlivesOpener: false,
           overrideBrowserWindowOptions: {
-            width: 520,
-            height: 640,
+            x: cel.x,
+            y: cel.y,
+            width: cel.width,
+            height: cel.height,
             backgroundColor: '#101116',
             autoHideMenuBar: true,
             title: APP_NAME,
@@ -462,6 +478,8 @@ class Tab {
 
     wc.on('did-create-window', (child) => {
       child.setMenuBarVisibility(false);
+      // Ta sama poprawka rozmiaru co przy zwyklym oknie (monitory.js).
+      if (this._granicePopupu) { monitory.ustawGranice(child, this._granicePopupu); this._granicePopupu = null; }
       child.webContents.setWindowOpenHandler(({ url }) => {
         this.owner.newTab({ url });
         return { action: 'deny' };
@@ -544,10 +562,36 @@ class AppWindow {
     // Karta trzymana "na zapas", patrz _prepareSpare() i newTab() nizej.
     this._spareTab = null;
 
-    const saved = bounds || data.settings.get('windowBounds', null);
+    /* Gdzie stanie okno (patrz monitory.js):
+       - pozycja podana wprost (wyrwana karta): na ekranie, nad ktorym puszczono
+         karte, w calosci na nim;
+       - kolejne okno (Ctrl+N, nowe okno prywatne) przy juz otwartym: na tym
+         samym monitorze co okno, z ktorego je otwarto, lekko przesuniete, jak
+         w Chrome. Wczesniej kazde nowe okno ladowalo dokladnie w miejscu
+         ostatnio zamknietego - czesto na innym monitorze i jedno na drugim;
+       - pierwsze okno: tam, gdzie bylo ostatnio, o ile ten monitor dalej
+         istnieje. Okno zapamietane na odlaczonym monitorze trafia na srodek
+         glownego ekranu zamiast poza ekran. */
+    let cel;
+    let maksymalizuj = false;
+    const zrodlo = bounds ? null : [...windows].find((w) => w.win && !w.win.isDestroyed() && w.win.isFocused()) || null;
+    if (bounds && Number.isFinite(bounds.x) && Number.isFinite(bounds.y)) {
+      const punkt = bounds.punkt || { x: bounds.x + 40, y: bounds.y + 10 };
+      cel = monitory.dopasuj({ x: bounds.x, y: bounds.y, width: bounds.width || 1280, height: bounds.height || 820 }, monitory.ekranPunktu(punkt));
+    } else if (zrodlo) {
+      const nb = monitory.normalne(zrodlo.win) || monitory.domyslne();
+      cel = monitory.dopasuj({ x: nb.x + 30, y: nb.y + 30, width: nb.width, height: nb.height }, monitory.ekranOkna(nb));
+      maksymalizuj = zrodlo.win.isMaximized();
+    } else {
+      const saved = data.settings.get('windowBounds', null);
+      cel = saved && monitory.widoczne(saved) ? monitory.dopasuj(saved) : monitory.domyslne();
+      maksymalizuj = !!data.settings.get('windowMaximized', false);
+    }
     const opts = {
-      width: (saved && saved.width) || 1280,
-      height: (saved && saved.height) || 820,
+      x: cel.x,
+      y: cel.y,
+      width: cel.width,
+      height: cel.height,
       minWidth: 620,
       minHeight: 420,
       frame: false,
@@ -565,27 +609,16 @@ class AppWindow {
       opts.trafficLightPosition = { x: 14, y: 13 };
     }
 
-    if (bounds && Number.isFinite(bounds.x) && Number.isFinite(bounds.y)) {
-      /* Pozycja podana wprost (np. wyrwanie karty na inny monitor). Bierzemy
-         ja tak, jak przyszla - to wspolrzedne ekranu, ktore Electron sam
-         przypisze do wlasciwego monitora. Poprzednio ta galaz w ogole sie
-         nie wykonywala (dawny warunek mial "&& !bounds"), wiec podane x/y
-         bylo ignorowane i okno zawsze ladowalo na glownym monitorze. */
-      opts.x = bounds.x; opts.y = bounds.y;
-    } else if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
-      const area = screen.getDisplayMatching(saved).workArea;
-      if (saved.x < area.x + area.width && saved.y < area.y + area.height) {
-        opts.x = saved.x; opts.y = saved.y;
-      }
-    }
-
     this.win = new BaseWindow(opts);
+    // Poprawka rozmiaru na monitorze o innej skali niz glowny (monitory.js).
+    monitory.ustawGranice(this.win, cel);
+    this._granice = cel;
 
-    /* Jesli ostatnio zamkniete okno bylo zmaksymalizowane, nowe startuje tak
-       samo - ale tylko gdy nikt nie podal pozycji na sztywno (wyrwana karta
-       na przyklad ma stanac dokladnie tam, gdzie ja puszczono, nie na cale
-       ekran). Robimy to przed pokazaniem okna, wiec nic nie miga. */
-    if (!bounds && data.settings.get('windowMaximized', false)) this.win.maximize();
+    /* Zmaksymalizowane, gdy takie bylo ostatnie okno (albo okno, z ktorego
+       otwarto to nowe) - na tym monitorze, na ktorym stoi. Wyrwana karta ma
+       stanac dokladnie tam, gdzie ja puszczono, wiec jej to nie dotyczy.
+       Robimy to przed pokazaniem okna, wiec nic nie miga. */
+    if (maksymalizuj) this.win.maximize();
 
     this.shellView = new WebContentsView({
       webPreferences: {
@@ -617,9 +650,10 @@ class AppWindow {
     this.shell.on('context-menu', (_e, params) => this.showShellContextMenu(params));
     this.shell.setWindowOpenHandler(({ url }) => { if (urls.bezpieczneZewnetrzne(url)) shell.openExternal(url); return { action: 'deny' }; });
 
-    this.win.on('resize', () => this.layout());
-    this.win.on('maximize', () => { this.layout(); this.scheduleSync(); });
-    this.win.on('unmaximize', () => { this.layout(); this.scheduleSync(); });
+    this.win.on('resize', () => { this.layout(); this._zapamietajPozniej(); });
+    this.win.on('moved', () => this._zapamietajPozniej());
+    this.win.on('maximize', () => { this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
+    this.win.on('unmaximize', () => { this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
     this.win.on('enter-full-screen', () => { this.layout(); this.scheduleSync(); });
     this.win.on('leave-full-screen', () => { this.layout(); this.scheduleSync(); });
     /* Po dluzszej nieaktywnosci (okno bez fokusu godzinami, zminimalizowane,
@@ -759,18 +793,30 @@ class AppWindow {
     this.layout();
   }
 
-  rememberBounds() {
+  rememberBounds(odRazu = true) {
     try {
       if (this.isPrivate || this.win.isDestroyed()) return;
       const zmaksymalizowane = this.win.isMaximized() && !this.win.isFullScreen();
-      /* Flaga "bylo zmaksymalizowane" zapisuje sie zawsze, niezaleznie od tego
-         w jakim stanie jest teraz okno. Sam rozmiar/pozycje aktualizujemy tylko
-         gdy okno jest w trybie normalnym - inaczej nadpisalibysmy zapamietany
-         "zwykly" rozmiar wymiarami pelnoekranowymi. */
+      /* Flaga "bylo zmaksymalizowane" zapisuje sie zawsze. Pozycje bierzemy
+         "normalna" (getNormalBounds) takze u zmaksymalizowanego okna - to
+         ona mowi, na KTORYM monitorze okno stoi. Wczesniej przy
+         zmaksymalizowanym oknie pozycja sie nie zapisywala i okno
+         zmaksymalizowane na drugim monitorze wracalo po starcie na tym, na
+         ktorym ostatnio bylo w normalnym rozmiarze. */
       data.settings.set('windowMaximized', zmaksymalizowane);
-      if (!this.win.isMaximized() && !this.win.isFullScreen()) data.settings.set('windowBounds', this.win.getBounds());
-      data.settings.flush();
+      const nb = monitory.normalne(this.win);
+      if (nb && monitory.widoczne(nb)) data.settings.set('windowBounds', nb);
+      if (odRazu) data.settings.flush();
     } catch (_) {}
+  }
+
+  /* Zapis pozycji chwile po przesunieciu albo zmianie rozmiaru, a nie tylko
+     przy zamykaniu - po awarii czy wylaczeniu komputera okno i tak wraca na
+     swoj monitor. Opoznienie, zeby przeciaganie okna nie pisalo co klatke. */
+  _zapamietajPozniej() {
+    if (this.isPrivate) return;
+    clearTimeout(this._zapisGranic);
+    this._zapisGranic = setTimeout(() => this.rememberBounds(false), 1500);
   }
 
   /* ----------------------------------------------------------------- tabs */
@@ -1442,6 +1488,7 @@ class AppWindow {
   }
 
   dispose() {
+    clearTimeout(this._zapisGranic);
     for (const tab of this.tabs) tab.destroy();
     this.tabs = [];
     if (this._spareTab) { this._spareTab.destroy(); this._spareTab = null; }
@@ -1587,17 +1634,21 @@ function runContextAction(appWindow, id) {
    ta jedna karta, nie robimy nic: powstaloby okno identyczne z obecnym. */
 function wyrwijKarte(zrodlo, tabId, x, y) {
   if (!zrodlo || zrodlo.tabs.length <= 1) return null;
-  const stare = zrodlo.win.getBounds();
+  // Rozmiar "normalny" - z okna zmaksymalizowanego getBounds dawalby caly
+  // ekran, i to ekranu zrodlowego, ktory moze miec inny rozmiar niz docelowy.
+  const stare = monitory.normalne(zrodlo.win) || zrodlo.win.getBounds();
   const tab = zrodlo.odepnijKarte(tabId);
   if (!tab) return null;
 
   // Nowe okno ma rozmiar poprzedniego i siedzi kursorem mniej wiecej tam,
-  // gdzie karta byla trzymana.
+  // gdzie karta byla trzymana - na tym monitorze, na ktorym jest kursor
+  // (punkt), i w calosci na nim (patrz konstruktor AppWindow).
   const bounds = {
     width: stare.width,
     height: stare.height,
     x: Math.round(x - stare.width * 0.25),
-    y: Math.round(y - 16)
+    y: Math.round(y - 16),
+    punkt: { x, y }
   };
   const nowe = new AppWindow({ isPrivate: zrodlo.isPrivate, partition: zrodlo.partition, puste: true, bounds });
   const podepnij = () => {
@@ -1640,9 +1691,25 @@ function oknoPodPunktem(x, y) {
 /* Czy punkt trafia w pasek kart tego okna. */
 function wPasku(w, y) {
   try {
-    const b = w.win.getBounds();
+    const b = w.win.getContentBounds();
     return y >= b.y && y <= b.y + LAYOUT.tabStrip + 6;
   } catch (_) { return false; }
+}
+
+/* Punkt ekranu przeliczony na wspolrzedne wewnatrz okna (te same, ktore zna
+   pasek w shell.html). Liczone tutaj, z polozenia okna wedlug Electrona -
+   pasek liczyl to sam z window.screenX, co przy roznych skalach monitorow
+   rozjezdzalo sie z tym, gdzie naprawde jest kursor. */
+function punktWOknie(w, x, y) {
+  try {
+    const b = w.win.getContentBounds();
+    return { x: x - b.x, y: y - b.y };
+  } catch (_) { return { x: 0, y: 0 }; }
+}
+
+/* Gdzie teraz jest kursor - wedlug procesu glownego (patrz monitory.js). */
+function kursor() {
+  try { return screen.getCursorScreenPoint(); } catch (_) { return null; }
 }
 
 function przeniesKarte(tabId, celWin, index) {
@@ -1767,6 +1834,50 @@ function startDiagnostics() {
   diagnostics.start(() => windows);
 }
 
+/* Zmiana monitorow w trakcie pracy: odlaczony monitor, inna skala, inny
+   uklad ekranow w Ustawieniach Windows, laptop wyjety ze stacji dokujacej.
+   Windows zwykle sam przenosi okna z odlaczonego ekranu, ale nie zawsze
+   (okno zmaksymalizowane, zapamietana pozycja "normalna" dalej na starym
+   ekranie) - wtedy okno albo jego przywrocony rozmiar zostawal poza
+   ekranem. Po kazdej takiej zmianie sprawdzamy kazde okno i w razie
+   potrzeby przestawiamy je na najblizszy istniejacy ekran. Przy okazji
+   przeliczamy uklad (zmiana skali zmienia wymiary w punktach). */
+let monitoryTimer = null;
+function sprawdzOknaPoZmianieEkranow() {
+  clearTimeout(monitoryTimer);
+  // Windows wysyla kilka zdarzen pod rzad i sam jeszcze przesuwa okna -
+  // dajemy mu chwile, zanim cokolwiek poprawimy.
+  monitoryTimer = setTimeout(() => {
+    for (const w of windows) {
+      if (!w.win || w.win.isDestroyed()) continue;
+      try {
+        if (!w.win.isFullScreen()) {
+          const nb = monitory.normalne(w.win);
+          if (nb && !monitory.widoczne(nb)) {
+            const bylo = w.win.isMaximized();
+            const cel = monitory.dopasuj(nb, monitory.ekranOkna(nb) || monitory.glowny());
+            const naEkranie = monitory.widoczne(cel) ? cel : monitory.domyslne(nb.width, nb.height);
+            if (bylo) w.win.unmaximize();
+            monitory.ustawGranice(w.win, naEkranie);
+            if (bylo) w.win.maximize();
+          }
+        }
+        w.layout();
+        w.invalidateActiveTab();
+        w.scheduleSync();
+      } catch (_) {}
+    }
+  }, 600);
+}
+
+function startMonitory() {
+  try {
+    screen.on('display-removed', sprawdzOknaPoZmianieEkranow);
+    screen.on('display-added', sprawdzOknaPoZmianieEkranow);
+    screen.on('display-metrics-changed', sprawdzOknaPoZmianieEkranow);
+  } catch (_) {}
+}
+
 /* Dla ekranu Ustawien - ile kart aktualnie spi i jaki prog bezczynnosci
    obowiazuje teraz (patrz refreshTabSleepInfo() w settings.js). */
 function tabSleepStatus() {
@@ -1829,4 +1940,4 @@ function broadcastAll(channel, payload, filtr = null) {
   }
 }
 
-module.exports = { AppWindow, createWindow, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics };
+module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory };

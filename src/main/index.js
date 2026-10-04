@@ -143,6 +143,16 @@ if (!gotLock) {
       W.broadcastAll(channel, payload, payload && payload.prywatne ? (w) => w.isPrivate : null);
     });
 
+    downloads.ustawOknoDla((wc) => {
+      const { BrowserWindow } = require('electron');
+      const nasze = W.allWindows().find((w) => w.tabs.some((t) => t.wc === wc) || (w._spareTab && w._spareTab.wc === wc));
+      if (nasze && nasze.win && !nasze.win.isDestroyed()) return nasze.win;
+      const popup = wc ? BrowserWindow.fromWebContents(wc) : null;
+      if (popup) return popup;
+      const aktywne = W.focusedWindow();
+      return aktywne && aktywne.win && !aktywne.win.isDestroyed() ? aktywne.win : null;
+    });
+
     adblock.onCountChanged((webContentsId) => {
       for (const win of W.allWindows()) {
         const active = win.activeTab();
@@ -171,6 +181,7 @@ if (!gotLock) {
     privacy.applySecureDns();
     W.startTabSleep();
     W.startDiagnostics();
+    W.startMonitory();
 
     /* Po wybudzeniu z uspienia albo odblokowaniu ekranu karta na wierzchu
        potrafi zostac biala, mimo ze nic w niej nie padlo - patrz szerszy
