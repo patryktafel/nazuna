@@ -77,4 +77,14 @@ function odswiezWyglad() {
 }
 
 odswiezWyglad();
+
+/* Ikona strony, ktorej nie ma (brak favicon.ico). Atrybut onerror w HTML-u
+   nic tu nie robi, bo polityka CSP tych stron nie wpuszcza skryptow
+   wpisanych w znaczniki - zostawala wiec ikonka zepsutego obrazka. Jeden
+   nasluch na calej stronie (faza przechwytywania, bo "error" obrazka nie
+   babelkuje) zalatwia to dla wszystkich list naraz. */
+document.addEventListener('error', (e) => {
+  const t = e.target;
+  if (t && t.tagName === 'IMG' && t.classList.contains('fav')) t.style.visibility = 'hidden';
+}, true);
 if (api.on) api.on('settings:changed', odswiezWyglad);

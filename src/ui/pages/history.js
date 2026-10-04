@@ -17,7 +17,7 @@ function render() {
     (items.length ? `<div class="card">${grouped.map((row) => row.header
       ? `<div class="section-date">${esc(row.header)}</div>`
       : `<div class="list-item" data-url="${esc(row.url)}">
-           <img class="fav" src="${esc(favicon(row.url))}" onerror="this.style.visibility='hidden'">
+           <img class="fav" src="${esc(favicon(row.url))}">
            <div class="main">
              <div class="name">${esc(row.title || row.url)}</div>
              <div class="url">${esc(row.url)}</div>

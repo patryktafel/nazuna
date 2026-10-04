@@ -80,10 +80,16 @@ function bezpiecznyBounds(view) {
   try { return view.getBounds(); } catch (_) { return null; }
 }
 
+/* Zrzuty laduja na dysku i zyja tam tygodniami, a okno prywatne ma nie
+   zostawiac sladu. Adresow i tytulow z takiego okna wiec nie zapisujemy. */
+const UKRYTE = '(okno prywatne)';
+function prywatna(tab) { return !!(tab && tab.owner && tab.owner.isPrivate); }
+
 function stanWszystkichOkien(windows) {
   const wynik = [];
   for (const w of windows) {
     try {
+      const ukryj = !!w.isPrivate;
       wynik.push({
         windowId: w.id,
         isPrivate: !!w.isPrivate,
@@ -91,9 +97,9 @@ function stanWszystkichOkien(windows) {
         expanded: !!w.expanded,
         tabs: w.tabs.map((t) => ({
           id: t.id,
-          url: t.url,
-          displayUrl: t.displayUrl,
-          title: t.title,
+          url: ukryj ? UKRYTE : t.url,
+          displayUrl: ukryj ? UKRYTE : t.displayUrl,
+          title: ukryj ? UKRYTE : t.title,
           loading: !!t.loading,
           ladujeSieOdMs: t._ladowanieOd ? Date.now() - t._ladowanieOd : null,
           sleeping: !!t.sleeping,
@@ -137,7 +143,11 @@ function zrzuc(powod, windows) {
 function sledzKarte(tab) {
   const wc = tab.wc;
   if (!wc) return;
-  const znacznik = (typ, dodatkowe = {}) => zdarzenie(typ, { tabId: tab.id, url: tab.url, ...dodatkowe });
+  const znacznik = (typ, dodatkowe = {}) => {
+    const wpis = { tabId: tab.id, url: tab.url, ...dodatkowe };
+    if (prywatna(tab)) wpis.url = UKRYTE;
+    zdarzenie(typ, wpis);
+  };
 
   wc.on('did-start-loading', () => { tab._ladowanieOd = Date.now(); znacznik('start-ladowania'); });
   wc.on('did-stop-loading', () => {
@@ -184,7 +194,7 @@ function start(pobierzOkna) {
         const trwa = Date.now() - t._ladowanieOd;
         if (trwa > PROG_ZAWIESZENIA_MS && !zrzuconeDlaLadowania.has(t.id)) {
           zrzuconeDlaLadowania.add(t.id);
-          zdarzenie('podejrzenie-zawieszenia', { tabId: t.id, url: t.url, trwaMs: trwa });
+          zdarzenie('podejrzenie-zawieszenia', { tabId: t.id, url: w.isPrivate ? UKRYTE : t.url, trwaMs: trwa });
           zrzuc('stuck-loading', windows);
         }
       }

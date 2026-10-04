@@ -163,6 +163,7 @@ function render() {
   });
   document.getElementById('openData').addEventListener('click', () => api.send('app.openUserData'));
   document.getElementById('reset').addEventListener('click', async () => {
+    if (!confirm('Przywrócić wszystkie ustawienia do domyślnych?')) return;
     cfg.values = await api.invoke('settings.reset');
     render();
     toast('Przywrócono ustawienia domyślne');
@@ -245,7 +246,10 @@ async function save(patch) {
 
 /* Probki kolorow zaleza od motywu, wiec przerysowujemy je dopiero gdy pagekit
    ustawi motyw. Nasluchiwanie samego rozgloszenia bylo za wczesne. */
-document.addEventListener('motyw:gotowy', () => { if (cfg && cfg.values) render(); });
+/* Przy okazji pobieramy swieze wartosci: zmiana mogla przyjsc spoza tej
+   karty (np. pasek zakladek ukryty z menu albo druga karta ustawien), a
+   render() ze starym cfg cofalby przelaczniki do poprzedniego stanu. */
+document.addEventListener('motyw:gotowy', () => { if (cfg && cfg.values) load(); });
 
 page.addEventListener('change', (e) => {
   const node = e.target.closest('[data-key]');

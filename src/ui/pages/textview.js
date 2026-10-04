@@ -90,8 +90,14 @@ async function start() {
     el.status.textContent = `Nie udało się otworzyć pliku${resp && resp.error ? ' (' + resp.error + ')' : resp && resp.status ? ' (kod ' + resp.status + ')' : ''}.`;
     return;
   }
+  // Kodowanie z naglowka serwera (np. windows-1250 w starszych polskich
+  // plikach) - na sztywno wpisane UTF-8 zamienialo w nich polskie litery w
+  // krzaczki. Nieznana nazwa kodowania wraca do UTF-8.
+  const m = /charset\s*=\s*"?([\w-]+)/i.exec(String(resp.contentType || ''));
+  let dekoder;
+  try { dekoder = new TextDecoder(m ? m[1] : 'utf-8'); } catch (_) { dekoder = new TextDecoder('utf-8'); }
   try {
-    surowyTekst = new TextDecoder('utf-8').decode(resp.bytes);
+    surowyTekst = dekoder.decode(resp.bytes);
   } catch (_) {
     el.status.textContent = 'Ten plik nie jest tekstem, którego dałoby się tu pokazać.';
     return;

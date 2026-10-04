@@ -135,8 +135,12 @@ if (!gotLock) {
       setInterval(() => { updater.sprawdz('auto-6h').catch(() => {}); }, 6 * 60 * 60 * 1000);
     }
 
+    /* Przez broadcastAll, zeby dotarlo tez do otwartej karty nazuna://downloads
+       (wczesniej dostawal to tylko pasek u gory, a sama strona Pobranych
+       stala w miejscu, dopoki ktos jej nie odswiezyl). Pobranie z okna
+       prywatnego widza tylko okna prywatne. */
     downloads.setBroadcaster((channel, payload) => {
-      for (const win of W.allWindows()) win.send(channel, payload);
+      W.broadcastAll(channel, payload, payload && payload.prywatne ? (w) => w.isPrivate : null);
     });
 
     adblock.onCountChanged((webContentsId) => {
@@ -223,11 +227,12 @@ if (!gotLock) {
   app.on('before-quit', (event) => {
     if (zamykanie) return;
     try {
-      const win = W.focusedWindow() || W.allWindows()[0];
-      if (win && !win.isPrivate) {
-        const open = win.tabs.map((t) => t.url).filter((u) => u && !/^nazuna:/.test(u));
-        data.settings.set('restoreSession', open);
-      }
+      // Okno prywatne moze byc akurat na wierzchu - wtedy bierzemy zwykle.
+      const zwykle = W.allWindows().filter((w) => !w.isPrivate);
+      const focused = W.focusedWindow();
+      const win = focused && !focused.isPrivate ? focused : zwykle[0];
+      // Brak zwyklych okien = ostatnie zamkniete juz zapisalo swoje karty.
+      if (win) W.zapamietajSesje(win);
     } catch (_) {}
     zamykanie = true;
     event.preventDefault();

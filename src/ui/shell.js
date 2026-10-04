@@ -492,7 +492,8 @@ function tabMenu(id, event) {
     const item = e.target.closest('.menu-item');
     if (!item) return;
     const map = {
-      reload: () => api.send('tab.reload', {}),
+      // Z id - inaczej odswiezala sie karta aktywna, a nie ta kliknieta.
+      reload: () => api.send('tab.reload', { id }),
       duplicate: () => api.send('tab.duplicate', { id }),
       doNowegoOkna: () => api.send('tab.doNowegoOkna', { id }),
       mute: () => api.send('tab.mute', { id }),
@@ -509,7 +510,18 @@ function tabMenu(id, event) {
 
 /* ---------------------------------------------------------------- toolbar */
 
+/* Adres tak, jak ma wygladac w pasku: bez koncowego ukosnika przy stronach
+   nazuna:// i pusty na nowej karcie. */
+function adresDoPokazania() {
+  const raw = String((state && state.url) || '');
+  const shown = /^nazuna:/i.test(raw) ? raw.replace(/\/+$/, '') : raw;
+  return shown && shown !== 'nazuna://newtab' ? shown : '';
+}
+
 function renderToolbar() {
+  // Stan z procesu glownego moze dojsc pozniej niz np. lista pobran -
+  // bez niego nie ma czego rysowac (wczesniej konczylo sie to bledem).
+  if (!state) return;
   $('#back').classList.toggle('disabled', !state.canGoBack);
   $('#forward').classList.toggle('disabled', !state.canGoForward);
   setIcon($('#reload'), state.loading ? 'stop' : 'reload');
@@ -521,11 +533,7 @@ function renderToolbar() {
   setIcon(el.lock, state.internal ? 'flower' : state.secure ? 'lock' : 'globe');
   el.lockLabel.hidden = !state.insecure;
 
-  if (!addressDirty && document.activeElement !== el.address) {
-    const raw = String(state.url || '');
-    const shown = /^nazuna:/i.test(raw) ? raw.replace(/\/+$/, '') : raw;
-    el.address.value = shown && shown !== 'nazuna://newtab' ? shown : '';
-  }
+  if (!addressDirty && document.activeElement !== el.address) el.address.value = adresDoPokazania();
 
   el.star.innerHTML = iconSvg(state.bookmarked ? 'starFilled' : 'star');
   el.star.classList.toggle('active', !!state.bookmarked);
@@ -940,7 +948,9 @@ el.address.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     addressDirty = false;
     closePopover();
-    el.address.value = state ? state.url : '';
+    // Ten sam wyglad co po zwyklym odswiezeniu paska - wczesniej Escape na
+    // nowej karcie wstawial do pola surowe "nazuna://newtab".
+    el.address.value = adresDoPokazania();
     el.address.blur();
   }
 });

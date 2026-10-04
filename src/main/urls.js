@@ -8,7 +8,13 @@ const SCHEME_RE = /^[a-z][a-z0-9+.-]*:/i;
    wklejona sciezka do pliku na Windows byla brana za adres z nieznanym
    protokolem "c" i ladowanie konczylo sie bledem zamiast otwarciem pliku. */
 const WIN_PATH_RE = /^[a-z]:[\\/]/i;
-const LOCALHOST_RE = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/i;
+/* "localhost:3000" albo "strona.pl:8080/x" tez pasuja do SCHEME_RE (przed
+   dwukropkiem stoi cos, co wyglada jak nazwa schematu), wiec bez tego
+   wyjatku byly brane za adres z protokolem "localhost:" i Nazuna probowala
+   oddac je systemowi jak link do innej aplikacji. Nazwa hosta z samym
+   numerem portu po dwukropku to zawsze zwykla strona. */
+const HOST_PORT_RE = /^[a-z0-9.-]+:\d{1,5}([/?#]|$)/i;
+const LOCALHOST_RE = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?([/?#]|$)/i;
 const IP_RE = /^\d{1,3}(\.\d{1,3}){3}(:\d+)?(\/|$)/;
 const DOMAIN_RE = /^[^\s/?#@]+\.[a-z]{2,}(:\d+)?([/?#].*)?$/i;
 
@@ -34,11 +40,17 @@ function resolve(input) {
   if (!value) return null;
   if (/^(nazuna|about|chrome|file|devtools|chrome-extension|view-source):/i.test(value)) return value;
   if (WIN_PATH_RE.test(value)) return `file:///${encodeURI(value.replace(/\\/g, '/'))}`;
+  if (HOST_PORT_RE.test(value) && !/\s/.test(value)) {
+    const lokalny = LOCALHOST_RE.test(value) || IP_RE.test(value);
+    return `${lokalny ? 'http' : 'https'}://${value}`;
+  }
   if (SCHEME_RE.test(value)) {
     if (/^(javascript|data):/i.test(value)) return searchUrl(value);
     return value;
   }
-  if (looksLikeUrl(value)) return `https://${value}`;
+  // Serwer na wlasnym komputerze albo router pod adresem IP prawie nigdy nie
+  // ma certyfikatu, wiec https:// konczylo sie tam bledem polaczenia.
+  if (looksLikeUrl(value)) return `${LOCALHOST_RE.test(value) || IP_RE.test(value) ? 'http' : 'https'}://${value}`;
   return searchUrl(value);
 }
 

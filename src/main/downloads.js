@@ -7,6 +7,11 @@ const security = require('./security');
 
 const active = new Map();      // id -> DownloadItem
 let nextId = 1;
+/* Pobrania z okien prywatnych. Trzymane tylko w pamieci, nigdy w
+   downloads.json - inaczej nazwa pliku i adres, z ktorego go sciagnieto,
+   zostawaly na dysku na zawsze, mimo ze cale okno prywatne mialo nie
+   zostawiac po sobie sladu. Znikaja razem z zamknieciem programu. */
+let prywatne = [];
 let broadcast = () => {};
 
 function setBroadcaster(fn) { broadcast = fn; }
@@ -67,7 +72,8 @@ function serialise(item, record) {
     startedAt: record.startedAt,
     finishedAt: record.finishedAt,
     mime: record.mime,
-    risky: !!record.risky
+    risky: !!record.risky,
+    prywatne: !!record.prywatne
   };
 }
 
@@ -87,6 +93,8 @@ function attach(session) {
     }
 
     const id = `d${Date.now().toString(36)}${nextId++}`;
+    let prywatna = false;
+    try { prywatna = !session.isPersistent(); } catch (_) {}
     const dir = defaultDir();
     const filename = safeFilename(item.getFilename());
     const risky = isRisky(filename);
@@ -111,14 +119,24 @@ function attach(session) {
       paused: false,
       startedAt: Date.now(),
       finishedAt: null,
-      risky
+      risky,
+      prywatne: prywatna
     };
 
     active.set(id, item);
     item.__nazunaId = id;
-    data.downloadsStore.data.items.unshift(record);
-    if (data.downloadsStore.data.items.length > 500) data.downloadsStore.data.items.length = 500;
-    data.downloadsStore.save();
+    if (prywatna) {
+      prywatne.unshift(record);
+      if (prywatne.length > 200) prywatne.length = 200;
+    } else {
+      data.downloadsStore.data.items.unshift(record);
+      if (data.downloadsStore.data.items.length > 500) data.downloadsStore.data.items.length = 500;
+      data.downloadsStore.save();
+    }
+    const zapisz = (odRazu) => {
+      if (prywatna) return;
+      if (odRazu) data.downloadsStore.flush(); else data.downloadsStore.save();
+    };
     broadcast('download-started', serialise(item, record));
 
     let lastBytes = 0;
@@ -137,7 +155,7 @@ function attach(session) {
         lastBytes = record.received;
         lastTime = now;
       }
-      data.downloadsStore.save();
+      zapisz(false);
       broadcast('download-updated', serialise(item, record));
     });
 
@@ -153,17 +171,22 @@ function attach(session) {
       // Jesli sie udalo, plik juz jest na dysku i fs.existsSync go zlapie sam.
       // Jesli nie, zwalniamy sciezke, zeby kolejne pobranie moglo jej uzyc.
       zarezerwowane.delete(record.savePath);
-      data.downloadsStore.flush();
+      zapisz(true);
       broadcast('download-done', serialise(item, record));
     });
   });
 }
 
-function list() { return data.downloadsStore.data.items; }
+/* Okno prywatne widzi tez swoje pobrania, zwykle okno tylko zwykle. */
+function list(zPrywatnymi = false) {
+  const zwykle = data.downloadsStore.data.items;
+  if (!zPrywatnymi || !prywatne.length) return zwykle;
+  return [...prywatne, ...zwykle].sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+}
 
-function control(id, action) {
+function control(id, action, zPrywatnymi = false) {
   const item = active.get(id);
-  const record = data.downloadsStore.data.items.find((r) => r.id === id);
+  const record = data.downloadsStore.data.items.find((r) => r.id === id) || prywatne.find((r) => r.id === id);
   switch (action) {
     case 'pause': if (item) item.pause(); break;
     case 'resume': if (item && item.canResume()) item.resume(); break;
@@ -175,18 +198,24 @@ function control(id, action) {
       if (record && record.savePath && fs.existsSync(record.savePath)) shell.showItemInFolder(record.savePath);
       break;
     case 'remove':
+      // Trwajace pobranie znika z listy dopiero po anulowaniu - inaczej
+      // dalej by sie sciagalo, tylko bez zadnej mozliwosci zatrzymania.
+      if (item) item.cancel();
       data.downloadsStore.data.items = data.downloadsStore.data.items.filter((r) => r.id !== id);
+      prywatne = prywatne.filter((r) => r.id !== id);
       data.downloadsStore.flush();
       break;
     default: break;
   }
-  return list();
+  return list(zPrywatnymi);
 }
 
-function clearFinished() {
-  data.downloadsStore.data.items = data.downloadsStore.data.items.filter((r) => r.state === 'progressing' || r.state === 'paused');
+function clearFinished(zPrywatnymi = false) {
+  const trwa = (r) => r.state === 'progressing' || r.state === 'paused';
+  data.downloadsStore.data.items = data.downloadsStore.data.items.filter(trwa);
+  prywatne = prywatne.filter(trwa);
   data.downloadsStore.flush();
-  return list();
+  return list(zPrywatnymi);
 }
 
 async function chooseDir(parentWindow) {

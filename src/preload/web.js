@@ -364,20 +364,41 @@ if (!internal) {
 
     // --- Web Audio: klasyczna sztuczka renderuje cichy dzwiek w tle i liczy
     // sume probek - na kazdym sprzecie/sterowniku wychodzi troszke inna suma,
-    // co daje kolejny odcisk urzadzenia. Zwracamy kopie bufora z drobnym,
-    // niesluchalnym przesunieciem zamiast prawdziwej proby. ---
+    // co daje kolejny odcisk urzadzenia. Odczyt dostaje drobne, niesluchalne
+    // przesuniecie zamiast prawdziwej proby.
+    //
+    // Przesuniecie dokladamy RAZ, w miejscu, do prawdziwego bufora (a nie do
+    // kopii, jak do 0.1.80). getChannelData() to tez sposob, w jaki strony
+    // same WPISUJA dzwiek do bufora (gry, syntezatory, efekty) - kopia
+    // sprawiala, ze ich zapis ladowal w kopii i dzwiek wychodzil cichy albo
+    // urwany. Szum rzedu 0.00005 na co 97. probce jest ponizej progu
+    // slyszalnosci, wiec nawet w buforze, ktory strona potem nadpisze tylko
+    // czesciowo, nic nie slychac. ---
     try {
       if (window.AudioBuffer) {
         const origGetChannelData = AudioBuffer.prototype.getChannelData;
-        AudioBuffer.prototype.getChannelData = function (channel) {
-          const data = origGetChannelData.call(this, channel);
+        const origCopyFromChannel = AudioBuffer.prototype.copyFromChannel;
+        const zaszumione = new WeakMap();   // bufor -> zbior kanalow juz przesunietych
+        const zaszum = (buf, channel) => {
+          const data = origGetChannelData.call(buf, channel);
           try {
-            const rnd = mulberry32(originSeed ^ ((channel | 0) + 1));
-            const copy = new Float32Array(data.length);
-            for (let i = 0; i < data.length; i++) copy[i] = data[i] + (i % 97 === 0 ? (rnd() - 0.5) * 0.0001 : 0);
-            return copy;
-          } catch (_) { return data; }
+            let kanaly = zaszumione.get(buf);
+            if (!kanaly) { kanaly = new Set(); zaszumione.set(buf, kanaly); }
+            if (!kanaly.has(channel)) {
+              kanaly.add(channel);
+              const rnd = mulberry32(originSeed ^ ((channel | 0) + 1));
+              for (let i = 0; i < data.length; i += 97) data[i] += (rnd() - 0.5) * 0.0001;
+            }
+          } catch (_) {}
+          return data;
         };
+        AudioBuffer.prototype.getChannelData = function (channel) { return zaszum(this, channel); };
+        if (origCopyFromChannel) {
+          AudioBuffer.prototype.copyFromChannel = function (destination, channel, ...rest) {
+            try { zaszum(this, channel); } catch (_) {}
+            return origCopyFromChannel.call(this, destination, channel, ...rest);
+          };
+        }
       }
     } catch (_) {}
   } catch (_) {}

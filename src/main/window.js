@@ -1,7 +1,7 @@
 'use strict';
 const path = require('path');
 const crypto = require('crypto');
-const { BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme, net, dialog } = require('electron');
+const { app, BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme, net, dialog } = require('electron');
 const { LAYOUT, PRELOAD_DIR, ASSETS_DIR, APP_NAME, rozstrzygnijMotyw, TLA } = require('./constants');
 const data = require('./data');
 const urls = require('./urls');
@@ -142,13 +142,16 @@ function hex([r, g, b]) {
    jasnosc do przyjemnego zakresu, zeby akcent byl zywy, ale nadal czytelny
    i na ciemnym, i na jasnym motywie. Wynik trzymamy w cache per-hostname,
    bo ta sama strona ma zawsze te sama favicone. */
-async function extractSiteAccent(faviconUrl) {
+async function extractSiteAccent(faviconUrl, ses) {
   if (!/^https?:\/\//i.test(String(faviconUrl || ''))) return null;
   let host;
   try { host = new URL(faviconUrl).hostname; } catch (_) { return null; }
   if (siteAccentCache.has(host)) return siteAccentCache.get(host);
   try {
-    const res = await net.fetch(faviconUrl, { redirect: 'follow' });
+    /* Przez sesje tej samej karty, nie przez domyslna. Inaczej ikona strony
+       otwartej w oknie prywatnym szla przez zwykly profil, z jego
+       ciasteczkami i pamiecia podreczna - zostawal wiec po niej slad. */
+    const res = await (ses ? ses.fetch(faviconUrl, { redirect: 'follow' }) : net.fetch(faviconUrl, { redirect: 'follow' }));
     if (!res.ok) { siteAccentCache.set(host, null); return null; }
     const buf = Buffer.from(await res.arrayBuffer());
     const img = nativeImage.createFromBuffer(buf);
@@ -393,7 +396,11 @@ class Tab {
       this.applyZoom();
       this.hadAudio = false;
       this.siteAccent = null;
-      if (!this.owner.isPrivate) data.addHistory(url, this.title);
+      // Bez tytulu: this.title to w tej chwili jeszcze tytul POPRZEDNIEJ
+      // strony, a nowy dochodzi dopiero w page-title-updated (wtedy
+      // updateHistoryTitle go dopisze). Strona bez <title> zostawala w
+      // historii z cudzym tytulem.
+      if (!this.owner.isPrivate) data.addHistory(url, '');
       sync();
     });
     wc.on('did-navigate-in-page', (_e, url, isMainFrame) => {
@@ -404,6 +411,9 @@ class Tab {
     });
     wc.on('did-fail-load', (_e, code, description, validatedURL, isMainFrame) => {
       if (!isMainFrame || code === -3 || !validatedURL) return;
+      // -20 (ERR_BLOCKED_BY_CLIENT) po podmianie na nazuna://pdf lub
+      // nazuna://textview - podglad juz sie laduje, to nie jest blad.
+      if (code === -20 && sessions.bladOdPodgladu(wc.id)) return;
       this.errorUrl = validatedURL;
       const params = new URLSearchParams({ url: validatedURL, code: String(code), description: description || '' });
       wc.loadURL(`nazuna://error/?${params.toString()}`).catch(() => {});
@@ -468,7 +478,7 @@ class Tab {
     if (/^nazuna:/i.test(this.url)) return;
     const favicon = this.favicon;
     const urlPrzy = this.url;
-    extractSiteAccent(favicon).then((accent) => {
+    extractSiteAccent(favicon, this.owner.session).then((accent) => {
       if (this.url !== urlPrzy || this.favicon !== favicon) return;
       this.siteAccent = accent;
       this.owner.scheduleSync();
@@ -511,10 +521,14 @@ class Tab {
 }
 
 class AppWindow {
-  constructor({ isPrivate = false, urls: startUrls = [], bounds = null, puste = false } = {}) {
+  constructor({ isPrivate = false, urls: startUrls = [], bounds = null, puste = false, partition = null } = {}) {
     this.id = nextWindowId++;
     this.isPrivate = isPrivate;
-    this.partition = isPrivate ? `nazuna-private-${++privatePartitionCounter}` : 'persist:nazuna';
+    // partition podana wprost: okno prywatne powstale z wyrwanej karty musi
+    // dzielic sesje z oknem, z ktorego karta wyszla. Z nowa, pusta sesja
+    // karta zaczynala zyc w innym magazynie niz kolejne karty tego okna i
+    // po uspieniu budzila sie wylogowana.
+    this.partition = partition || (isPrivate ? `nazuna-private-${++privatePartitionCounter}` : 'persist:nazuna');
     this.session = sessions.forPartition(this.partition);
     this.tabs = [];
     this.activeTabId = null;
@@ -618,7 +632,15 @@ class AppWindow {
     this.win.on('focus', () => { this.scheduleSync(); this.invalidateActiveTab(); });
     this.win.on('restore', () => this.invalidateActiveTab());
     this.win.on('show', () => this.invalidateActiveTab());
-    this.win.on('close', () => this.rememberBounds());
+    this.win.on('close', () => {
+      this.rememberBounds();
+      /* Ostatnie zwykle okno zamykane krzyzykiem. Zapis sesji w index.js
+         (before-quit) przychodzi dopiero PO zamknieciu wszystkich okien,
+         kiedy nie ma juz z czego czytac kart - wiec "Karty z poprzedniej
+         sesji" przywracaly cos sprzed wielu dni, a nie to, co bylo otwarte
+         przed chwila. */
+      if (!zamykanieProgramu && !this.isPrivate && ![...windows].some((w) => w !== this && !w.isPrivate)) zapamietajSesje(this);
+    });
     this.win.on('closed', () => this.dispose());
 
     windows.add(this);
@@ -782,6 +804,10 @@ class AppWindow {
 
   newTab({ url = NEW_TAB, background = false, index = null, lazy = false } = {}) {
     const resolved = url ? (urls.resolve(url) || NEW_TAB) : NEW_TAB;
+    // Link mailto:, tel: albo protokol innej aplikacji otwierany "w nowej
+    // karcie" (target="_blank", srodkowy klik, menu) - tego i tak nie da sie
+    // pokazac w karcie, a pusta, biala karta zostawala po nim na pasku.
+    if (!lazy && urls.zewnetrznyProtokol(resolved)) { this.handleExternalProtocol(resolved); return null; }
     let tab;
     if (lazy) {
       // Ominiecie karty z zapasu jest tu celowe - lazy sluzy do przywracania
@@ -935,6 +961,9 @@ class AppWindow {
     const tab = tabId ? this.tabById(tabId) : this.activeTab();
     const target = forceSearch ? urls.searchUrl(input) : urls.resolve(input);
     if (!target) return;
+    // Wpisane w pasek "mailto:..." albo inny protokol aplikacji - loadURL
+    // konczyl sie na nim bledem zamiast otworzyc program pocztowy.
+    if (urls.zewnetrznyProtokol(target)) { this.handleExternalProtocol(target); return; }
     if (!tab) return this.newTab({ url: target });
     tab.errorUrl = null;
     tab.otworz(target);
@@ -964,9 +993,12 @@ class AppWindow {
 
   goBack() { this.idzWHistorii(-1); }
   goForward() { this.idzWHistorii(1); }
-  reload(hard = false) {
-    const t = this.activeTab();
+  reload(hard = false, tabId = null) {
+    const t = tabId ? this.tabById(tabId) : this.activeTab();
     if (!t) return;
+    // Uspiona karta w tle nie ma czego przeladowac - obudzi sie sama
+    // (i wczyta od nowa) przy kliknieciu.
+    if (!t.wc || t.wc.isDestroyed()) return;
     t.errorUrl ? t.wc.loadURL(t.errorUrl).catch(() => {}) : (hard ? t.wc.reloadIgnoringCache() : t.wc.reload());
   }
   stop() { const t = this.activeTab(); if (t) t.wc.stop(); }
@@ -1118,6 +1150,10 @@ class AppWindow {
      Samo potwierdzenie to tez zabezpieczenie: bez niego dowolna strona
      mogłaby po cichu odpalac zarejestrowane w Windows aplikacje. */
   handleExternalProtocol(target) {
+    // Jedno pytanie naraz. Strona ponawiajaca przekierowanie w petli
+    // otwierala inaczej cala serie identycznych okienek, jedno na drugim.
+    if (this._pytanieOProtokol || !this.win || this.win.isDestroyed()) return;
+    this._pytanieOProtokol = true;
     let schemat = target;
     try { schemat = new URL(target).protocol.replace(/:$/, ''); } catch (_) { /* zostaw surowy adres */ }
     dialog.showMessageBox(this.win, {
@@ -1131,7 +1167,7 @@ class AppWindow {
       detail: target.length > 200 ? `${target.slice(0, 200)}…` : target
     }).then((res) => {
       if (res.response === 0) shell.openExternal(target).catch(() => {});
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => { this._pytanieOProtokol = false; });
   }
 
   resolvePermission(key, answer, remember) {
@@ -1361,7 +1397,7 @@ class AppWindow {
       // Etykieta "Niezabezpieczona" idzie razem z przelacznikiem ostrzezen w
       // Ustawieniach - wylaczona ochrona, wylaczona i etykieta, zeby jedno
       // nie przeczylo drugiemu.
-      insecure: active && data.settings.get('securityWarningsEnabled', true) ? /^http:/i.test(active.displayUrl) : false,
+      insecure: active && data.settings.get('securityWarningsEnabled', true) ? (/^http:/i.test(active.displayUrl) && !security.lokalny(host)) : false,
       internal: active ? /^nazuna:/.test(active.displayUrl) : false,
       loading: active ? active.loading : false,
       canGoBack: active && !active.wc.isDestroyed() ? active.wc.navigationHistory.canGoBack() : false,
@@ -1408,6 +1444,18 @@ class AppWindow {
     this.tabs = [];
     if (this._spareTab) { this._spareTab.destroy(); this._spareTab = null; }
     windows.delete(this);
+    /* Sesja okna prywatnego siedzi tylko w pamieci, ale Electron trzyma ja
+       tam az do zamkniecia calego programu - ciasteczka i logowania z
+       zamknietego okna prywatnego zylyby wiec dalej w tle. Czyscimy ja,
+       gdy zamyka sie ostatnie okno, ktore z niej korzystalo. */
+    if (this.isPrivate && ![...windows].some((w) => w.partition === this.partition)) {
+      const ses = this.session;
+      Promise.resolve()
+        .then(() => ses.clearStorageData())
+        .then(() => ses.clearCache())
+        .then(() => ses.clearAuthCache && ses.clearAuthCache())
+        .catch(() => {});
+    }
   }
 }
 
@@ -1549,7 +1597,7 @@ function wyrwijKarte(zrodlo, tabId, x, y) {
     x: Math.round(x - stare.width * 0.25),
     y: Math.round(y - 16)
   };
-  const nowe = new AppWindow({ isPrivate: zrodlo.isPrivate, puste: true, bounds });
+  const nowe = new AppWindow({ isPrivate: zrodlo.isPrivate, partition: zrodlo.partition, puste: true, bounds });
   const podepnij = () => {
     nowe.przyjmijKarte(tab);
     nowe.layout();
@@ -1604,11 +1652,32 @@ function przeniesKarte(tabId, celWin, index) {
      zwyklego okna wygladalaby na zwykla, bedac dalej prywatna, i odwrotnie.
      Mieszania nie ma, w obie strony. */
   if (zrodlo.isPrivate !== celWin.isPrivate) return null;
+  // Dwa osobno otwarte okna prywatne maja dwie osobne sesje - karta
+  // przeniesiona miedzy nimi mieszalaby jedna z druga.
+  if (zrodlo.partition !== celWin.partition) return null;
   const tab = zrodlo.odepnijKarte(id);
   if (!tab) return null;
   celWin.przyjmijKarte(tab, index);
   try { celWin.win.focus(); } catch (_) {}
   return celWin;
+}
+
+// Przy zamykaniu calego programu (menu, aktualizacja) sesje zapisuje juz
+// before-quit w index.js, z okna, ktore bylo na wierzchu - zamykane po kolei
+// okna nie moga tego potem nadpisac.
+let zamykanieProgramu = false;
+try { app.on('before-quit', () => { zamykanieProgramu = true; }); } catch (_) {}
+
+/* Karty tego okna do przywrocenia przy nastepnym starcie. displayUrl, a nie
+   url: karta pokazujaca strone bledu (np. chwilowy brak sieci) ma w url
+   adres nazuna://error i inaczej wypadalaby z listy. */
+function zapamietajSesje(win) {
+  if (!win || win.isPrivate) return;
+  try {
+    const otwarte = win.tabs.map((t) => t.displayUrl).filter((u) => u && !/^nazuna:/i.test(u));
+    data.settings.set('restoreSession', otwarte);
+    data.settings.flush();
+  } catch (_) {}
 }
 
 function createWindow(opts = {}) {
@@ -1737,10 +1806,16 @@ try {
    nie tylko do samej ramki przegladarki: przelaczenie motywu ma byc widac od
    razu we wszystkich otwartych kartach, tak samo zmiana kafelkow nowej karty,
    gdy kilka okien ma otwarte "Nowa karta" naraz. */
-const DO_WLASNYCH_KART = new Set(['settings:changed', 'skroty:zmiana', 'update:status']);
+const DO_WLASNYCH_KART = new Set([
+  'settings:changed', 'skroty:zmiana', 'update:status', 'bookmarks:changed',
+  'download-started', 'download-updated', 'download-done'
+]);
 
-function broadcastAll(channel, payload) {
+/* filtr (opcjonalny) wybiera okna, do ktorych wiadomosc ma trafic - np.
+   pobranie z okna prywatnego nie ma sie pokazywac w zwyklych oknach. */
+function broadcastAll(channel, payload, filtr = null) {
   for (const w of windows) {
+    if (filtr && !filtr(w)) continue;
     w.send(channel, payload);
     if (channel === 'bookmarks:changed' || channel === 'settings:changed') w.scheduleSync();
     if (!DO_WLASNYCH_KART.has(channel)) continue;
@@ -1752,4 +1827,4 @@ function broadcastAll(channel, payload) {
   }
 }
 
-module.exports = { AppWindow, createWindow, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics };
+module.exports = { AppWindow, createWindow, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics };

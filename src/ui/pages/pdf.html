@@ -2,7 +2,11 @@
 <html lang="pl" data-accent="violet">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src nazuna:; img-src nazuna: data:; style-src nazuna: 'unsafe-inline'; script-src nazuna:; worker-src nazuna:">
+<!-- blob: w worker-src: pdf.js uruchamia swoj watek przez maly plik blob
+     (skrypt watku lezy pod nazuna://ui, a strona pod nazuna://pdf, czyli
+     inny host). Bez tego watek byl blokowany i caly PDF liczyl sie w glownym
+     watku strony, co przy duzych plikach zamrazalo karte. -->
+<meta http-equiv="Content-Security-Policy" content="default-src nazuna:; img-src nazuna: data:; style-src nazuna: 'unsafe-inline'; script-src nazuna:; worker-src nazuna: blob:">
 <title>PDF</title>
 <link rel="stylesheet" href="nazuna://ui/theme.css">
 <style>

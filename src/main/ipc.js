@@ -124,7 +124,7 @@ const handlers = {
   'tab.close': (win, p) => win.closeTab(p.id),
   'tab.select': (win, p) => win.selectTab(p.id),
   'tab.move': (win, p) => win.moveTab(p.id, p.index),
-  'tab.reload': (win, p = {}) => win.reload(!!p.hard),
+  'tab.reload': (win, p = {}) => win.reload(!!p.hard, p.id || null),
   'tab.stop': (win) => win.stop(),
   'tab.duplicate': (win, p) => { const t = win.tabById(p.id); if (t) win.newTab({ url: t.url }); },
   // Srodkowy przycisk myszy na linku (patrz auxclick w preload/web.js) -
@@ -156,9 +156,15 @@ const handlers = {
     win.scheduleSync();
   },
   'tab.reopen': (win) => win.reopenClosedTab(),
-  'tab.closeOthers': (win, p) => { for (const t of [...win.tabs]) if (t.id !== p.id) win.closeTab(t.id); },
+  'tab.closeOthers': (win, p) => {
+    if (!win.tabById(p.id)) return;   // tak samo jak nizej: nie zamykamy wszystkiego przez pomylke
+    for (const t of [...win.tabs]) if (t.id !== p.id) win.closeTab(t.id);
+  },
   'tab.closeRight': (win, p) => {
     const idx = win.tabs.findIndex((t) => t.id === p.id);
+    // Karta mogla juz zniknac (np. zamknieta chwile wczesniej) - przy -1
+    // slice(0) zamykal wszystkie karty w oknie.
+    if (idx < 0) return;
     for (const t of win.tabs.slice(idx + 1)) win.closeTab(t.id);
   },
 
@@ -175,8 +181,9 @@ const handlers = {
   /* Przycisk "przejdz mimo to" na nazuna://warning. Uzytkownik swiadomie
      omija ostrzezenie, wiec ladujemy prawdziwy adres wprost, bez ponownego
      pytania security.sprawdz() (patrz komentarz w window.js/Tab.otworz). */
-  'security.proceed': (win, p) => {
-    const tab = win.activeTab();
+  'security.proceed': (win, p, sender) => {
+    // Karta, na ktorej kliknieto przycisk - nie zawsze ta aktywna.
+    const tab = (sender && win.tabs.find((t) => t.wc === sender)) || win.activeTab();
     if (!tab || !p.url) return;
     security.zapamietajWyjatek(p.typ, p.url); // http - zapamietuje, zlosliwe domeny - nic nie robi
     tab.errorUrl = null;
@@ -249,9 +256,9 @@ const handlers = {
   },
 
   /* ----------------------------------------------------------- downloads */
-  'downloads.list': () => downloads.list(),
-  'downloads.control': (win, p) => downloads.control(p.id, p.action),
-  'downloads.clear': () => downloads.clearFinished(),
+  'downloads.list': (win) => downloads.list(win.isPrivate),
+  'downloads.control': (win, p) => downloads.control(p.id, p.action, win.isPrivate),
+  'downloads.clear': (win) => downloads.clearFinished(win.isPrivate),
   'downloads.panel': (win) => win.toggleDownloadsPanel(),
   'downloads.chooseDir': (win) => downloads.chooseDir(win.win),
   'downloads.dir': () => downloads.defaultDir(),
@@ -359,24 +366,25 @@ const handlers = {
 
   'settings.get': () => ({ values: data.settings.data, motyw: rozstrzygnijMotyw(data.settings.get('theme', 'dark')), engines: SEARCH_ENGINES, downloadDir: downloads.defaultDir() }),
   'settings.set': (win, p) => {
-    data.settings.assign(p.patch || {});
+    const patch = (p.patch && typeof p.patch === 'object') ? p.patch : {};
+    data.settings.assign(patch);
     data.settings.flush();
-    const sessionList = [...new Set([...W.windows].map((w) => w.session))];
-    if ('adblockEnabled' in (p.patch || {})) adblock.setGlobal(p.patch.adblockEnabled, sessionList);
-    if ('adblockMode' in (p.patch || {})) adblock.setMode(p.patch.adblockMode, sessionList);
-    if ('extensionsEnabled' in (p.patch || {})) reloadExtensions();
-    if ('theme' in (p.patch || {})) W.repaintTheme();
-    if ('doNotTrack' in (p.patch || {}) || 'blockThirdPartyCookies' in (p.patch || {}) || 'webrtcLeakProtection' in (p.patch || {})) sessions.refreshFlags();
-    if ('webrtcLeakProtection' in (p.patch || {})) sessions.applyWebRtcToAll();
-    if ('secureDns' in (p.patch || {})) privacy.applySecureDns();
-    for (const w of W.windows) { w.layout(); w.scheduleSync(); }
-    W.broadcastAll('settings:changed');
+    zastosujZmianyUstawien(Object.keys(patch));
     return data.settings.data;
   },
+  /* Przywrocenie domyslnych dotad tylko podmienialo plik - bloker, motyw,
+     DNS, WebRTC i reszta dalej dzialaly po staremu az do restartu, a
+     otwarte karty ustawien nie wiedzialy o zmianie. Teraz idzie ta sama
+     droga co zwykla zmiana ustawienia. Okno, jego rozmiar i zapamietana
+     sesja to nie preferencje, wiec zostaja. */
   'settings.reset': () => {
-    data.settings.data = JSON.parse(JSON.stringify(data.DEFAULT_SETTINGS));
+    const zostaw = {};
+    for (const klucz of ['windowBounds', 'windowMaximized', 'restoreSession']) {
+      if (data.settings.data[klucz] !== undefined) zostaw[klucz] = data.settings.data[klucz];
+    }
+    data.settings.data = Object.assign(JSON.parse(JSON.stringify(data.DEFAULT_SETTINGS)), zostaw);
     data.settings.flush();
-    for (const w of W.windows) { w.layout(); w.scheduleSync(); }
+    zastosujZmianyUstawien(Object.keys(data.DEFAULT_SETTINGS));
     return data.settings.data;
   },
   'settings.clearData': (win, p) => clearBrowsingData(win, p),
@@ -483,6 +491,21 @@ const handlers = {
   'app.quit': () => app.quit()
 };
 
+/* Wszystko, co trzeba zrobic od razu po zmianie ustawien (bez restartu). */
+function zastosujZmianyUstawien(klucze) {
+  const zmienione = new Set(klucze);
+  const sessionList = [...new Set([...W.windows].map((w) => w.session))];
+  if (zmienione.has('adblockEnabled')) adblock.setGlobal(data.settings.get('adblockEnabled', true), sessionList);
+  if (zmienione.has('adblockMode')) adblock.setMode(data.settings.get('adblockMode', 'safe'), sessionList);
+  if (zmienione.has('extensionsEnabled')) reloadExtensions();
+  if (zmienione.has('theme')) W.repaintTheme();
+  if (zmienione.has('doNotTrack') || zmienione.has('blockThirdPartyCookies') || zmienione.has('webrtcLeakProtection')) sessions.refreshFlags();
+  if (zmienione.has('webrtcLeakProtection')) sessions.applyWebRtcToAll();
+  if (zmienione.has('secureDns')) privacy.applySecureDns();
+  for (const w of W.windows) { w.layout(); w.scheduleSync(); }
+  W.broadcastAll('settings:changed');
+}
+
 function menuAction(win, id, value) {
   switch (id) {
     case 'new-tab': win.newTab({ url: W.NEW_TAB }); break;
@@ -504,7 +527,9 @@ function menuAction(win, id, value) {
     case 'bookmark-page': win.toggleBookmark(); break;
     case 'toggle-bookmarks-bar':
       data.settings.set('showBookmarksBar', !data.settings.get('showBookmarksBar', true));
-      for (const w of W.windows) { w.layout(); w.scheduleSync(); }
+      // Przez to samo co zmiana w Ustawieniach, zeby otwarta karta ustawien
+      // tez pokazala nowy stan przelacznika.
+      zastosujZmianyUstawien(['showBookmarksBar']);
       break;
     case 'quit': app.quit(); break;
     default: break;
@@ -533,6 +558,24 @@ async function reloadExtensions() {
   try { await reloading; } finally { reloading = null; }
 }
 
+/* Druga linia obrony, po preload/web.js. Preload daje mostek tylko stronom
+   nazuna:// bedacym ramka najwyzsza, ale proces glowny dotad wierzyl kazdej
+   wiadomosci od dowolnej karty. Wystarczylby jeden blad w preloadzie (albo
+   w Electronie), zeby zwykla strona internetowa mogla zmieniac ustawienia,
+   czytac historie czy instalowac rozszerzenia. Teraz sprawdzamy to tutaj,
+   po prawdziwej ramce nadawcy, ktorej strona nie podrobi. Pasek przegladarki
+   (shell) przechodzi zawsze, a z dowolnej strony tylko srodkowy klik w link
+   (patrz auxclick w preload/web.js). */
+const Z_KAZDEJ_STRONY = new Set(['link.middleClick']);
+function nadawcaDozwolony(event, win, method) {
+  if (win.shell === event.sender) return true;
+  if (Z_KAZDEJ_STRONY.has(method)) return true;
+  try {
+    const ramka = event.senderFrame;
+    return !!ramka && !ramka.parent && /^nazuna:/i.test(String(ramka.url || ''));
+  } catch (_) { return false; }
+}
+
 function register() {
   ipcMain.handle('nazuna:invoke', async (event, method, payload) => {
     const win = ownerOf(event.sender);
@@ -541,13 +584,20 @@ function register() {
     // Bez okna wiekszosc handlerow siega po jego pola i by sie wysypala - a
     // brak jakiegokolwiek okna znaczy, ze i tak nie ma gdzie pokazac wyniku.
     if (!win) return null;
-    return handler(win, payload || {});
+    if (!nadawcaDozwolony(event, win, method)) return null;
+    return handler(win, payload || {}, event.sender);
   });
 
   ipcMain.on('nazuna:send', (event, method, payload) => {
     const win = ownerOf(event.sender);
     const handler = handlers[method];
-    if (handler && win) { try { handler(win, payload || {}, event.sender); } catch (err) { console.error(method, err.message); } }
+    if (!handler || !win || !nadawcaDozwolony(event, win, method)) return;
+    try {
+      // Handler moze byc async - jego odrzucona obietnica nie ma prawa
+      // wywrocic procesu glownego jako nieobsluzony wyjatek.
+      const wynik = handler(win, payload || {}, event.sender);
+      if (wynik && typeof wynik.catch === 'function') wynik.catch((err) => console.error(method, err && err.message));
+    } catch (err) { console.error(method, err.message); }
   });
 }
 

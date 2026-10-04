@@ -27,7 +27,7 @@ function render() {
 function rowHtml(b) {
   const isFolder = b.type === 'folder';
   return `<div class="list-item" data-id="${esc(b.id)}" data-url="${esc(b.url || '')}" data-type="${b.type}">
-    ${isFolder ? iconSvg('folder') : `<img class="fav" src="${esc(favicon(b.url))}" onerror="this.style.visibility='hidden'">`}
+    ${isFolder ? iconSvg('folder') : `<img class="fav" src="${esc(favicon(b.url))}">`}
     <div class="main">
       <div class="name" contenteditable="false" data-title>${esc(b.title)}</div>
       ${isFolder ? '<div class="url">Folder</div>' : `<div class="url">${esc(b.url)}</div>`}
@@ -65,6 +65,13 @@ page.addEventListener('click', async (e) => {
 
 async function load() {
   items = await api.invoke('bookmarks.list');
+  // Nie przerywamy komus zmiany nazwy w polowie pisania.
+  if (document.activeElement && document.activeElement.isContentEditable) return;
+  const s = document.getElementById('search');
+  const szukal = s && document.activeElement === s;
   render();
+  if (szukal) { const n = document.getElementById('search'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
 }
 load();
+// Zakladka dodana gwiazdka albo z paska ma sie tu pojawic od razu.
+if (api.on) api.on('bookmarks:changed', load);

@@ -152,6 +152,10 @@ function obce(ses, details) {
    zapytan fetch/XHR jakiejs aplikacji) - inaczej kazda strona korzystajaca
    z JSON-a przez fetch zaczelaby sama nawigowac gdzies indziej. */
 const VIEWER_TYPES = { 'application/pdf': 'pdf', 'application/json': 'textview', 'text/plain': 'textview' };
+const doPodgladu = new Set();   // id kart, ktorych nawigacje wlasnie podmieniamy na podglad
+/* Czy blad ladowania tej karty to tylko skutek podmiany na podglad (a nie
+   prawdziwy problem do pokazania). Jednorazowe - zdejmuje znacznik. */
+function bladOdPodgladu(wcId) { return doPodgladu.delete(wcId); }
 function naglowek(headers, nazwa) {
   if (!headers) return '';
   for (const klucz of Object.keys(headers)) {
@@ -168,7 +172,13 @@ function typZasobu(headers) {
 function podmienNaPodglad(details) {
   if (details.resourceType !== 'mainFrame') return false;
   if (/^nazuna:/i.test(details.url)) return false;
-  if (details.statusCode >= 400) return false;
+  // Tylko prawdziwa tresc (2xx). Przekierowanie (3xx) tez potrafi miec typ
+  // text/plain, a jego przechwycenie zrywalo przekierowanie i podglad
+  // pokazywal pozniej docelowa strone jako surowy tekst.
+  if (!(details.statusCode >= 200 && details.statusCode < 300)) return false;
+  // Podglad pobiera plik jeszcze raz, zwyklym GET-em. Odpowiedz na wyslany
+  // formularz (POST) dostalby wtedy inna, albo zadna.
+  if (details.method && details.method !== 'GET') return false;
   // Strona sama poprosila o pobranie (Content-Disposition: attachment) - to
   // jej swiadoma decyzja, ze plik ma trafic na dysk, a nie do podgladu.
   // Chrome i Firefox tak samo respektuja ten naglowek nawet dla PDF-ow.
@@ -178,6 +188,12 @@ function podmienNaPodglad(details) {
   const wc = webContents.fromId(details.webContentsId);
   if (!wc || wc.isDestroyed()) return false;
   const cel = `nazuna://${widok}?src=${encodeURIComponent(details.url)}`;
+  // Anulowanie ponizej konczy oryginalna nawigacje bledem ERR_BLOCKED_BY_CLIENT,
+  // a karta (did-fail-load w window.js) reaguje na blad strona nazuna://error.
+  // Bez tego znacznika to, ktora nawigacja wygra, bylo kwestia przypadku -
+  // czasem zamiast podgladu pliku zostawala strona bledu.
+  doPodgladu.add(wc.id);
+  setTimeout(() => doPodgladu.delete(wc.id), 5000);
   // Nawigacja startuje dopiero po zakonczeniu tego callbacku (cancel:true) -
   // inaczej wchodzilibysmy w drugie zadanie sieciowe w trakcie obslugi
   // pierwszego.
@@ -339,4 +355,4 @@ async function loadExtensions(ses) {
   return loaded;
 }
 
-module.exports = { forPartition, prepare, loadExtensions, setPermissionPrompt, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, prepared };
+module.exports = { forPartition, prepare, loadExtensions, bladOdPodgladu, setPermissionPrompt, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, prepared };

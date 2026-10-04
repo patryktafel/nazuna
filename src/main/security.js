@@ -131,12 +131,20 @@ function naLiscie(host) {
 
 /* ------------------------------------------------------------------ sprawdz */
 
+/* Ruch do wlasnego komputera nigdy nie wychodzi do sieci, wiec brak
+   szyfrowania niczego tu nie odslania - Chrome tez traktuje localhost jako
+   bezpieczny. Bez tego kazdy lokalny serwer (np. podglad strony w trakcie
+   pisania) zaczynal sie od ostrzezenia. */
+function lokalny(host) {
+  return host === 'localhost' || host.endsWith('.localhost') || host === '[::1]' || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host);
+}
+
 function sprawdz(url) {
   if (!data.settings.get('securityWarningsEnabled', true)) return null;
   const r = rozbierz(url);
   if (!r) return null;
   if (naLiscie(r.host)) return { typ: 'malicious' };
-  if (r.http && !data.httpZaakceptowany(r.host)) return { typ: 'insecure' };
+  if (r.http && !lokalny(r.host) && !data.httpZaakceptowany(r.host)) return { typ: 'insecure' };
   return null; // null = bezpieczne
 }
 
@@ -164,4 +172,4 @@ function adresOstrzezenia(typ, target) {
   return `nazuna://warning/?${params.toString()}`;
 }
 
-module.exports = { init, sprawdz, jestZlosliwy, zapamietajWyjatek, adresOstrzezenia, status, refresh };
+module.exports = { init, sprawdz, jestZlosliwy, zapamietajWyjatek, adresOstrzezenia, status, refresh, lokalny };

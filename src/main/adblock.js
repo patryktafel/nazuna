@@ -139,7 +139,10 @@ function documentHost(details) {
     const wc = webContents.fromId(id);
     if (wc && !wc.isDestroyed()) {
       const host = hostOf(wc.getURL());
-      docHosts.set(id, host);
+      // Pusty host (okienko popup jeszcze na about:blank) nie trafia do
+      // pamieci - inaczej zostawal tam na stale i wyjatek "bloker wylaczony
+      // na tej stronie" nigdy juz w tym okienku nie zadzialal.
+      if (host) docHosts.set(id, host);
       return host;
     }
   } catch (_) {}

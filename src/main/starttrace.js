@@ -19,11 +19,29 @@ const { app } = require('electron');
 const t0 = Date.now();
 let logPath = null;
 
+/* Dziennik dopisuje sie przy kazdym starcie i nigdy nie byl przycinany, wiec
+   po miesiacach rosl bez konca. Raz na uruchomienie, przy pierwszym
+   zapisie, zostawiamy z niego tylko swiezy koniec. Wspolne z updater.js. */
+const LIMIT_DZIENNIKA = 512 * 1024;
+function przytnij(plik) {
+  try {
+    const { size } = fs.statSync(plik);
+    if (size <= LIMIT_DZIENNIKA) return;
+    const fd = fs.openSync(plik, 'r');
+    const zostaw = Buffer.alloc(LIMIT_DZIENNIKA / 2);
+    fs.readSync(fd, zostaw, 0, zostaw.length, size - zostaw.length);
+    fs.closeSync(fd);
+    // Od pierwszej pelnej linii, zeby nie zaczynac od polowy wpisu.
+    const nl = zostaw.indexOf(10);
+    fs.writeFileSync(plik, nl >= 0 ? zostaw.subarray(nl + 1) : zostaw);
+  } catch (_) { /* brak pliku albo brak dostepu - nic sie nie stalo */ }
+}
+
 function znacznik(etap) {
   try {
-    if (!logPath) logPath = path.join(app.getPath('userData'), 'start.log');
+    if (!logPath) { logPath = path.join(app.getPath('userData'), 'start.log'); przytnij(logPath); }
     fs.appendFileSync(logPath, `[${new Date().toISOString()}] +${Date.now() - t0}ms ${etap}\n`);
   } catch (_) { /* dziennik nigdy nie moze wywrocic aplikacji */ }
 }
 
-module.exports = { znacznik };
+module.exports = { znacznik, przytnij };

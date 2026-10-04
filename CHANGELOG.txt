@@ -1,6 +1,57 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.81 - 4 pazdziernika 2026
+-----------------------------
+
+Przeglad calej przegladarki i poprawki znalezionych bledow
+
+Pasek adresu i nawigacja:
+- Adres z numerem portu (np. localhost:3000, strona.pl:8080) otwiera sie
+  jako zwykla strona. Wczesniej byl brany za link do innej aplikacji.
+- localhost i adresy IP wpisane bez http:// otwieraja sie przez http.
+- Strony na wlasnym komputerze (localhost, 127.x) nie dostaja ostrzezenia
+  o braku szyfrowania ani etykiety "Niezabezpieczona".
+- Link mailto: albo do innej aplikacji otwierany w nowej karcie nie
+  zostawia pustej karty. Kilka takich prob naraz daje jedno pytanie.
+- Przekierowanie oraz odpowiedz na wyslany formularz nie trafiaja juz
+  omylkowo do podgladu pliku tekstowego.
+- Podglad pliku tekstowego czasem zamiast tresci pokazywal strone bledu.
+- Podglad tekstu respektuje kodowanie podane przez serwer (np.
+  windows-1250), polskie litery nie zamieniaja sie w krzaczki.
+- Podglad PDF liczy strony w osobnym watku, wiec duze pliki nie
+  zamrazaja karty.
+
+Karty i okna:
+- "Odswiez" z menu karty odswieza kliknieta karte, a nie aktywna.
+- "Karty z poprzedniej sesji" przywracaja karty takze po zamknieciu okna
+  krzyzykiem (wczesniej tylko po zamknieciu z menu).
+- "Zamknij pozostale" i "Zamknij karty po prawej" nie moga juz przez
+  pomylke zamknac wszystkich kart.
+- Historia nie przypisuje stronie bez tytulu tytulu poprzedniej strony.
+
+Prywatnosc:
+- Pobrania z okna prywatnego nie sa zapisywane na dysku i nie widac ich
+  w zwyklych oknach.
+- Po zamknieciu okna prywatnego jego ciasteczka i dane sa od razu
+  czyszczone z pamieci.
+- Karta wyrwana z okna prywatnego zachowuje swoja sesje (logowanie).
+- Ikony stron w oknie prywatnym nie sa pobierane przez zwykly profil.
+- Zrzuty diagnostyczne nie zawieraja adresow z okien prywatnych.
+- Ochrona odcisku Web Audio nie psuje juz dzwieku generowanego przez
+  strony (gry, syntezatory).
+
+Bezpieczenstwo i stabilnosc:
+- Proces glowny przyjmuje polecenia tylko od stron wewnetrznych nazuna://,
+  niezaleznie od zabezpieczen w samej stronie.
+- Przywrocenie ustawien domyslnych dziala od razu (bloker, motyw, DNS),
+  bez restartu, i pyta o potwierdzenie.
+- Strony Pobranych, Zakladek i Ustawien odswiezaja sie same po zmianach.
+- Brakujace ikony stron w Historii i Zakladkach nie wyswietlaja sie jako
+  zepsute obrazki.
+- Pliki dziennika (start.log, aktualizacje.log) sa przycinane i nie rosna
+  bez konca.
+
 0.1.80 - 30 wrzesnia 2026
 --------------------------
 

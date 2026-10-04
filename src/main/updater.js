@@ -12,7 +12,10 @@ const path = require('path');
 let logPath = null;
 function log(poziom, ...args) {
   try {
-    if (!logPath) logPath = path.join(app.getPath('userData'), 'aktualizacje.log');
+    if (!logPath) {
+      logPath = path.join(app.getPath('userData'), 'aktualizacje.log');
+      require('./starttrace').przytnij(logPath);
+    }
     const tekst = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
     fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${poziom}: ${tekst}\n`);
   } catch (_) { /* dziennik nigdy nie moze wywrocic aplikacji */ }
