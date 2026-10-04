@@ -1348,8 +1348,10 @@ class AppWindow {
   toggleBookmark() {
     const t = this.activeTab();
     if (!t || /^nazuna:/.test(t.url)) return;
-    if (data.isBookmarked(t.url)) data.removeBookmarkByUrl(t.url);
-    else data.addBookmark({ title: t.title, url: t.url });
+    // Gwiazdka i Ctrl+D dzialaja tylko na menu zakladek - pasek ma swoje
+    // wlasne zakladki (przeciagniecie karty albo prawy przycisk na pasku).
+    if (data.isBookmarked(t.url, 'menu')) data.removeBookmarkByUrl(t.url, 'menu');
+    else data.addBookmark({ title: t.title, url: t.url, parent: 'menu' });
     this.scheduleSync();
     broadcastAll('bookmarks:changed');
   }
@@ -1402,7 +1404,7 @@ class AppWindow {
       loading: active ? active.loading : false,
       canGoBack: active && !active.wc.isDestroyed() ? active.wc.navigationHistory.canGoBack() : false,
       canGoForward: active && !active.wc.isDestroyed() ? active.wc.navigationHistory.canGoForward() : false,
-      bookmarked: active ? data.isBookmarked(active.displayUrl) : false,
+      bookmarked: active ? data.isBookmarked(active.displayUrl, 'menu') : false,
       zoom: active ? active.zoom : 1,
       findOpen: this.findOpen,
       showBookmarksBar: data.settings.get('showBookmarksBar', true),

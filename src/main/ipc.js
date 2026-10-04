@@ -343,6 +343,20 @@ const handlers = {
       w.scheduleSync();
     }
     if (!W.odbierzPrzeciaganie(p.id)) return;
+    /* Karta puszczona na pasku zakladek wlasnego okna (pasek sam to
+       rozpoznaje, bo zna swoje polozenie) - zostaje na miejscu, a jej strona
+       trafia na pasek zakladek, tak jak w Firefoksie. Tylko na pasek, nie do
+       menu pod przyciskiem zakladek. */
+    if (p.naZakladki && win) {
+      const tab = win.tabById(Number(p.id));
+      const url = tab ? tab.displayUrl : '';
+      if (url && !/^nazuna:/i.test(url)) {
+        const z = data.addBookmark({ title: tab.title || url, url, parent: 'bar' });
+        if (z) data.moveBookmark(z.id, 'bar', p.naZakladki.beforeId || null);
+        W.broadcastAll('bookmarks:changed');
+      }
+      return;
+    }
     const cel = (Number.isFinite(x) && Number.isFinite(y)) ? W.oknoPodPunktem(x, y) : null;
     if (cel && W.wPasku(cel, y)) {
       // Pasek docelowego okna sam policzy miejsce wstawienia, bo tylko on wie,

@@ -392,6 +392,40 @@ function schowajWskaznik() {
   if (w) w.hidden = true;
 }
 
+/* Czy kursor jest nad paskiem zakladek tego okna, i przed ktora zakladka
+   wstawic upuszczona karte (null = na koniec). */
+function nadPaskiemZakladek(x, y) {
+  const bar = el.bookmarksbar;
+  if (!bar || bar.hidden) return null;
+  const r = bar.getBoundingClientRect();
+  if (x < r.left || x > r.right || y < r.top || y > r.bottom) return null;
+  for (const n of bar.querySelectorAll('.bm')) {
+    const b = n.getBoundingClientRect();
+    if (x < b.left + b.width / 2) return { beforeId: n.dataset.id };
+  }
+  return { beforeId: null };
+}
+
+function pokazWskaznikZakladki(cel) {
+  let w = document.getElementById('wskaznikZakladki');
+  if (!cel) { el.bookmarksbar.classList.remove('przyjmuje'); if (w) w.hidden = true; return; }
+  el.bookmarksbar.classList.add('przyjmuje');
+  if (!w) {
+    w = document.createElement('div');
+    w.id = 'wskaznikZakladki';
+    w.className = 'wskaznik-karty';
+    el.bookmarksbar.appendChild(w);
+  }
+  const pas = el.bookmarksbar.getBoundingClientRect();
+  const przed = cel.beforeId ? el.bookmarksbar.querySelector(`.bm[data-id="${CSS.escape(cel.beforeId)}"]`) : null;
+  const wszystkie = el.bookmarksbar.querySelectorAll('.bm');
+  let lewo = 8;
+  if (przed) lewo = przed.getBoundingClientRect().left - pas.left;
+  else if (wszystkie.length) lewo = wszystkie[wszystkie.length - 1].getBoundingClientRect().right - pas.left;
+  w.style.left = `${Math.max(2, lewo - 1)}px`;
+  w.hidden = false;
+}
+
 function wireTabDrag(node) {
   node.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
@@ -411,6 +445,8 @@ function wireTabDrag(node) {
       node.classList.add('dragging');
       api.send('tab.dragStart', { id: ciagniete.id });
     }
+    // Nad paskiem zakladek pokazujemy, gdzie wyladuje zakladka.
+    pokazWskaznikZakladki(nadPaskiemZakladek(e.clientX, e.clientY));
     const teraz = Date.now();
     if (teraz - ostatniRuch >= 40) {          // nie zasypujemy procesu glownego
       ostatniRuch = teraz;
@@ -426,7 +462,9 @@ function wireTabDrag(node) {
     schowajWskaznik();
     try { c.node.releasePointerCapture(e.pointerId); } catch (_) {}
     if (!c.ruszone) return;                    // zwykle klikniecie, nie przeciaganie
-    api.send('tab.dragKoniecP', { id: c.id, x: e.screenX, y: e.screenY });
+    const naZakladki = nadPaskiemZakladek(e.clientX, e.clientY);
+    pokazWskaznikZakladki(null);
+    api.send('tab.dragKoniecP', { id: c.id, x: e.screenX, y: e.screenY, naZakladki });
   };
   node.addEventListener('pointerup', koniec);
   node.addEventListener('pointercancel', koniec);
@@ -657,7 +695,7 @@ function renderBookmarks() {
   if (!show) return;
   const items = (state.bookmarks || []).filter((b) => b.parent === 'bar');
   if (!items.length) {
-    el.bookmarksbar.innerHTML = '<span class="empty">Pasek zakładek jest pusty. Kliknij gwiazdkę w pasku adresu, żeby coś tu dodać.</span>';
+    el.bookmarksbar.innerHTML = '<span class="empty">Pasek zakładek jest pusty. Przeciągnij tu kartę albo kliknij prawym przyciskiem, żeby dodać zakładkę.</span>';
     return;
   }
   el.bookmarksbar.innerHTML = items.map((b) => {
@@ -1075,16 +1113,17 @@ function middleOpenBmRow(e) {
 }
 
 function bookmarksPanel() {
-  const bar = bookmarkChildren('bar');
-  const other = bookmarkChildren('other');
-  const body = bar.length || other.length
-    ? `<div class="bm-list">${bmListHtml(bar)}${other.length ? `<div class="menu-sep"></div><div class="menu-title">Inne zakładki</div>${bmListHtml(other)}` : ''}</div>`
-    : '<div class="bm-empty">Nie masz jeszcze zakładek.<br>Kliknij gwiazdkę w pasku adresu, żeby dodać tę stronę.</div>';
+  // Tylko menu zakladek - pasek pod adresem ma osobne zakladki i tu ich nie
+  // pokazujemy (jak w Firefoksie). "other" to stara nazwa menu.
+  const menu = [...bookmarkChildren('menu'), ...bookmarkChildren('other')];
+  const body = menu.length
+    ? `<div class="bm-list">${bmListHtml(menu)}</div>`
+    : '<div class="bm-empty">Menu zakładek jest puste.<br>Kliknij gwiazdkę w pasku adresu, żeby dodać tu tę stronę.</div>';
 
   const node = panel(`<div class="bm-panel">
     <div class="bm-head"><b>Zakładki</b><button class="btn ghost" data-manager>Menedżer</button></div>
     ${body}
-    <div class="bm-foot"><div class="menu-item" data-add>${iconSvg('star')}<span>Dodaj tę stronę</span><span class="accel">Ctrl+D</span></div></div>
+    <div class="bm-foot"><div class="menu-item" data-add>${iconSvg('star')}<span>${state.bookmarked ? 'Usuń tę stronę z menu' : 'Dodaj tę stronę'}</span><span class="accel">Ctrl+D</span></div></div>
   </div>`);
   openPanel('bookmarks', node, $('#bookmarksBtn').getBoundingClientRect());
   attachFavicons(node);

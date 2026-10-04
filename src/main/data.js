@@ -150,10 +150,33 @@ function removeHistory(urls) {
 
 function bookmarkList() { return bookmarks.data.items; }
 
-function isBookmarked(url) { return bookmarks.data.items.some((b) => b.type === 'link' && b.url === url); }
+/* Dwa niezalezne miejsca na zakladki, tak jak w Firefoksie: "bar" to pasek
+   pod paskiem adresu, "menu" to lista pod przyciskiem zakladek (tam trafia
+   gwiazdka i Ctrl+D). Ta sama strona moze byc w obu naraz i usuniecie jej z
+   jednego miejsca nie rusza drugiego. "other" to stara nazwa z wczesniejszych
+   wersji, liczona jako menu. Folder nalezy tam, gdzie jego folder nadrzedny. */
+function miejsceZakladki(parent) {
+  const items = bookmarks.data.items;
+  let p = parent;
+  for (let i = 0; i < 50 && p; i++) {
+    if (p === 'bar') return 'bar';
+    if (p === 'menu' || p === 'other') return 'menu';
+    const nad = items.find((b) => b.id === p);
+    if (!nad) break;
+    p = nad.parent;
+  }
+  return 'bar';
+}
 
-function addBookmark({ title, url, parent = 'bar' }) {
-  const existing = bookmarks.data.items.find((b) => b.type === 'link' && b.url === url);
+function linkiW(gdzie) {
+  return bookmarks.data.items.filter((b) => b.type === 'link' && miejsceZakladki(b.parent) === gdzie);
+}
+
+function isBookmarked(url, gdzie = 'menu') { return linkiW(gdzie).some((b) => b.url === url); }
+
+function addBookmark({ title, url, parent = 'menu' }) {
+  const gdzie = miejsceZakladki(parent);
+  const existing = linkiW(gdzie).find((b) => b.url === url);
   if (existing) { existing.title = title || existing.title; bookmarks.save(); return existing; }
   const item = { id: String(bookmarks.data.nextId++), type: 'link', title: title || url, url, parent, ts: Date.now() };
   bookmarks.data.items.push(item);
@@ -196,8 +219,8 @@ function removeBookmark(id) {
   bookmarks.save();
 }
 
-function removeBookmarkByUrl(url) {
-  const hit = bookmarks.data.items.find((b) => b.type === 'link' && b.url === url);
+function removeBookmarkByUrl(url, gdzie = 'menu') {
+  const hit = linkiW(gdzie).find((b) => b.url === url);
   if (hit) removeBookmark(hit.id);
 }
 
@@ -314,7 +337,7 @@ module.exports = {
   get extensionsStore() { return extensionsStore; },
   get siteStore() { return siteStore; },
   addHistory, updateHistoryTitle, searchHistory, clearHistory, removeHistory,
-  bookmarkList, isBookmarked, addBookmark, addFolder, addSeparator, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
+  bookmarkList, isBookmarked, miejsceZakladki, addBookmark, addFolder, addSeparator, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
   adblockAllowed, setAdblockForSite, siteZoom, setSiteZoom, permissionFor, setPermission,
   isSleepExempt, setSleepExempt,
   httpZaakceptowany, zaakceptujHttp,

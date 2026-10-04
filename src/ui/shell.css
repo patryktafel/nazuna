@@ -102,6 +102,7 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 /* Widoczny sygnal, ze pasek przyjmie upuszczana karte, plus kreska w miejscu,
    w ktore karta wejdzie. */
 .tabstrip.przyjmuje { background: var(--accent-dim); }
+.bookmarksbar.przyjmuje { background: var(--accent-dim); position: relative; }
 /* Karta trzymana w kursorze. Nie lapie klikniec, zeby nie wchodzila w droge. */
 .duch-karty {
   position: fixed; z-index: 60; pointer-events: none;

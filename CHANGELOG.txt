@@ -1,6 +1,24 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.82 - 4 pazdziernika 2026
+-----------------------------
+
+Pasek zakladek i menu zakladek sa od siebie niezalezne
+
+Tak jak w Firefoksie, zakladki leza teraz w dwoch osobnych miejscach:
+- Gwiazdka w pasku adresu (i Ctrl+D) dodaje strone do menu pod
+  przyciskiem zakladek. Na pasku zakladek sie nie pojawia.
+- Na pasek zakladek trafia strona przeciagnieta tam razem z karta albo
+  dodana prawym przyciskiem na pasku ("Dodaj zakladke..."). W menu pod
+  przyciskiem jej nie widac.
+- Ta sama strona moze byc w obu miejscach, a usuniecie jej z jednego nie
+  rusza drugiego.
+- Menedzer zakladek pokazuje pasek i menu osobno i pozwala przeniesc
+  zakladke z jednego miejsca do drugiego.
+
+Dotychczasowe zakladki zostaja na pasku.
+
 0.1.81 - 4 pazdziernika 2026
 -----------------------------
 
