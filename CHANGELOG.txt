@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.85 - 9 pazdziernika 2026
+----------------------------
+
+Blokada wyskakujacych okien i pisanie od razu po Ctrl+T
+
+- Strony nie moga juz same otwierac nowych kart ani okien bez klikniecia
+  (tak jak w Chrome). Wczesniej reklamy otwieraly karty i okna w
+  dowolnej chwili. Zablokowane okno mozna otworzyc z powiadomienia w
+  rogu ("Otworz mimo to"). Jedno klikniecie pozwala otworzyc jedno okno.
+- Ctrl+W zamyka tez osobne okienka otwarte przez strone (np. reklamy albo
+  okna logowania), nie tylko karty.
+- Po Ctrl+T albo kliknieciu "+" mozna od razu pisac w pasku adresu, bez
+  klikania w niego. Strona nowej karty nie zabiera juz klawiatury, takze
+  przy wylaczonym "Szybszym otwieraniu nowej karty".
+
 0.1.84 - 4 pazdziernika 2026
 -----------------------------
 

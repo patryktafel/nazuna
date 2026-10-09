@@ -943,7 +943,11 @@ el.bookmarksbar.addEventListener('contextmenu', (e) => {
 
 el.address.addEventListener('focus', () => {
   el.omnibox.classList.add('focused');
-  setTimeout(() => el.address.select(), 0);
+  // Zaznaczamy calosc tylko, gdy nikt jeszcze nic nie wpisal - pasek dostaje
+  // fokus z powrotem takze po tym, jak nowa karta na chwile go zabrala
+  // (patrz newTab w window.js), a wtedy zaznaczenie sprawiloby, ze kolejna
+  // litera skasuje to, co juz napisano.
+  if (!addressDirty) setTimeout(() => { if (!addressDirty) el.address.select(); }, 0);
 });
 el.address.addEventListener('blur', () => {
   el.omnibox.classList.remove('focused');
@@ -1735,6 +1739,19 @@ api.on('download-blocked', (d) => {
   node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
 });
 
+/* Zablokowane wyskakujace okno (patrz zablokowanoOkno w window.js). Jedno
+   powiadomienie naraz - kolejna proba tej samej strony tylko je odswieza. */
+api.on('popup-blocked', (d) => {
+  if (!d || !d.url) return;
+  const node = showUpdateToast(`
+    <div class="row">${iconSvg('shield')}<div class="title">Zablokowano wyskakujące okno</div>
+      <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
+    <div class="sub">Strona ${escapeHtml(d.host || '')} próbowała otworzyć nową kartę albo okno bez kliknięcia.</div>
+    <div class="actions"><button class="go" data-act="open">Otwórz mimo to</button></div>`);
+  node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
+  node.querySelector('[data-act="open"]').addEventListener('click', () => { api.send('tab.new', { url: d.url }); hideUpdateToast(); });
+});
+
 api.on('find:focus', () => setTimeout(() => { el.findInput.focus(); el.findInput.select(); }, 40));
 api.on('find:result', (r) => {
   el.findCount.textContent = r && r.matches ? `${r.active}/${r.matches}` : (el.findInput.value ? '0/0' : '');
@@ -1749,6 +1766,12 @@ api.on('address:blur', () => {
   renderToolbar();
 });
 api.on('focus:address', (payload) => {
+  // Oddanie fokusu po tym, jak strona go na chwile zabrala - bez czyszczenia
+  // i bez zaznaczania tego, co ktos zdazyl wpisac.
+  if (payload && payload.zachowaj) {
+    if (document.activeElement !== el.address) el.address.focus();
+    return;
+  }
   addressDirty = false;
   // Gdy to pusta nowa karta (payload.clear), czyscimy pasek od razu, zamiast
   // czekac na nastepny sync() ze stanem - renderToolbar() i tak nie

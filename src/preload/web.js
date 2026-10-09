@@ -37,7 +37,10 @@ if (internal) {
    (nodeIntegrationInSubFrames w window.js). */
 try {
   document.addEventListener('auxclick', (event) => {
-    if (event.button !== 1) return;
+    // Tylko prawdziwe klikniecie - strona moglaby inaczej wygenerowac
+    // "srodkowy klik" w skrypcie i tak otwierac karty z ominieciem blokady
+    // wyskakujacych okien.
+    if (event.button !== 1 || !event.isTrusted) return;
     const link = event.target && event.target.closest ? event.target.closest('a[href]') : null;
     if (!link) return;
     let href = '';

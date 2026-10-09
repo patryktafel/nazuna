@@ -186,6 +186,33 @@ async function extractSiteAccent(faviconUrl, ses) {
   }
 }
 
+/* ------------------------------------------------ blokada wyskakujacych okien
+   Electron, w odroznieniu od Chrome, nie ma wlasnej blokady: dowolny skrypt
+   (najczesciej reklama) mogl w kazdej chwili otworzyc nowa karte albo okno,
+   bez zadnego klikniecia. Robimy to tak jak Chrome: strona moze otworzyc
+   nowe okno/karte tylko chwile (AKTYWACJA_MS) po prawdziwym kliknieciu albo
+   nacisnieciu klawisza w niej samej, i tylko jedno na jedno klikniecie
+   (klikniecie sie "zuzywa"). Kliknieciem jest tylko prawdziwe wejscie z
+   myszy/klawiatury, ktore przechodzi przez proces glowny - strona nie
+   podrobi go zdarzeniem wygenerowanym w JavaScripcie. Zablokowane okno
+   mozna otworzyc z powiadomienia w rogu (patrz 'popup-blocked' w shell.js). */
+const AKTYWACJA_MS = 5000;
+const aktywacje = new WeakMap();   // webContents -> czas ostatniego prawdziwego wejscia
+function sledzAktywnosc(wc) {
+  wc.on('before-input-event', (_e, input) => {
+    if (input.type === 'keyDown' && input.key !== 'Escape') aktywacje.set(wc, Date.now());
+  });
+  wc.on('before-mouse-event', (_e, mysz) => {
+    if (mysz && (mysz.type === 'mouseDown' || mysz.type === 'mouseUp')) aktywacje.set(wc, Date.now());
+  });
+}
+function zuzyjAktywnosc(wc) {
+  const t = aktywacje.get(wc);
+  if (!t || Date.now() - t > AKTYWACJA_MS) return false;
+  aktywacje.delete(wc);
+  return true;
+}
+
 class Tab {
   constructor(appWindow, { url, background = false, lazy = false }) {
     this.id = nextTabId++;
@@ -344,7 +371,19 @@ class Tab {
        cos pisze" i nie nadpisuje jego wartosci, mimo ze naprawde nikt juz w
        nim nie pisze. Efekt: pasek zostaje pusty na stale po takiej nawigacji,
        mimo ze karta poprawnie przechodzi na nowy adres. */
-    wc.on('focus', () => { if (this.owner.activeTabId === this.id) this.owner.send('address:blur'); });
+    wc.on('focus', () => {
+      if (this.owner.activeTabId !== this.id) return;
+      if (this._pasekMaFokus && Date.now() < this._pasekMaFokus) {
+        // Strona przejela klawiature sama, nie przez klikniecie - wraca do paska.
+        try { this.owner.shell.focus(); } catch (_) {}
+        return;
+      }
+      this.owner.send('address:blur');
+    });
+    // Klikniecie w strone (albo przejscie na inna strone) konczy ochrone
+    // fokusu paska z newTab() - od tej chwili strona moze go normalnie miec.
+    wc.on('before-mouse-event', (_e, mysz) => { if (mysz && mysz.type === 'mouseDown') this._pasekMaFokus = 0; });
+    wc.on('did-start-navigation', (ev) => { if (ev.isMainFrame && !/^nazuna:\/\/newtab/i.test(ev.url)) this._pasekMaFokus = 0; });
     wc.on('will-navigate', (event, target) => {
       if (/^nazuna:/i.test(target) && !/^nazuna:/i.test(wc.getURL())) { event.preventDefault(); return; }
       if (urls.zewnetrznyProtokol(target)) { event.preventDefault(); this.owner.handleExternalProtocol(target); return; }
@@ -433,8 +472,10 @@ class Tab {
     wc.on('render-process-gone', () => { this.title = 'Karta przestała odpowiadać'; this.loading = false; sync(); });
     wc.on('destroyed', () => { adblock.forget(wc.id); sessions.zapomnijKarte(wc.id); sync(); });
 
+    sledzAktywnosc(wc);
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
       if (disposition === 'save-to-disk') return { action: 'allow' };
+      if (!zuzyjAktywnosc(wc)) { this.owner.zablokowanoOkno(url); return { action: 'deny' }; }
       const wantsPopup = disposition === 'new-window' && /width=|height=|popup/i.test(features || '');
       if (wantsPopup) {
         /* Okienko (np. logowanie przez Google) na srodku okna Nazuny, na tym
@@ -480,9 +521,20 @@ class Tab {
       child.setMenuBarVisibility(false);
       // Ta sama poprawka rozmiaru co przy zwyklym oknie (monitory.js).
       if (this._granicePopupu) { monitory.ustawGranice(child, this._granicePopupu); this._granicePopupu = null; }
+      sledzAktywnosc(child.webContents);
       child.webContents.setWindowOpenHandler(({ url }) => {
+        if (!zuzyjAktywnosc(child.webContents)) { this.owner.zablokowanoOkno(url); return { action: 'deny' }; }
         this.owner.newTab({ url });
         return { action: 'deny' };
+      });
+      // Okienko (np. logowanie) nie ma paska Nazuny ani jej skrotow - Ctrl+W
+      // nic w nim nie robilo. Zamyka je tak samo jak karte.
+      child.webContents.on('before-input-event', (ev, input) => {
+        const ctrl = process.platform === 'darwin' ? input.meta : input.control;
+        if (input.type === 'keyDown' && ctrl && !input.shift && !input.alt && (input.key || '').toLowerCase() === 'w') {
+          ev.preventDefault();
+          try { child.close(); } catch (_) {}
+        }
       });
     });
   }
@@ -877,7 +929,10 @@ class AppWindow {
     // Karta lazy nie ma jeszcze widoku (patrz konstruktor Tab) - nie ma wiec
     // czego doczepiac do okna, dopoki sama sie nie obudzi (wake()).
     if (tab.view) this.win.contentView.addChildView(tab.view, 0);
-    if (!background || this.activeTabId === null) this.selectTab(tab.id);
+    // Pusta nowa karta na wierzchu: klawiatura ma isc do paska adresu, nie do
+    // strony (patrz nizej i _pasekMaFokus w Tab).
+    const doPaska = !background && resolved === NEW_TAB;
+    if (!background || this.activeTabId === null) this.selectTab(tab.id, { fokusStrony: !doPaska });
     else this.layout();
     // Pusta nowa karta w tle nie ma czego pokazywac, wiec od razu przenosimy
     // kursor do paska adresu na gorze - tak samo jak Chrome i Firefox, zeby
@@ -894,7 +949,25 @@ class AppWindow {
     // poprzedniej aktywnej karty, bo renderToolbar() celowo nie nadpisuje
     // wartosci pola, ktore ma akurat fokus (zeby nie kasowac tego, co ktos
     // sam wpisuje).
-    if (!background && resolved === NEW_TAB) {
+    if (doPaska) {
+      /* Swiezo zbudowana karta (bez karty "na zapas", czyli przy wylaczonym
+         szybszym otwieraniu) po zaladowaniu strony sama zabierala klawiature
+         paskowi adresu - Ctrl+T, a potem pisanie, trafialo w pustke i trzeba
+         bylo kliknac w pasek. Przez kilka sekund od otwarcia (albo do
+         pierwszego klikniecia w strone) oddajemy wiec fokus z powrotem
+         paskowi, gdyby karta go przejela. */
+      tab._pasekMaFokus = Date.now() + 5000;
+      const oddaj = () => {
+        if (!tab._pasekMaFokus || Date.now() > tab._pasekMaFokus || this.activeTabId !== tab.id) return;
+        if (!this.win || this.win.isDestroyed()) return;
+        try { this.shell.focus(); } catch (_) {}
+        this.send('focus:address', { zachowaj: true });
+      };
+      // Strona przejmuje klawiature w roznych chwilach ladowania (nie zawsze
+      // z jakimkolwiek zdarzeniem), wiec sprawdzamy kilka razy: zaraz, w
+      // trakcie i po zaladowaniu. Gdy pasek ma juz fokus, to nic nie zmienia.
+      for (const ms of [30, 120, 300, 700, 1500]) setTimeout(oddaj, ms);
+      if (tab.wc) { tab.wc.once('dom-ready', oddaj); tab.wc.once('did-stop-loading', oddaj); }
       try { this.shell.focus(); } catch (_) {}
       this.send('focus:address', { clear: true });
     }
@@ -938,7 +1011,7 @@ class AppWindow {
     return tab;
   }
 
-  selectTab(id) {
+  selectTab(id, { fokusStrony = true } = {}) {
     const tab = this.tabById(id);
     if (!tab) return;
     if (tab.sleeping) tab.wake();
@@ -949,7 +1022,7 @@ class AppWindow {
     this.closeExtensionPopup();
     if (this.findOpen) this.findOpen = false;
     this.layout();
-    try { tab.wc.focus(); } catch (_) {}
+    if (fokusStrony) { try { tab.wc.focus(); } catch (_) {} }
     this.scheduleSync();
   }
 
@@ -1185,6 +1258,14 @@ class AppWindow {
       this._permissionResolvers.set(key, resolve);
       this.openPopover('permission', { key, permission, origin, strona, osadzona });
     });
+  }
+
+  /* Strona probowala otworzyc okno/karte bez klikniecia (patrz blokada
+     wyskakujacych okien wyzej) - krotkie powiadomienie z mozliwoscia
+     otwarcia mimo to. */
+  zablokowanoOkno(url) {
+    if (!/^https?:/i.test(String(url || ''))) return;
+    this.send('popup-blocked', { url: String(url).slice(0, 2000), host: urls.prettyHost(url) });
   }
 
   /* Strona probuje przejsc na adres, ktorego Nazuna sama nie umie wyswietlic
