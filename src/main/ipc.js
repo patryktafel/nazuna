@@ -48,6 +48,7 @@ function ownerOf(sender) {
     // puste, jakby nic sie nie udalo.
     if (win._spareTab && win._spareTab.wc === sender) return win;
     if (win.extensionPopup && win.extensionPopup.view.webContents === sender) return win;
+    if (win.toastView && win.toastView.webContents === sender) return win;
   }
   // Brak dopasowania to sygnal, ze nadawca akurat nie nalezy do zadnego
   // znanego okna (np. karta w trakcie przenoszenia miedzy oknami) - zamiast
@@ -510,6 +511,11 @@ const handlers = {
     }
     if (url && sender && !sender.isDestroyed()) sender.downloadURL(url);
   },
+  /* Warstwa powiadomien w rogu okna (src/ui/toast.js, pokazToast w window.js). */
+  'toast.gotowy': (win) => win.toastGotowy(),
+  'toast.rozmiar': (win, p) => win.ustawRozmiarToastu(p.w, p.h),
+  'toast.otworz': (win, p) => { const url = String((p && p.url) || ''); if (/^https?:\/\//i.test(url)) win.newTab({ url }); },
+  'toast.rozszerzenie': (win, p) => win.send('toast:rozszerzenie', { ok: !!p.ok, nazwa: String(p.nazwa || ''), blad: String(p.blad || '') }),
   'app.updateAvailable': () => updater.dostepny(),
   'app.updateStatus': () => updater.stan(),
   'app.updateCheck': async () => updater.sprawdz('reczne'),

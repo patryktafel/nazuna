@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pl" data-accent="violet">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+<title>Powiadomienia</title>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="shell.css">
+<style>
+  /* Osobna, mala warstwa w prawym gornym rogu okna (patrz pokazToast w
+     main/window.js). Powiadomienie stoi tu w zwyklym ukladzie, a proces
+     glowny dopasowuje rozmiar warstwy do niego - poza nim nic nie
+     zaslania strony. Margines zostawia miejsce na cien karty. */
+  html, body { margin: 0; overflow: hidden; }
+  #slot { display: inline-block; padding: 8px 14px 22px 22px; }
+  #slot:empty { padding: 0; }
+  /* Cien mniejszy niz w menu paska: musi zmiescic sie w marginesie warstwy,
+     inaczej ucinalby sie na jej krawedziach w szary prostokat. */
+  .update-toast { position: relative; top: auto; right: auto; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32), 0 1px 4px rgba(0, 0, 0, 0.25); }
+  :root[data-motyw="jasny"] .update-toast { box-shadow: 0 8px 18px rgba(24, 28, 45, 0.14), 0 1px 4px rgba(24, 28, 45, 0.10); }
+</style>
+</head>
+<body>
+  <div id="slot"></div>
+  <script src="icons.js"></script>
+  <script src="toast.js"></script>
+</body>
+</html>

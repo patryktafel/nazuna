@@ -1,6 +1,24 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.86 - 14 pazdziernika 2026
+-----------------------------
+
+Widoczne powiadomienia, poprawka F11 i diagnostyka klikania
+
+- Powiadomienia w rogu okna (aktualizacja, zablokowane pobieranie,
+  zablokowane wyskakujace okno, instalacja rozszerzenia) byly rysowane
+  poza widocznym obszarem paska i nigdy ich nie bylo widac. Teraz maja
+  wlasna, mala warstwe w prawym gornym rogu strony, ktora zaslania tylko
+  samo powiadomienie.
+- F11 w trakcie filmu na pelnym ekranie zostawial strone w trybie
+  pelnoekranowym bez paska przegladarki, z niewidocznie przykrytym gornym
+  pasem strony. Teraz F11 wychodzi z pelnego ekranu strony, tak jak w
+  Chrome.
+- Nowy skrot Ctrl+Shift+Alt+D: gdy na stronie nie da sie czegos kliknac,
+  wcisniecie go z kursorem nad tym miejscem zapisuje w folderze
+  diagnostyka informacje o tym, co lezy pod kursorem.
+
 0.1.85 - 9 pazdziernika 2026
 ----------------------------
 

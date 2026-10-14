@@ -613,6 +613,12 @@ class AppWindow {
     this._permissionResolvers = new Map();
     // Karta trzymana "na zapas", patrz _prepareSpare() i newTab() nizej.
     this._spareTab = null;
+    // Warstwa powiadomien w rogu (patrz pokazToast nizej) - tworzona dopiero,
+    // gdy jest co pokazac.
+    this.toastView = null;
+    this._toastGotowy = false;
+    this._toastKolejka = [];
+    this._toastRozmiar = { w: 0, h: 0 };
 
     /* Gdzie stanie okno (patrz monitory.js):
        - pozycja podana wprost (wyrwana karta): na ekranie, nad ktorym puszczono
@@ -707,7 +713,12 @@ class AppWindow {
     this.win.on('maximize', () => { this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
     this.win.on('unmaximize', () => { this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
     this.win.on('enter-full-screen', () => { this.layout(); this.scheduleSync(); });
-    this.win.on('leave-full-screen', () => { this.layout(); this.scheduleSync(); });
+    this.win.on('leave-full-screen', () => {
+      // Okno wyszlo z pelnego ekranu (np. przez Windows), a strona dalej
+      // jest w swoim - wyprowadzamy z niego i strone, inaczej zostaje bez paska.
+      if (this.contentFullScreen) this.wyjdzZPelnegoEkranuStrony();
+      this.layout(); this.scheduleSync();
+    });
     /* Po dluzszej nieaktywnosci (okno bez fokusu godzinami, zminimalizowane,
        albo caly system usypiony - patrz tez powerMonitor w index.js) karta
        na wierzchu potrafi zostac pusta/biala, mimo ze jej proces wcale nie
@@ -834,6 +845,7 @@ class AppWindow {
       }
     }
     this.positionExtensionPopup();
+    this.positionToast();
   }
 
   /** Interfejs to przezroczysta warstwa nad strona. Rozciaga sie na cale okno
@@ -1170,7 +1182,21 @@ class AppWindow {
   }
 
   toggleFullScreen() {
+    /* F11 w trakcie filmu na pelnym ekranie: wychodzimy z pelnego ekranu
+       strony (tak jak Chrome). Wczesniej okno wracalo do zwyklego rozmiaru,
+       ale strona zostawala w swoim trybie pelnoekranowym - bez paska Nazuny,
+       z gornym pasem strony przykrytym przez niewidoczna warstwe. */
+    if (this.contentFullScreen) { this.wyjdzZPelnegoEkranuStrony(); return; }
     this.win.setFullScreen(!this.win.isFullScreen());
+  }
+
+  wyjdzZPelnegoEkranuStrony() {
+    const t = this.activeTab();
+    if (t && t.wc && !t.wc.isDestroyed()) {
+      t.wc.executeJavaScript('document.fullscreenElement ? document.exitFullscreen().then(() => true, () => false) : false', true).catch(() => {});
+    }
+    // Na wypadek, gdyby strona nie odpowiedziala - nasz stan i tak wraca.
+    setTimeout(() => { if (this.contentFullScreen) this.setContentFullScreen(false); if (this.win && !this.win.isDestroyed() && this.win.isFullScreen()) this.win.setFullScreen(false); }, 800);
   }
 
   /* ------------------------------------------------------------- find bar */
@@ -1258,6 +1284,44 @@ class AppWindow {
       this._permissionResolvers.set(key, resolve);
       this.openPopover('permission', { key, permission, origin, strona, osadzona });
     });
+  }
+
+  /* Diagnostyka zgloszenia "na stronie nie da sie kliknac niektorych
+     przyciskow" (pazdziernik 2026), ktorego nie udalo sie odtworzyc u nas.
+     Uzytkownik wciska Ctrl+Shift+Alt+D z kursorem nad przyciskiem, ktory nie
+     dziala - zapisujemy uklad wszystkich warstw okna i to, co strona ma pod
+     kursorem (elementy na wierzchu, niewidoczne nakladki). */
+  async zrzutKlikania() {
+    const fs = require('fs');
+    const wynik = { czas: new Date().toISOString(), wersja: app.getVersion() };
+    try {
+      const kursor = screen.getCursorScreenPoint();
+      const tresc = this.win.getContentBounds();
+      const wOknie = { x: kursor.x - tresc.x, y: kursor.y - tresc.y };
+      const t = this.activeTab();
+      Object.assign(wynik, {
+        okno: this.win.getBounds(), tresc, maksymalizowane: this.win.isMaximized(), pelnyEkran: this.win.isFullScreen(),
+        ekran: (() => { const d = monitory.ekranOkna(this.win.getBounds()); return d ? { skala: d.scaleFactor, obszar: d.workArea } : null; })(),
+        kursor, wOknie,
+        stan: { expanded: this.expanded, popover: this.popover, findOpen: this.findOpen, contentFullScreen: this.contentFullScreen, hint: this.fullscreenHintUntil > Date.now(), chromeHeight: this.chromeHeight(), przeciaganie: !!this.przeciaganieKarty, rozszerzenie: !!this.extensionPopup },
+        widoki: this.win.contentView.children.map((v) => { let url = ''; try { url = v.webContents ? v.webContents.getURL().slice(0, 80) : ''; } catch (_) {} return { url: this.isPrivate && !/^nazuna:/.test(url) ? '(prywatne)' : url, bounds: v.getBounds() }; }),
+        pasekWarstwa: await this.shell.executeJavaScript(`({ h: innerHeight, expandedCss: document.body.classList.contains('expanded'), warstwa: [...document.getElementById('layer').children].map((n) => n.className), pod: (document.elementFromPoint(${wOknie.x}, ${wOknie.y}) || {}).tagName || null })`).catch((e) => String(e))
+      });
+      if (t && t.wc && !t.wc.isDestroyed()) {
+        const py = wOknie.y - this.chromeHeight();
+        wynik.strona = await t.wc.executeJavaScript(`(() => {
+          const opis = (e) => { const cs = getComputedStyle(e); const r = e.getBoundingClientRect(); return e.tagName + (e.id ? '#' + e.id : '') + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(' ').filter(Boolean).slice(0, 2).join('.') : '') + ' [' + [cs.position, 'z' + cs.zIndex, 'op' + cs.opacity, 'pe:' + cs.pointerEvents, cs.display, cs.visibility].join(' ') + ' ' + [r.left, r.top, r.width, r.height].map(Math.round).join(',') + ']'; };
+          const pod = (x, y) => document.elementsFromPoint(x, y).slice(0, 6).map(opis);
+          const nakladki = [...document.querySelectorAll('body *')].filter((e) => { const cs = getComputedStyle(e); if (cs.position !== 'fixed' && cs.position !== 'absolute') return false; const r = e.getBoundingClientRect(); return r.width >= innerWidth * 0.6 && r.height >= 40 && cs.pointerEvents !== 'none' && cs.display !== 'none' && (parseFloat(cs.opacity) < 0.05 || cs.visibility === 'hidden' || cs.backgroundColor === 'rgba(0, 0, 0, 0)'); }).slice(0, 15).map(opis);
+          return { url: location.hostname, kursor: [${wOknie.x}, ${py}], podKursorem: pod(${wOknie.x}, ${py}), gornyPas: [10, 30, 60].map((y) => y + ': ' + pod(innerWidth / 3, y).join(' > ')), nakladki, fullscreen: !!document.fullscreenElement };
+        })()`, true).catch((e) => String(e));
+      }
+    } catch (err) { wynik.blad = String(err && err.stack); }
+    try {
+      const plik = path.join(diagnostics.folder(), `klikanie-${wynik.czas.replace(/[:.]/g, '-')}.json`);
+      fs.writeFileSync(plik, JSON.stringify(wynik, null, 2));
+      dialog.showMessageBox(this.win, { type: 'info', buttons: ['OK'], noLink: true, title: 'Diagnostyka', message: 'Zapisano informacje o tym, co jest pod kursorem.', detail: plik }).catch(() => {});
+    } catch (_) {}
   }
 
   /* Strona probowala otworzyc okno/karte bez klikniecia (patrz blokada
@@ -1442,6 +1506,9 @@ class AppWindow {
       if (key === '9') { const t = this.tabs[this.tabs.length - 1]; if (t) this.selectTab(t.id); return stop(); }
     }
 
+    // Ctrl+Shift+Alt+D - zapis diagnostyki "nie da sie kliknac" (patrz zrzutKlikania).
+    if (ctrl && shift && alt && key === 'd') { this.zrzutKlikania(); return stop(); }
+
     if (ctrl && shift && !alt) {
       switch (key) {
         case 't': this.reopenClosedTab(); return stop();
@@ -1492,6 +1559,53 @@ class AppWindow {
 
   send(channel, payload) {
     if (this.shell && !this.shell.isDestroyed()) this.shell.send(channel, payload);
+    if (KANALY_POWIADOMIEN.has(channel)) this.pokazToast(channel, payload);
+    else if (channel === 'settings:changed' && this.toastView && this._toastGotowy) { try { this.toastView.webContents.send(channel, payload); } catch (_) {} }
+  }
+
+  /* Powiadomienia w rogu okna maja wlasna, mala warstwe (src/ui/toast.html).
+     Warstwa paska konczy sie na dole paska zakladek, wiec rysowane w niej
+     powiadomienie nigdy nie bylo widac, a rozciagniecie calej warstwy paska
+     w dol zaslonilby niewidocznie pas strony na cala szerokosc okna. Ta
+     warstwa ma dokladnie rozmiar powiadomienia (toast.rozmiar z toast.js),
+     a bez powiadomienia - zero, wiec niczego na stronie nie zaslania. */
+  pokazToast(channel, payload) {
+    if (!this.win || this.win.isDestroyed()) return;
+    // Zwykle sprawdzanie aktualizacji (bez nowej wersji) nie potrzebuje warstwy.
+    if (!this.toastView && channel === 'update:status' && !['dostepna', 'pobieranie', 'pobrana', 'blad'].includes(payload && payload.status)) return;
+    if (!this.toastView) {
+      this.toastView = new WebContentsView({
+        webPreferences: { preload: path.join(PRELOAD_DIR, 'shell.js'), contextIsolation: true, sandbox: true, nodeIntegration: false, transparent: true }
+      });
+      this.toastView.setBackgroundColor('#00000000');
+      this.toastView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+      this.win.contentView.addChildView(this.toastView);
+      this.toastView.webContents.loadURL('nazuna://ui/toast.html').catch(() => {});
+    }
+    if (!this._toastGotowy) { this._toastKolejka.push([channel, payload]); return; }
+    try { this.toastView.webContents.send(channel, payload); } catch (_) {}
+  }
+
+  toastGotowy() {
+    this._toastGotowy = true;
+    const kolejka = this._toastKolejka;
+    this._toastKolejka = [];
+    for (const [c, p] of kolejka) { try { this.toastView.webContents.send(c, p); } catch (_) {} }
+  }
+
+  ustawRozmiarToastu(w, h) {
+    this._toastRozmiar = { w: Math.max(0, Math.min(600, Number(w) || 0)), h: Math.max(0, Math.min(500, Number(h) || 0)) };
+    this.positionToast();
+  }
+
+  positionToast() {
+    if (!this.toastView || !this.win || this.win.isDestroyed()) return;
+    const { w, h } = this._toastRozmiar;
+    if (!w || !h) { this.toastView.setBounds({ x: 0, y: 0, width: 0, height: 0 }); return; }
+    const { width } = this.win.getContentBounds();
+    this.toastView.setBounds({ x: Math.max(0, width - w), y: this.chromeHeight(), width: Math.min(w, width), height: h });
+    // Na wierzch, ponad karte i ewentualne okienko rozszerzenia.
+    try { this.win.contentView.addChildView(this.toastView); } catch (_) {}
   }
 
   scheduleSync() {
@@ -1570,6 +1684,7 @@ class AppWindow {
 
   dispose() {
     clearTimeout(this._zapisGranic);
+    if (this.toastView) { try { this.toastView.webContents.close(); } catch (_) {} this.toastView = null; }
     for (const tab of this.tabs) tab.destroy();
     this.tabs = [];
     if (this._spareTab) { this._spareTab.destroy(); this._spareTab = null; }
@@ -2000,6 +2115,9 @@ try {
    nie tylko do samej ramki przegladarki: przelaczenie motywu ma byc widac od
    razu we wszystkich otwartych kartach, tak samo zmiana kafelkow nowej karty,
    gdy kilka okien ma otwarte "Nowa karta" naraz. */
+/* Kanaly, ktore pokazuja powiadomienie w rogu okna (patrz pokazToast). */
+const KANALY_POWIADOMIEN = new Set(['update:status', 'download-blocked', 'popup-blocked', 'toast:rozszerzenie']);
+
 const DO_WLASNYCH_KART = new Set([
   'settings:changed', 'skroty:zmiana', 'update:status', 'bookmarks:changed',
   'download-started', 'download-updated', 'download-done'

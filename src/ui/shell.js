@@ -115,7 +115,6 @@ function closePopover(silent) {
 
 function openPanel(name, node, anchorRect, opts = {}) {
   closePopover(true);
-  hideUpdateToast(false);
   node.classList.add('panel');
   el.layer.appendChild(node);
   popover = { name, el: node };
@@ -1557,18 +1556,10 @@ async function installFromWebstorePage() {
   el.webstoreInstall.classList.add('busy');
   try {
     const r = await api.invoke('extensions.install', { input: url });
-    const node = showUpdateToast(`
-      <div class="row">${iconSvg('puzzle')}<div class="title">Zainstalowano ${escapeHtml(r.name)}</div>
-        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
-      <div class="sub">Rozszerzenie znajdziesz w Ustawieniach - Rozszerzenia.</div>`);
-    node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
+    // Wynik pokazuje warstwa powiadomien (toast.js), nie pasek.
+    api.send('toast.rozszerzenie', { ok: true, nazwa: r.name });
   } catch (err) {
-    const node = showUpdateToast(`
-      <div class="row">${iconSvg('alert')}<div class="title">Nie udało się zainstalować</div>
-        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
-      <div class="sub">${escapeHtml(String((err && err.message) || err).replace(/^Error: /, ''))}</div>`);
-    node.classList.add('error');
-    node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
+    api.send('toast.rozszerzenie', { ok: false, blad: String((err && err.message) || err).replace(/^Error: /, '') });
   } finally {
     el.webstoreInstall.classList.remove('busy');
   }
@@ -1658,98 +1649,6 @@ api.on('fullscreen:hint', () => {
     hint.classList.add('leaving');
     setTimeout(() => hint.remove(), 500);
   }, 3400);
-});
-
-/* --------------------------------------------------------- aktualizacje */
-
-/* Nie jest popoverem: pojawia sie sama, bez klikniecia, wiec nie korzysta
-   z closePopover/forceClose - ma wlasny, prostszy cykl zycia. Pamietamy
-   tylko, ktora wersja zostala odrzucona (Pozniej/x), zeby to samo ciche
-   sprawdzenie w tle nie odpalalo tego samego powiadomienia w kolko. */
-let updateToastDismissedWersja = null;
-
-function hideUpdateToast(animowane = true) {
-  const node = document.querySelector('.update-toast');
-  if (!node) return;
-  if (!animowane) { node.remove(); return; }
-  node.classList.add('leaving');
-  setTimeout(() => node.remove(), 320);
-}
-
-function showUpdateToast(html) {
-  hideUpdateToast(false);
-  const node = document.createElement('div');
-  node.className = 'update-toast';
-  node.innerHTML = html;
-  $('#updateToastSlot').appendChild(node);
-  // Wysokosc paska na gorze jest zmienna (pasek zakladek, pasek szukania),
-  // wiec zamiast liczby na sztywno w CSS liczymy pozycje od rzeczywistej
-  // wysokosci el.chrome w chwili pokazania powiadomienia.
-  node.style.top = `${el.chrome.offsetHeight + 8}px`;
-  return node;
-}
-
-function renderUpdateToast(stan) {
-  if (!stan) return;
-  if (stan.status === 'dostepna') {
-    // Pobieranie rusza samo (patrz updater.js), wiec nie ma juz czego tu
-    // klikac - to czysto informacyjna karta, znika sama razem ze zmiana
-    // stanu na "pobieranie" chwile potem.
-    if (updateToastDismissedWersja === stan.wersja) return;
-    const node = showUpdateToast(`
-      <div class="row">${iconSvg('download')}<div class="title">Dostępna nowa wersja ${escapeHtml(stan.wersja || '')}</div>
-        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
-      <div class="sub">Nazuna pobiera ją teraz sama, w tle.</div>`);
-    const odrzuc = () => { updateToastDismissedWersja = stan.wersja; hideUpdateToast(); };
-    node.querySelector('[data-act="close"]').addEventListener('click', odrzuc);
-  } else if (stan.status === 'pobieranie') {
-    showUpdateToast(`
-      <div class="row">${iconSvg('download')}<div class="title">Pobieranie aktualizacji… ${stan.procent ?? 0}%</div></div>
-      <div class="sub">Nazuna zainstaluje ją sama, gdy pobieranie się skończy.</div>`);
-  } else if (stan.status === 'pobrana') {
-    const node = showUpdateToast(`
-      <div class="row">${iconSvg('download')}<div class="title">Wersja ${escapeHtml(stan.wersja || '')} jest gotowa do instalacji</div>
-        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
-      <div class="sub">Zainstaluje się przy najbliższym uruchomieniu programu, albo od razu, jeśli klikniesz niżej.</div>
-      <div class="actions"><button class="go" data-act="install">Zainstaluj i uruchom ponownie</button></div>`);
-    node.querySelector('[data-act="install"]').addEventListener('click', () => api.send('app.updateInstall'));
-    node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
-  } else if (stan.status === 'blad') {
-    const node = showUpdateToast(`
-      <div class="row">${iconSvg('alert')}<div class="title">Nie udało się pobrać aktualizacji</div>
-        <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
-      <div class="sub">${escapeHtml(stan.komunikat || 'Spróbuj ponownie później, z poziomu O programie.')}</div>`);
-    // Odrozniamy blad kolorem - inaczej wyglada tak samo jak zwykla, spokojna
-    // informacja o dostepnej wersji, a to co innego.
-    node.classList.add('error');
-    node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
-  }
-}
-api.on('update:status', renderUpdateToast);
-
-/* Ten sam mechanizm karty co przy aktualizacjach (showUpdateToast dzieli
-   jeden slot w rogu okna) - tu tylko inna tresc, na powiadomienie o
-   zablokowanym pobieraniu z listy zlosliwych domen (patrz downloads.js). */
-api.on('download-blocked', (d) => {
-  const node = showUpdateToast(`
-    <div class="row">${iconSvg('shield')}<div class="title">Zablokowano pobieranie</div>
-      <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
-    <div class="sub">"${escapeHtml(d.filename || 'plik')}"${d.host ? ` z ${escapeHtml(d.host)}` : ''} - ta domena jest na liście znanych zagrożeń.</div>`);
-  node.classList.add('error');
-  node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
-});
-
-/* Zablokowane wyskakujace okno (patrz zablokowanoOkno w window.js). Jedno
-   powiadomienie naraz - kolejna proba tej samej strony tylko je odswieza. */
-api.on('popup-blocked', (d) => {
-  if (!d || !d.url) return;
-  const node = showUpdateToast(`
-    <div class="row">${iconSvg('shield')}<div class="title">Zablokowano wyskakujące okno</div>
-      <button class="dismiss" data-act="close" title="Zamknij">${iconSvg('x')}</button></div>
-    <div class="sub">Strona ${escapeHtml(d.host || '')} próbowała otworzyć nową kartę albo okno bez kliknięcia.</div>
-    <div class="actions"><button class="go" data-act="open">Otwórz mimo to</button></div>`);
-  node.querySelector('[data-act="close"]').addEventListener('click', () => hideUpdateToast());
-  node.querySelector('[data-act="open"]').addEventListener('click', () => { api.send('tab.new', { url: d.url }); hideUpdateToast(); });
 });
 
 api.on('find:focus', () => setTimeout(() => { el.findInput.focus(); el.findInput.select(); }, 40));
