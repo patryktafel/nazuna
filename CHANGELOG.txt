@@ -1,6 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.88 - 25 pazdziernika 2026
+-----------------------------
+
+Menu ikony w pasku zadan i cofanie przyciskami myszy jak w Firefoksie
+
+- Prawy przycisk na ikonie Nazuny w pasku zadan Windows pokazuje
+  "Nowa karta", "Nowe okno" i "Nowe okno prywatne" oraz liste czesto
+  odwiedzanych stron. Zastepuje to liste "Ostatnio uzywane" z nazwami
+  pobranych plikow.
+- Boczne przyciski myszy (wstecz/dalej) cofaja zawsze dokladnie o jedna
+  strone, tak jak w Firefoksie. Wczesniej na niektorych stronach jedno
+  nacisniecie przeskakiwalo kilka stron, az do nowej karty. Dziala to
+  tez przyciskami wstecz/dalej w pasku i skrotami Alt+strzalki.
+
 0.1.87 - 25 pazdziernika 2026
 -----------------------------
 

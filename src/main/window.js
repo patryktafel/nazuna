@@ -234,6 +234,33 @@ function zablokujUchwytOkna(wc) {
   } catch (_) {}
 }
 
+/* Wstecz/dalej po kolejnych wpisach historii karty, bez przeskakiwania
+   stron (patrz idzWHistorii). canGoBack() Chromium liczy z pominieciem
+   stron "bez klikniecia", wiec liczymy sami po indeksie. */
+function moznaWstecz(wc) {
+  try { return wc.navigationHistory.getActiveIndex() > 0; } catch (_) { return false; }
+}
+function moznaDalej(wc) {
+  try { const h = wc.navigationHistory; return h.getActiveIndex() < h.length() - 1; } catch (_) { return false; }
+}
+
+/* Boczne przyciski myszy (wstecz/dalej, te pod kciukiem). Chromium obsluguje
+   je sam, przez goBack() z przeskakiwaniem stron "bez klikniecia" - przy
+   takich stronach jedno nacisniecie wyrzucalo od razu na nowa karte.
+   Zatrzymujemy je, zanim dotra do strony, i cofamy karte przez
+   idzWHistorii (zawsze o jedna strone). Dziala tez nad paskiem przegladarki. */
+function przyciskiWsteczDalej(wc, okno) {
+  wc.on('before-mouse-event', (event, mysz) => {
+    if (!mysz || (mysz.button !== 'back' && mysz.button !== 'forward')) return;
+    if (mysz.type !== 'mouseDown' && mysz.type !== 'mouseUp') return;
+    event.preventDefault();
+    if (mysz.type !== 'mouseUp') return;
+    const w = okno();
+    if (!w) return;
+    if (mysz.button === 'back') w.goBack(); else w.goForward();
+  });
+}
+
 class Tab {
   constructor(appWindow, { url, background = false, lazy = false }) {
     this.id = nextTabId++;
@@ -495,6 +522,7 @@ class Tab {
     wc.on('destroyed', () => { adblock.forget(wc.id); sessions.zapomnijKarte(wc.id); sync(); });
 
     sledzAktywnosc(wc);
+    przyciskiWsteczDalej(wc, () => this.owner);
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
       if (disposition === 'save-to-disk') return { action: 'allow' };
       if (!zuzyjAktywnosc(wc)) { this.owner.zablokowanoOkno(url); return { action: 'deny' }; }
@@ -600,8 +628,8 @@ class Tab {
       sleeping: !!this.sleeping,
       sleepExempt: data.isSleepExempt(urls.hostOf(this.displayUrl)),
       siteAccent: this.siteAccent,
-      canGoBack: wc ? wc.navigationHistory.canGoBack() : false,
-      canGoForward: wc ? wc.navigationHistory.canGoForward() : false
+      canGoBack: wc ? moznaWstecz(wc) : false,
+      canGoForward: wc ? moznaDalej(wc) : false
     };
   }
 
@@ -723,6 +751,7 @@ class AppWindow {
     this.shell.loadURL(`nazuna://ui/shell.html?${shellParams.toString()}`);
 
     this.shell.on('before-input-event', (event, input) => this.handleShortcut(event, input, true));
+    przyciskiWsteczDalej(this.shell, () => this);
 
     /* Menu pod prawym przyciskiem bylo podpiete tylko do stron internetowych.
        Pasek adresu, pasek wyszukiwania i pasek zakladek naleza do interfejsu
@@ -1130,18 +1159,25 @@ class AppWindow {
      tam faktycznie przejdziemy, zamiast wolac goBack/goForward wprost. */
   idzWHistorii(kierunek) {
     const t = this.activeTab();
-    if (!t) return;
+    if (!t || !t.wc || t.wc.isDestroyed()) return;
     const hist = t.wc.navigationHistory;
-    const mozna = kierunek < 0 ? hist.canGoBack() : hist.canGoForward();
+    const mozna = kierunek < 0 ? moznaWstecz(t.wc) : moznaDalej(t.wc);
     if (!mozna) return;
-    const cel = hist.getEntryAtIndex(hist.getActiveIndex() + kierunek);
+    const indeks = hist.getActiveIndex() + kierunek;
+    const cel = hist.getEntryAtIndex(indeks);
     const zagrozenie = cel && cel.url ? security.sprawdz(cel.url) : null;
     if (zagrozenie) {
       t.warnUrl = cel.url;
       t.wc.loadURL(security.adresOstrzezenia(zagrozenie.typ, cel.url)).catch(() => {});
       return;
     }
-    if (kierunek < 0) hist.goBack(); else hist.goForward();
+    /* Zawsze dokladnie o jedna strone, jak w Firefoksie. goBack()/goForward()
+       Chromium przeskakuja strony, ktore dodaly sie do historii "bez
+       klikniecia" (ochrona Chrome przed stronami zasmiecajacymi historie) -
+       na stronach, ktore same zmieniaja adres (np. YouTube przy
+       autoodtwarzaniu), "wstecz" wyrzucalo przez to od razu na nowa karte
+       zamiast na poprzednia strone. */
+    hist.goToIndex(indeks);
   }
 
   goBack() { this.idzWHistorii(-1); }
@@ -1665,8 +1701,8 @@ class AppWindow {
       insecure: active && data.settings.get('securityWarningsEnabled', true) ? (/^http:/i.test(active.displayUrl) && !security.lokalny(host)) : false,
       internal: active ? /^nazuna:/.test(active.displayUrl) : false,
       loading: active ? active.loading : false,
-      canGoBack: active && !active.wc.isDestroyed() ? active.wc.navigationHistory.canGoBack() : false,
-      canGoForward: active && !active.wc.isDestroyed() ? active.wc.navigationHistory.canGoForward() : false,
+      canGoBack: active && !active.wc.isDestroyed() ? moznaWstecz(active.wc) : false,
+      canGoForward: active && !active.wc.isDestroyed() ? moznaDalej(active.wc) : false,
       bookmarked: active ? data.isBookmarked(active.displayUrl, 'menu') : false,
       zoom: active ? active.zoom : 1,
       findOpen: this.findOpen,
@@ -1795,8 +1831,8 @@ function buildContextMenu(appWindow, tab, params) {
     sep();
   }
   if (!params.linkURL && !params.isEditable && params.mediaType === 'none' && !params.selectionText) {
-    add({ id: 'back', label: 'Wstecz', accel: 'Alt+\u2190', enabled: tab.wc.navigationHistory.canGoBack() });
-    add({ id: 'forward', label: 'Dalej', accel: 'Alt+\u2192', enabled: tab.wc.navigationHistory.canGoForward() });
+    add({ id: 'back', label: 'Wstecz', accel: 'Alt+\u2190', enabled: moznaWstecz(tab.wc) });
+    add({ id: 'forward', label: 'Dalej', accel: 'Alt+\u2192', enabled: moznaDalej(tab.wc) });
     add({ id: 'reload', label: 'Odśwież', accel: 'F5' });
     sep();
     add({ id: 'save-page', label: 'Zapisz stronę jako...' });

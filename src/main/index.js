@@ -60,6 +60,7 @@ const security = require('./security');
 const privacy = require('./privacy');
 const W = require('./window');
 const localFiles = require('./localFiles');
+const jumplist = require('./jumplist');
 
 protocolHelper.registerSchemes();
 
@@ -100,7 +101,20 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, argv) => {
-    const win = W.focusedWindow() || W.allWindows()[0];
+    /* Pozycje z menu ikony w pasku zadan (jumplist.js) przy dzialajacej juz
+       Nazunie. Nowa karta trafia do zwyklego okna, nie do prywatnego. */
+    const zadanie = jumplist.zadanieZArgumentow(argv);
+    if (zadanie === 'prywatne') { W.createWindow({ isPrivate: true }); return; }
+    if (zadanie === 'noweOkno') { W.createWindow({}); return; }
+    const focused = W.focusedWindow();
+    const win = (focused && !focused.isPrivate ? focused : W.allWindows().find((w) => !w.isPrivate)) || null;
+    if (zadanie === 'nowaKarta') {
+      if (!win) { W.createWindow({}); return; }
+      if (win.win.isMinimized()) win.win.restore();
+      win.win.focus();
+      win.newTab({ url: W.NEW_TAB });
+      return;
+    }
     const url = argv.slice(1).map(argToStartUrl).find(Boolean);
     if (win) {
       if (win.win.isMinimized()) win.win.restore();
@@ -204,9 +218,14 @@ if (!gotLock) {
     if (!initial.length && startup === 'homepage') initial = [data.settings.get('homepage', W.NEW_TAB)];
 
     starttrace.znacznik('przed createWindow');
-    const win = W.createWindow({ urls: initial });
+    // "Nowe okno prywatne" z menu ikony przy zamknietej Nazunie - otwiera sie
+    // tylko okno prywatne, jak w Firefoksie. Rozszerzenia i tak wczytujemy do
+    // zwyklej sesji, zeby byly gotowe w pozniej otwartym zwyklym oknie.
+    const tylkoPrywatne = jumplist.zadanieZArgumentow(process.argv) === 'prywatne';
+    W.createWindow(tylkoPrywatne ? { isPrivate: true } : { urls: initial });
     starttrace.znacznik('po createWindow (okno jeszcze niewidoczne - buduje sie async)');
-    sessions.loadExtensions(win.session).catch((err) => console.warn('[ext]', err.message));
+    sessions.loadExtensions(sessions.forPartition('persist:nazuna')).catch((err) => console.warn('[ext]', err.message));
+    jumplist.start();
 
     // Modul odszyfrowywania DRM dociaga sie z serwerow Google przy pierwszym
     // uruchomieniu. Nigdy nie blokujemy tym startu: gdy sie nie uda, przegladarka
