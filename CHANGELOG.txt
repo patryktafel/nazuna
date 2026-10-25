@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.87 - 25 pazdziernika 2026
+-----------------------------
+
+Naprawione: nie dalo sie kliknac gornego paska niektorych stron
+
+Niektore strony oznaczaja swoj gorny pasek jako uchwyt do przeciagania
+okna (ten sam kod sluzy ich aplikacjom na komputer). W zwyklej
+przegladarce nic to nie robi, ale w Nazunie, ktora nie ma systemowej
+ramki okna, taki pasek stawal sie uchwytem calego okna. Co gorsza,
+zostawal w oknie takze po przejsciu w tej karcie na inna strone: pas
+o wysokosci okolo 52 pikseli pod paskiem zakladek przestawal reagowac na
+klikniecia, np. logo YouTube albo menu jbzd.com.pl. Teraz zadna strona
+w karcie nie moze przejac okna. Okno dalej przeciaga sie za pusty pasek
+kart.
+
 0.1.86 - 14 pazdziernika 2026
 -----------------------------
 

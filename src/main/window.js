@@ -213,6 +213,27 @@ function zuzyjAktywnosc(wc) {
   return true;
 }
 
+/* ---------------------------------------------- strony nie przeciagaja okna
+   Okno Nazuny nie ma systemowej ramki, a w takim oknie Electron traktuje
+   KAZDY obszar oznaczony przez strone stylem -webkit-app-region: drag jako
+   uchwyt calego okna. Niektore serwisy maja tak oznaczony gorny pasek (ten
+   sam kod sluzy ich aplikacji na komputer). Klikniecie w ten pas lapalo
+   wtedy okno zamiast strony, a co gorsza obszar zostawal w oknie takze po
+   przejsciu w tej karcie na inna strone (zmierzone: pas 52 px pod paskiem
+   zakladek) - stad "nie da sie kliknac logo YouTube" ani menu na jbzd.
+   W zwyklej przegladarce strona nigdy nie przeciaga okna, wiec wylaczamy to
+   kazdej stronie w karcie: styl z poziomu uzytkownika z !important jest
+   silniejszy niz wszystko, co ustawi strona (patrz tez preload/web.js, ktory
+   robi to samo, zanim strona zdazy cokolwiek narysowac). Pasek kart Nazuny
+   (shell) dalej przeciaga okno, bo to osobny widok. */
+const BEZ_UCHWYTU_OKNA = 'html, html *, html *::before, html *::after { -webkit-app-region: no-drag !important; app-region: no-drag !important; }';
+function zablokujUchwytOkna(wc) {
+  try {
+    if (!wc || wc.isDestroyed() || /^nazuna:/i.test(wc.getURL())) return;
+    wc.insertCSS(BEZ_UCHWYTU_OKNA, { cssOrigin: 'user' }).catch(() => {});
+  } catch (_) {}
+}
+
 class Tab {
   constructor(appWindow, { url, background = false, lazy = false }) {
     this.id = nextTabId++;
@@ -430,7 +451,8 @@ class Tab {
       adblock.setDocumentHost(wc.id, event.url);
       sessions.ustawDomeneKarty(wc.id, event.url);
     });
-    wc.on('dom-ready', () => { adblock.applyCosmetics(wc, wc.getURL()); });
+    wc.on('dom-ready', () => { zablokujUchwytOkna(wc); adblock.applyCosmetics(wc, wc.getURL()); });
+    wc.on('did-navigate', () => zablokujUchwytOkna(wc));
     wc.on('did-navigate', (_e, url) => {
       this.url = url;
       this.applyZoom();

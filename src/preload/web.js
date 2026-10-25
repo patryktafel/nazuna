@@ -63,6 +63,22 @@ try {
    Uwaga na granice: uzupelniamy WLASNA przegladarke o brakujace, standardowe
    elementy Chromium. Nie ruszamy niczyich stron i nie ukrywamy tego, ze te
    uzupelnienia pochodza od nas. */
+/* Strona nie moze oznaczyc niczego jako uchwytu okna (-webkit-app-region:
+   drag) - w oknie bez ramki Electron chwytalby wtedy cale okno zamiast
+   klikniecia w strone. Wstawiamy to jak najwczesniej; proces glowny dokleja
+   jeszcze silniejsza wersje stylu (zablokujUchwytOkna w window.js). */
+if (!internal) {
+  try {
+    const wstaw = () => {
+      const s = document.createElement('style');
+      s.textContent = 'html, html *, html *::before, html *::after { -webkit-app-region: no-drag !important; app-region: no-drag !important; }';
+      (document.head || document.documentElement).appendChild(s);
+    };
+    if (document.documentElement) wstaw();
+    else document.addEventListener('readystatechange', wstaw, { once: true });
+  } catch (_) {}
+}
+
 let bezKluczy = false;
 try { bezKluczy = process.argv.indexOf('--nazuna-bez-kluczy') !== -1; } catch (_) {}
 
