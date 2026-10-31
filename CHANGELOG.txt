@@ -1,6 +1,17 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.89 - 31 pazdziernika 2026
+-----------------------------
+
+Nowszy silnik przegladarki (poprawki bezpieczenstwa)
+
+- Silnik Electron z obsluga Widevine podniesiony z 43.5.0 do 43.8.3
+  (Chromium 150.0.7871.250). To ta sama seria, wiec bez zmian w dzialaniu,
+  za to z poprawkami bezpieczenstwa Chromium wydanymi od wrzesnia.
+- Przy budowaniu silnik pobiera sie od nowa, gdy w folderze lezy inna
+  wersja niz wymagana, a numer wersji jest brany z samego silnika.
+
 0.1.88 - 25 pazdziernika 2026
 -----------------------------
 

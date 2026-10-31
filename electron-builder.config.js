@@ -26,6 +26,17 @@ function electronDist() {
   return 'node_modules/electron/dist';
 }
 
+/* Wersja brana z tego, na czym naprawde budujemy (plik "version" w folderze
+   silnika, np. "43.8.3+wvcus"), zeby nie trzeba jej bylo zmieniac w dwoch
+   miejscach. */
+function electronVersion() {
+  try {
+    return fs.readFileSync(path.join(__dirname, electronDist(), 'version'), 'utf8').trim().replace(/\+.*$/, '');
+  } catch (_) {
+    return require('electron/package.json').version;
+  }
+}
+
 module.exports = {
   appId: 'com.tafel.nazuna',
   /* Wydania (instalator + latest.yml) laduja na publicznym repo
@@ -103,7 +114,7 @@ module.exports = {
      Kto chce szybkiego startu, uzywa wersji z rozpakowanego folderu. */
   compression: 'maximum',
   electronDist: electronDist(),
-  electronVersion: '43.5.0',
+  electronVersion: electronVersion(),
   afterPack: 'tools/after-pack.js',
   directories: { output: 'dist', buildResources: 'build' },
   files: ['src/**/*', 'package.json', '!**/*.map'],

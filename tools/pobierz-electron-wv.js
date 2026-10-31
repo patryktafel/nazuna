@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const WERSJA = '43.5.0';
+const WERSJA = '43.8.3';
 
 /* Domyslnie pobieramy silnik dla Windows. Uruchomienie z argumentem --mac
    sciaga wariant dla Macow z procesorem Apple, do osobnego folderu, zeby oba
@@ -53,8 +53,16 @@ function pobierz(url, plik, glebokosc = 0) {
 
 (async () => {
   if (fs.existsSync(path.join(cel, ZNACZNIK))) {
-    console.log('Silnik z obsługą DRM już jest, pomijam pobieranie.');
-    return;
+    /* Plik "version" w paczce castLabs ma postac "43.8.3+wvcus". Inna wersja
+       w folderze = zostal po starszym WERSJA, wiec pobieramy od nowa. */
+    let jest = '';
+    try { jest = fs.readFileSync(path.join(cel, 'version'), 'utf8').trim(); } catch (_) {}
+    if (jest === `${WERSJA}+wvcus`) {
+      console.log('Silnik z obsługą DRM już jest, pomijam pobieranie.');
+      return;
+    }
+    console.log(`W folderze jest silnik ${jest || 'nieznanej wersji'}, wymieniam na ${WERSJA}.`);
+    fs.rmSync(cel, { recursive: true, force: true });
   }
   console.log('Pobieram silnik z obsługą DRM (około 140 MB, tylko za pierwszym razem)...');
   try {
