@@ -161,10 +161,10 @@ function jestZlosliwy(url) {
 /* Wolane, gdy uzytkownik kliknie "przejdz mimo to" na nazuna://warning
    (patrz ipc.js, 'security.proceed'). Zlosliwych domen to nie dotyczy -
    tam ostrzezenie ma wracac za kazdym razem. */
-function zapamietajWyjatek(typ, url) {
+function zapamietajWyjatek(typ, url, prywatnie = false) {
   if (typ !== 'insecure') return;
   const r = rozbierz(url);
-  if (r) data.zaakceptujHttp(r.host);
+  if (r) data.zaakceptujHttp(r.host, prywatnie);
 }
 
 function adresOstrzezenia(typ, target) {

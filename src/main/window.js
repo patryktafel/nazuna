@@ -206,6 +206,13 @@ function sledzAktywnosc(wc) {
     if (mysz && (mysz.type === 'mouseDown' || mysz.type === 'mouseUp')) aktywacje.set(wc, Date.now());
   });
 }
+/* Protokoly, ktorych strona nigdy nie odpali w Windows (lista jak w Chrome
+   plus znane z atakow: ms-msdt "Follina", search-ms, ms-officecmd). */
+const ZAKAZANE_PROTOKOLY = new Set([
+  'shell', 'vbscript', 'hcp', 'ms-help', 'res', 'ie.http', 'afp', 'disk', 'disks', 'mk',
+  'its', 'ms-its', 'ms-msdt', 'search-ms', 'search', 'ms-officecmd', 'ms-cxh', 'ms-cxh-full'
+]);
+
 function zuzyjAktywnosc(wc) {
   const t = aktywacje.get(wc);
   if (!t || Date.now() - t > AKTYWACJA_MS) return false;
@@ -407,6 +414,8 @@ class Tab {
     });
     wc.on('page-favicon-updated', (_e, favicons) => {
       this.favicon = favicons && favicons.length ? favicons[favicons.length - 1] : null;
+      this.faviconPrywatna = null;
+      if (this.owner.isPrivate) this._faviconPrywatna(this.favicon);
       sync();
       this._updateSiteAccent();
     });
@@ -468,7 +477,6 @@ class Tab {
       try { this.view.setBackgroundColor(pageBackground(event.url)); } catch (_) {}
       adblock.resetCount(wc.id);
       adblock.setDocumentHost(wc.id, event.url);
-      sessions.ustawDomeneKarty(wc.id, event.url);
     });
     wc.on('did-redirect-navigation', (event) => {
       if (!event.isMainFrame) return;
@@ -476,8 +484,13 @@ class Tab {
          did-start-navigation jeszcze raz - bez tego adblock i blokada obcych
          ciasteczek dzialalyby chwile na podstawie hosta sprzed przekierowania. */
       adblock.setDocumentHost(wc.id, event.url);
-      sessions.ustawDomeneKarty(wc.id, event.url);
     });
+    /* Domene karty dla blokady obcych ciasteczek zmieniamy dopiero, gdy
+       nawigacja sie zatwierdzi. Wczesniej (na starcie nawigacji) klikniecie
+       linku do pobrania z innej domeny zostawialo ja w pamieci, mimo ze karta
+       dalej pokazywala stara strone - jej wlasne ciasteczka byly wtedy
+       wycinane (wylogowanie), a obce przepuszczane. */
+    wc.on('did-navigate', (_e, url) => sessions.ustawDomeneKarty(wc.id, url));
     wc.on('dom-ready', () => { zablokujUchwytOkna(wc); adblock.applyCosmetics(wc, wc.getURL()); });
     wc.on('did-navigate', () => zablokujUchwytOkna(wc));
     wc.on('did-navigate', (_e, url) => {
@@ -591,6 +604,22 @@ class Tab {
     });
   }
 
+  _faviconPrywatna(adres) {
+    if (!/^https?:\/\//i.test(String(adres || ''))) { this.faviconPrywatna = /^data:image\//i.test(String(adres || '')) ? adres : null; return; }
+    this.owner.session.fetch(adres, { redirect: 'follow' })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const buf = Buffer.from(await res.arrayBuffer());
+        if (!buf.length || buf.length > 256 * 1024) return;
+        const typ = (res.headers.get('content-type') || 'image/x-icon').split(';')[0].trim();
+        if (!/^image\//i.test(typ)) return;
+        if (this.favicon !== adres) return;
+        this.faviconPrywatna = `data:${typ};base64,${buf.toString('base64')}`;
+        this.owner.scheduleSync();
+      })
+      .catch(() => {});
+  }
+
   /* Odpala wyliczenie koloru akcentu dla aktualnej favicony, w tle - nie
      blokuje niczego, a wynik dociera przez sync() gdy juz gotowy. Strazniczka
      na url pilnuje, zeby szybka kolejna nawigacja nie nadpisala akcentu
@@ -621,7 +650,9 @@ class Tab {
       id: this.id,
       title: this.title || urls.prettyHost(this.displayUrl) || 'Nowa karta',
       url: this.displayUrl,
-      favicon: this.favicon,
+      // Okno prywatne: pasek dostaje ikone jako data:, pobrana sesja karty -
+      // sam pasek pobieralby ja przez zwykla sesje zapisywana na dysku.
+      favicon: this.owner.isPrivate ? this.faviconPrywatna : this.favicon,
       loading: this.loading,
       audible: this.audible,
       muted: this.muted,
@@ -643,7 +674,7 @@ class Tab {
 }
 
 class AppWindow {
-  constructor({ isPrivate = false, urls: startUrls = [], bounds = null, puste = false, partition = null } = {}) {
+  constructor({ isPrivate = false, urls: startUrls = [], aktywna = 0, bounds = null, puste = false, partition = null } = {}) {
     this.id = nextWindowId++;
     this.isPrivate = isPrivate;
     // partition podana wprost: okno prywatne powstale z wyrwanej karty musi
@@ -812,7 +843,7 @@ class AppWindow {
       // pusta nowa karta, doganiamy to recznie - tak samo jak Chrome i
       // Firefox robia przy pierwszym oknie.
       const pustaNaStarcie = this.tabs.length > 0 && this.tabs[0].url === NEW_TAB;
-      if (this.tabs.length) this.selectTab(this.tabs[0].id);
+      if (this.tabs.length) this.selectTab((this.tabs[aktywna] || this.tabs[0]).id);
       this.layout();
       this._prepareSpare();
       /* Okno "puste" czeka na karte i pokazuje sie dopiero, gdy ja dostanie.
@@ -1203,7 +1234,7 @@ class AppWindow {
     const clamped = Math.max(0.25, Math.min(5, factor));
     t.zoom = clamped;
     try { t.wc.setZoomFactor(clamped); } catch (_) {}
-    data.setSiteZoom(urls.hostOf(t.url), clamped);
+    data.setSiteZoom(urls.hostOf(t.url), clamped, this.isPrivate);
     this.scheduleSync();
   }
 
@@ -1404,13 +1435,18 @@ class AppWindow {
     // Jedno pytanie naraz. Strona ponawiajaca przekierowanie w petli
     // otwierala inaczej cala serie identycznych okienek, jedno na drugim.
     if (this._pytanieOProtokol || !this.win || this.win.isDestroyed()) return;
-    this._pytanieOProtokol = true;
     let schemat = target;
     try { schemat = new URL(target).protocol.replace(/:$/, ''); } catch (_) { /* zostaw surowy adres */ }
+    // Schematy uzywane w atakach na Windows (jak w Chrome) - bez pytania, nigdy.
+    if (ZAKAZANE_PROTOKOLY.has(String(schemat).toLowerCase())) return;
+    // Po "Anuluj" strona nie moze od razu zasypac nas kolejnym pytaniem.
+    if (Date.now() < (this._protokolCiszaDo || 0)) return;
+    this._pytanieOProtokol = true;
     dialog.showMessageBox(this.win, {
       type: 'question',
       buttons: ['Otwórz', 'Anuluj'],
-      defaultId: 0,
+      // Enter nie moze od razu odpalic obcej aplikacji.
+      defaultId: 1,
       cancelId: 1,
       noLink: true,
       title: 'Otworzyć w innej aplikacji?',
@@ -1418,6 +1454,7 @@ class AppWindow {
       detail: target.length > 200 ? `${target.slice(0, 200)}…` : target
     }).then((res) => {
       if (res.response === 0) shell.openExternal(target).catch(() => {});
+      else this._protokolCiszaDo = Date.now() + 10000;
     }).catch(() => {}).finally(() => { this._pytanieOProtokol = false; });
   }
 
@@ -1537,7 +1574,9 @@ class AppWindow {
       if (this.extensionPopup) { this.closeExtensionPopup(); return stop(); }
       if (this.popover) { this.closePopover(); return stop(); }
       if (this.findOpen) { this.closeFind(); return stop(); }
-      if (this.contentFullScreen) { this.setContentFullScreen(false); return stop(); }
+      // Tak jak F11: wyjscie musi objac tez sama strone (document.exitFullscreen),
+      // inaczej strona zostaje w swoim trybie pelnoekranowym.
+      if (this.contentFullScreen) { this.wyjdzZPelnegoEkranuStrony(); return stop(); }
       return;
     }
 
@@ -1761,6 +1800,7 @@ class AppWindow {
         .then(() => ses.clearAuthCache && ses.clearAuthCache())
         .catch(() => {});
     }
+    if (this.isPrivate && ![...windows].some((w) => w.isPrivate)) data.wyczyscPrywatneStrony();
   }
 }
 
@@ -2077,9 +2117,44 @@ function usypianieCheck() {
       // uzytkownik sam zdecydowal, ze ta karta ma zyc dalej w tle.
       if (data.isSleepExempt(urls.hostOf(tab.url))) continue;
       if (now - tab.lastActiveAt < prog) continue;
-      tab.sleep();
+      uspijJesliBezFormularza(tab);
     }
   }
+}
+
+/* Uspienie = przeladowanie strony po powrocie, wiec tekst wpisany w
+   formularz (komentarz, mail, ogloszenie) by przepadl. Jak Chrome Memory
+   Saver: karta z wypelnionym polem albo edytowanym tekstem nie zasypia.
+   Sprawdzamy wszystkie ramki (formularze bywaja w iframe). Jak sie nie da
+   sprawdzic - na wszelki wypadek nie usypiamy. */
+const SKRYPT_FORMULARZA = `(() => {
+  try {
+    for (const el of document.querySelectorAll('input, textarea')) {
+      const t = (el.type || '').toLowerCase();
+      if (['hidden', 'submit', 'button', 'image', 'reset', 'file'].includes(t)) continue;
+      if (t === 'checkbox' || t === 'radio') { if (el.checked !== el.defaultChecked) return true; continue; }
+      if (el.value !== el.defaultValue) return true;
+    }
+    for (const el of document.querySelectorAll('select')) {
+      for (const o of el.options) if (o.selected !== o.defaultSelected) return true;
+    }
+    const ed = document.activeElement;
+    if (ed && ed.isContentEditable && (ed.textContent || '').trim()) return true;
+  } catch (_) {}
+  return false;
+})()`;
+function uspijJesliBezFormularza(tab) {
+  const wc = tab.wc;
+  if (!wc || wc.isDestroyed()) return;
+  let ramki = [];
+  try { ramki = wc.mainFrame.framesInSubtree; } catch (_) { return; }
+  Promise.all(ramki.map((f) => f.executeJavaScript(SKRYPT_FORMULARZA).catch(() => false)))
+    .then((wyniki) => {
+      if (wyniki.some(Boolean)) return;
+      if (tab.sleeping || tab.wc !== wc || !tab.owner || tab.id === tab.owner.activeTabId) return;
+      tab.sleep();
+    })
+    .catch(() => {});
 }
 
 function startTabSleep() {

@@ -247,10 +247,24 @@ function moveBookmark(id, parent, beforeId) {
 
 /* ------------------------------------------------------------------- sites */
 
-function adblockAllowed(hostname) {
-  return !siteStore.data.adblockOff.includes(hostname);
+/* Ustawienia stron zmienione w oknie prywatnym (powiekszenie, bloker,
+   usypianie, "przejdz mimo to" na http) trzymamy tylko w pamieci - okno
+   prywatne nie zostawia nic na dysku. Dzialaja do zamkniecia ostatniego
+   okna prywatnego (wyczyscPrywatneStrony z window.js). */
+const prywatneStrony = { zoom: new Map(), adblockOff: new Set(), sleepExempt: new Set(), http: new Set() };
+function wyczyscPrywatneStrony() {
+  prywatneStrony.zoom.clear(); prywatneStrony.adblockOff.clear();
+  prywatneStrony.sleepExempt.clear(); prywatneStrony.http.clear();
 }
-function setAdblockForSite(hostname, enabled) {
+
+function adblockAllowed(hostname) {
+  return !siteStore.data.adblockOff.includes(hostname) && !prywatneStrony.adblockOff.has(hostname);
+}
+function setAdblockForSite(hostname, enabled, prywatnie = false) {
+  if (prywatnie) {
+    if (enabled) prywatneStrony.adblockOff.delete(hostname); else prywatneStrony.adblockOff.add(hostname);
+    return;
+  }
   const list = siteStore.data.adblockOff;
   const i = list.indexOf(hostname);
   if (enabled && i >= 0) list.splice(i, 1);
@@ -263,19 +277,26 @@ function setAdblockForSite(hostname, enabled) {
    w window.js pomija takie hosty, ale reczne "Usnij karte teraz" i tak
    dziala - to reczna akcja uzytkownika, nie automat. */
 function isSleepExempt(hostname) {
-  return !!hostname && siteStore.data.sleepExempt.includes(hostname);
+  return !!hostname && (siteStore.data.sleepExempt.includes(hostname) || prywatneStrony.sleepExempt.has(hostname));
 }
-function setSleepExempt(hostname, exempt) {
+function setSleepExempt(hostname, exempt, prywatnie = false) {
   if (!hostname) return;
+  if (prywatnie) {
+    if (exempt) prywatneStrony.sleepExempt.add(hostname); else prywatneStrony.sleepExempt.delete(hostname);
+    return;
+  }
   const list = siteStore.data.sleepExempt;
   const i = list.indexOf(hostname);
   if (!exempt && i >= 0) list.splice(i, 1);
   if (exempt && i < 0) list.push(hostname);
   siteStore.save();
 }
-function siteZoom(hostname) { return siteStore.data.zoom[hostname]; }
-function setSiteZoom(hostname, factor) {
+function siteZoom(hostname) {
+  return prywatneStrony.zoom.has(hostname) ? prywatneStrony.zoom.get(hostname) : siteStore.data.zoom[hostname];
+}
+function setSiteZoom(hostname, factor, prywatnie = false) {
   if (!hostname) return;
+  if (prywatnie) { prywatneStrony.zoom.set(hostname, factor || 1); return; }
   if (!factor || Math.abs(factor - 1) < 0.001) delete siteStore.data.zoom[hostname];
   else siteStore.data.zoom[hostname] = factor;
   siteStore.save();
@@ -285,10 +306,11 @@ function setSiteZoom(hostname, factor) {
    tak jak ustalilismy (pytamy raz, nie za kazdym razem). Ostrzezenia o
    zlosliwych domenach tego NIE uzywaja - tam pytamy zawsze. */
 function httpZaakceptowany(hostname) {
-  return siteStore.data.httpZaakceptowane.includes(hostname);
+  return siteStore.data.httpZaakceptowane.includes(hostname) || prywatneStrony.http.has(hostname);
 }
-function zaakceptujHttp(hostname) {
+function zaakceptujHttp(hostname, prywatnie = false) {
   if (!hostname) return;
+  if (prywatnie) { prywatneStrony.http.add(hostname); return; }
   const list = siteStore.data.httpZaakceptowane;
   if (!list.includes(hostname)) { list.push(hostname); siteStore.save(); }
 }
@@ -350,7 +372,7 @@ module.exports = {
   bookmarkList, isBookmarked, miejsceZakladki, addBookmark, addFolder, addSeparator, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
   adblockAllowed, setAdblockForSite, siteZoom, setSiteZoom, permissionFor, setPermission,
   isSleepExempt, setSleepExempt,
-  httpZaakceptowany, zaakceptujHttp,
+  httpZaakceptowany, zaakceptujHttp, wyczyscPrywatneStrony,
   skrotyStan, dodajSkrot, usunSkrot,
   DEFAULT_SETTINGS
 };

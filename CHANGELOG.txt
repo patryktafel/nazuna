@@ -1,6 +1,28 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.91 - 1 listopada 2026
+-------------------------
+
+Poprawki z przegladu: karty, okno prywatne, ciasteczka, pelny ekran
+
+- Wiele kart: pasek kart przewija sie kolkiem myszy, przycisk "+" jest
+  zawsze widoczny, a aktywna karta przewija sie do widoku. Karty zwezaja
+  sie do samej ikonki dopiero, gdy naprawde brakuje miejsca.
+- Otwarcie linku z innego programu przy wlaczonym przywracaniu kart
+  dokleja nowa karte do poprzednich zamiast kasowac zapamietana sesje.
+- Karta z wpisanym tekstem w formularzu nie jest usypiana (tekst nie
+  przepada).
+- Esc wychodzi z pelnego ekranu filmu tak samo jak F11 - razem ze strona.
+- Okno prywatne: ikonki kart pobierane przez sesje prywatna, a
+  powiekszenie, wyjatki blokera i usypiania oraz "przejdz mimo to" nie sa
+  zapisywane na dysku (dzialaja do zamkniecia okna prywatnego).
+- Pobranie pliku z innej domeny nie psuje juz logowania na stronie i nie
+  oslabia blokady obcych ciasteczek.
+- Okno "Otworzyc w innej aplikacji?": domyslnie zaznaczone "Anuluj", po
+  anulowaniu strona nie moze pytac od razu znowu, a niebezpieczne
+  protokoly Windows (np. ms-msdt, search-ms) sa blokowane.
+
 0.1.90 - 1 listopada 2026
 -------------------------
 

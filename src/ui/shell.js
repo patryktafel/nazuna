@@ -234,6 +234,25 @@ function scheduleTabTip(node) {
   }, 450);
 }
 
+let waskieKarty = false;
+let ostatniaAktywna = null;
+// Kolko myszy nad kartami przewija je w poziomie (gdy sie nie mieszcza).
+el.tabs.addEventListener('wheel', (e) => {
+  if (el.tabs.scrollWidth <= el.tabs.clientWidth + 1) return;
+  el.tabs.scrollLeft += Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+  e.preventDefault();
+}, { passive: false });
+// Zmiana szerokosci okna zmienia, czy pelne karty sie mieszcza.
+window.addEventListener('resize', () => { if (state && Array.isArray(state.tabs)) renderTabs(); });
+function poRenderzeKart() {
+  el.tabs.classList.toggle('przewijane', el.tabs.scrollWidth > el.tabs.clientWidth + 1);
+  if (state.activeTabId !== ostatniaAktywna) {
+    ostatniaAktywna = state.activeTabId;
+    const n = tabNodes.get(state.activeTabId);
+    if (n) n.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+}
+
 function renderTabs() {
   // Przy duzej liczbie kart plynne "rozjezdzanie sie" szerokosci wszystkich
   // kart naraz (patrz transition: flex-basis w shell.css) to animacja
@@ -243,6 +262,10 @@ function renderTabs() {
   // to nie traci, a ratuje plynnosc dokladnie tam, gdzie ma to najwieksze
   // znaczenie - przy wielu otwartych kartach.
   el.tabs.classList.toggle('many', state.tabs.length > 11);
+  /* Waskie karty (sama ikonka) dopiero, gdy pelne naprawde sie nie mieszcza -
+     wczesniej powyzej 11 kart tytuly znikaly nawet na szerokim monitorze. */
+  const miejsce = el.tabs.clientWidth - 44;
+  waskieKarty = miejsce > 0 && state.tabs.length * 108 > miejsce;
   const ids = new Set(state.tabs.map((t) => t.id));
   for (const [id, node] of tabNodes) {
     if (!ids.has(id)) {
@@ -326,7 +349,7 @@ function renderTabs() {
     node.dataset.tipSleeping = tab.sleeping ? '1' : '';
     if (tabTipNode === node) fillTabTip(node);
     node.classList.toggle('sleeping', !!tab.sleeping);
-    node.classList.toggle('narrow', state.tabs.length > 11);
+    node.classList.toggle('narrow', waskieKarty);
     // Glosniczek: pokazujemy go tylko gdy jest o czym informowac (karta
     // faktycznie gra dzwiek w tym momencie, albo jest recznie wyciszona) -
     // inaczej wisialby na kazdej karcie na zapas. Ikona i tytul mowia, co
@@ -343,6 +366,7 @@ function renderTabs() {
       audioBtn.title = tab.muted ? 'Włącz dźwięk' : 'Wycisz kartę';
     }
   });
+  poRenderzeKart();
 }
 
 

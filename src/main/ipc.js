@@ -164,7 +164,7 @@ const handlers = {
     if (!t) return;
     const host = urls.hostOf(t.url);
     if (!host) return;
-    data.setSleepExempt(host, !data.isSleepExempt(host));
+    data.setSleepExempt(host, !data.isSleepExempt(host), win.isPrivate);
     win.scheduleSync();
   },
   'tab.reopen': (win) => win.reopenClosedTab(),
@@ -205,7 +205,7 @@ const handlers = {
     const cel = tab.warnUrl || String(p.url || '');
     if (!/^https?:\/\//i.test(cel)) return;
     const zagrozenie = security.sprawdz(cel);
-    if (zagrozenie) security.zapamietajWyjatek(zagrozenie.typ, cel); // http - zapamietuje, zlosliwe domeny - nic nie robi
+    if (zagrozenie) security.zapamietajWyjatek(zagrozenie.typ, cel, win.isPrivate); // http - zapamietuje, zlosliwe domeny - nic nie robi
     tab.errorUrl = null;
     tab.warnUrl = null;
     tab.wc.loadURL(cel).catch(() => {});
@@ -469,7 +469,7 @@ const handlers = {
   },
   'app.adblockSite': (win, p) => {
     win.closePopover();               // najpierw zwin okienko, dopiero potem przeladuj
-    adblock.setSiteEnabled(p.host, p.enabled);
+    adblock.setSiteEnabled(p.host, p.enabled, win.isPrivate);
     win.reload();
     win.scheduleSync();
   },

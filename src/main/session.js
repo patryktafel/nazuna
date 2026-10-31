@@ -134,6 +134,9 @@ function wczytajWyjatki(ses) {
    w pasku adresu. Wlasnie tedy plynie sledzenie miedzy stronami. */
 function obce(ses, details) {
   if (details.webContentsId === undefined) return false;
+  // Sama nawigacja karty (wpisany adres, klikniety link, przekierowanie
+  // logowania) nigdy nie jest obca - to strona, na ktora wlasnie wchodzisz.
+  if (details.resourceType === 'mainFrame') return false;
   const strona = domenyKart.get(details.webContentsId);
   if (!strona) return false;
   const cel = getDomain(details.url || '');

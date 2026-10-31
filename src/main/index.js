@@ -211,9 +211,17 @@ if (!gotLock) {
     if (process.env.NAZUNA_START) startUrls.push(...process.env.NAZUNA_START.split('|'));
     const startup = data.settings.get('startup', 'newtab');
     let initial = startUrls;
-    if (!initial.length && startup === 'restore') {
+    let aktywna = 0;
+    /* Start z linkiem z innego programu (Nazuna jako domyslna przegladarka)
+       nie moze pomijac przywracania - inaczej okno mialo jedna karte, a po
+       zamknieciu ta jedna karta nadpisywala zapisana sesje i reszta kart
+       przepadala. Jak w Chrome: zapisane karty, a link na koncu i aktywny. */
+    if (startup === 'restore') {
       const saved = data.settings.get('restoreSession', null);
-      if (Array.isArray(saved) && saved.length) initial = saved;
+      if (Array.isArray(saved) && saved.length) {
+        initial = [...saved, ...startUrls];
+        aktywna = startUrls.length ? saved.length : 0;
+      }
     }
     if (!initial.length && startup === 'homepage') initial = [data.settings.get('homepage', W.NEW_TAB)];
 
@@ -222,7 +230,7 @@ if (!gotLock) {
     // tylko okno prywatne, jak w Firefoksie. Rozszerzenia i tak wczytujemy do
     // zwyklej sesji, zeby byly gotowe w pozniej otwartym zwyklym oknie.
     const tylkoPrywatne = jumplist.zadanieZArgumentow(process.argv) === 'prywatne';
-    W.createWindow(tylkoPrywatne ? { isPrivate: true } : { urls: initial });
+    W.createWindow(tylkoPrywatne ? { isPrivate: true } : { urls: initial, aktywna });
     starttrace.znacznik('po createWindow (okno jeszcze niewidoczne - buduje sie async)');
     sessions.loadExtensions(sessions.forPartition('persist:nazuna')).catch((err) => console.warn('[ext]', err.message));
     jumplist.start();

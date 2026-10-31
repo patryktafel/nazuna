@@ -130,7 +130,17 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
      jak jedna, dopoki naprawde nie zabraknie miejsca. */
   display: flex; align-items: flex-end; gap: 2px; flex: 1 1 auto;
   min-width: 0; max-width: calc(100% - 220px); height: 100%; padding-top: 7px;
-  -webkit-app-region: no-drag; overflow: hidden;
+  -webkit-app-region: no-drag;
+  /* Gdy kart jest wiecej niz miejsca: przewijanie kolkiem myszy (shell.js),
+     bez widocznego paska przewijania. Wczesniej nadmiarowe karty i "+"
+     byly po prostu ucinane. */
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+/* "+" przy przewijanym pasku przykleja sie do prawej krawedzi. */
+.tabs.przewijane .tab-add {
+  position: sticky; right: 0; z-index: 6; margin-right: 0;
+  background: var(--chrome-top); box-shadow: -10px 0 10px -4px var(--chrome-top);
 }
 .tab {
   position: relative; display: flex; align-items: center; gap: 9px;
@@ -205,6 +215,7 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 .tab .tab-close .icon { width: 12px; height: 12px; stroke-width: 2; }
 .tab:hover .tab-close, .tab.active .tab-close { opacity: 1; pointer-events: auto; }
 .tab .tab-close:hover { background: rgba(var(--tint), 0.12); color: var(--text); }
+.tab.narrow { min-width: 42px; padding: 0 0 0 13px; }
 .tab.narrow .label, .tab.narrow .tab-close { display: none; }
 .tab .spinner {
   width: 15px; height: 15px; flex: none; border-radius: 50%;

@@ -259,8 +259,8 @@ function setMode(value, sessions) {
   reapply(sessions);
 }
 
-function setSiteEnabled(hostname, enabled) {
-  data.setAdblockForSite(hostname, enabled);
+function setSiteEnabled(hostname, enabled, prywatnie = false) {
+  data.setAdblockForSite(hostname, enabled, prywatnie);
   if (!blocker) return;
   const filter = `@@||${hostname}^$document`;
   try {
