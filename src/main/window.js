@@ -12,6 +12,7 @@ const security = require('./security');
 const starttrace = require('./starttrace');
 const diagnostics = require('./diagnostics');
 const monitory = require('./monitory');
+const downloads = require('./downloads');
 
 const windows = new Set();
 let nextWindowId = 1;
@@ -80,7 +81,11 @@ function odbierzPrzeciaganie(id) {
 
 function allWindows() { return [...windows]; }
 function focusedWindow() {
-  return [...windows].find((w) => w.win && !w.win.isDestroyed() && w.win.isFocused()) || [...windows][0] || null;
+  /* Bez fokusu najpierw okno widoczne: okno jeszcze niepokazane (w trakcie
+     budowania albo czekajace na wyrwana karte) nie powinno lapac linkow
+     z innych programow, bo ich nie widac. */
+  const zywe = [...windows].filter((w) => w.win && !w.win.isDestroyed());
+  return zywe.find((w) => w.win.isFocused()) || zywe.find((w) => w.win.isVisible()) || [...windows][0] || null;
 }
 
 /* Kolor akcentu wyliczony na podstawie favicony danej strony - patrz
@@ -810,10 +815,30 @@ class AppWindow {
        kompozytor Chromium nie odmalowal ostatniej klatki po odwieszeniu.
        invalidate() to oficjalny sposob Electrona na wymuszenie takiego
        przemalowania - tanie, bez przeladowania strony i bez utraty stanu. */
-    this.win.on('focus', () => { this.scheduleSync(); this.invalidateActiveTab(); });
+    this.win.on('focus', () => {
+      if (!this.isPrivate) ostatnioAktywneZwykle = this;
+      this.scheduleSync(); this.invalidateActiveTab();
+    });
     this.win.on('restore', () => this.invalidateActiveTab());
     this.win.on('show', () => this.invalidateActiveTab());
-    this.win.on('close', () => {
+    this.win.on('close', (e) => {
+      /* Ostatnie okno, a w tle trwa pobieranie: pytamy, jak Firefox. Po
+         "Zamknij" zamykamy juz bez pytania (flaga), po "Anuluj" okno zostaje. */
+      if (!zamykanieProgramu && !this._pobraniaPotwierdzone && windows.size === 1 && downloads.ileAktywnych() > 0) {
+        e.preventDefault();
+        const n = downloads.ileAktywnych();
+        dialog.showMessageBox(this.win, {
+          type: 'warning', buttons: ['Zamknij', 'Anuluj'], defaultId: 1, cancelId: 1, noLink: true,
+          title: 'Trwa pobieranie',
+          message: n === 1 ? 'Trwa pobieranie pliku. Zamknąć mimo to?' : `Trwa pobieranie plików (${n}). Zamknąć mimo to?`,
+          detail: 'Niepobrane pliki zostaną przerwane.'
+        }).then(({ response }) => {
+          if (response !== 0 || !this.win || this.win.isDestroyed()) return;
+          this._pobraniaPotwierdzone = true;
+          this.win.close();
+        }).catch(() => {});
+        return;
+      }
       this.rememberBounds();
       /* Ostatnie zwykle okno zamykane krzyzykiem. Zapis sesji w index.js
          (before-quit) przychodzi dopiero PO zamknieciu wszystkich okien,
@@ -822,7 +847,23 @@ class AppWindow {
          przed chwila. */
       if (!zamykanieProgramu && !this.isPrivate && ![...windows].some((w) => w !== this && !w.isPrivate)) zapamietajSesje(this);
     });
-    this.win.on('closed', () => this.dispose());
+    this.win.on('closed', () => {
+      this.dispose();
+      if (ostatnioAktywneZwykle === this) ostatnioAktywneZwykle = null;
+      // Zamkniete krzyzykiem (nie ostatnie) zwykle okno wypada z sesji, jak w Chrome.
+      if (!this.isPrivate) zaplanujZapisSesji();
+    });
+    /* Wylaczanie, restart albo wylogowanie z Windows: Electron nie wysyla
+       wtedy before-quit ani 'close' okien, a proces moze zostac ubity zaraz
+       potem. Zapisujemy karty od razu i synchronicznie. */
+    this.win.on('query-session-end', () => zapamietajSesje(null, { synchronicznie: true }));
+    this.win.on('session-end', () => {
+      zapamietajSesje(null, { synchronicznie: true });
+      // Windows i tak konczy proces - zamykane potem okna (albo zapis okresowy)
+      // nie moga nadpisac pelnej sesji kartami jednego, ostatniego okna.
+      zamykanieProgramu = true;
+      clearTimeout(zapisSesjiTimer); zapisSesjiTimer = null;
+    });
 
     windows.add(this);
 
@@ -837,6 +878,10 @@ class AppWindow {
       // ta karta i tak od razu sie budzi w tej samej linijce, wiec dla niej
       // nic sie nie zmienia.
       for (const url of list) this.newTab({ url, background: true, lazy: true });
+      // Od teraz karty tego okna ida do zapisu sesji. Wczesniej okno ma zero
+      // kart i nadpisaloby zapisana sesje pusta lista.
+      this._kartyGotowe = true;
+      if (!this.isPrivate) zaplanujZapisSesji();
       // Wszystkie karty przy starcie ida przez background:true (patrz
       // newTab() wyzej), wiec normalny mechanizm "pusta karta = kursor od
       // razu w pasku adresu" sie tu nie odpala. Gdy domowa strona to wlasnie
@@ -1713,6 +1758,9 @@ class AppWindow {
     setTimeout(() => {
       this._syncQueued = false;
       this.sync();
+      // Kazda zmiana kart (nowa, zamknieta, przesunieta, nawigacja) przechodzi
+      // tedy - zapis sesji z opoznieniem, tylko dla okien zwyklych.
+      if (!this.isPrivate) zaplanujZapisSesji();
     }, 16);
   }
 
@@ -2034,17 +2082,68 @@ function przeniesKarte(tabId, celWin, index) {
 // before-quit w index.js, z okna, ktore bylo na wierzchu - zamykane po kolei
 // okna nie moga tego potem nadpisac.
 let zamykanieProgramu = false;
-try { app.on('before-quit', () => { zamykanieProgramu = true; }); } catch (_) {}
+let zapisSesjiTimer = null;
+try { app.on('before-quit', () => { zamykanieProgramu = true; clearTimeout(zapisSesjiTimer); zapisSesjiTimer = null; }); } catch (_) {}
 
-/* Karty tego okna do przywrocenia przy nastepnym starcie. displayUrl, a nie
-   url: karta pokazujaca strone bledu (np. chwilowy brak sieci) ma w url
-   adres nazuna://error i inaczej wypadalaby z listy. */
-function zapamietajSesje(win) {
-  if (!win || win.isPrivate) return;
+// Ostatnio aktywne zwykle okno - idzie jako pierwsze w zapisanej sesji.
+let ostatnioAktywneZwykle = null;
+
+/* Zapis sesji na biezaco (po awarii, zabiciu procesu czy zaniku pradu
+   zostawala lista z ostatniego czystego zamkniecia). Najwyzej raz na 5 s
+   i tylko gdy lista sie zmienila, zeby nie mielic dysku. */
+const ZAPIS_SESJI_MS = 5000;
+function zaplanujZapisSesji() {
+  if (zamykanieProgramu || zapisSesjiTimer) return;
+  zapisSesjiTimer = setTimeout(() => {
+    zapisSesjiTimer = null;
+    if (!zamykanieProgramu) zapamietajSesje();
+  }, ZAPIS_SESJI_MS);
+}
+
+/* Karty do przywrocenia przy nastepnym starcie, osobno dla kazdego zwyklego
+   okna (prywatne nigdy). Wczesniej szlo tylko jedno okno i przy "Zakoncz"
+   z kilkoma oknami karty pozostalych przepadaly. pierwsze = okno, ktore ma
+   wrocic jako glowne (na wierzchu). displayUrl, a nie url: karta pokazujaca
+   strone bledu (np. chwilowy brak sieci) ma w url adres nazuna://error
+   i inaczej wypadalaby z listy. Okna jeszcze bez kart (w trakcie budowania)
+   pomijamy, a gdy nie ma zadnego zwyklego okna, nic nie nadpisujemy. */
+function zapamietajSesje(pierwsze = null, { synchronicznie = false } = {}) {
   try {
-    const otwarte = win.tabs.map((t) => t.displayUrl).filter((u) => u && !/^nazuna:/i.test(u));
-    data.settings.set('restoreSession', otwarte);
-    data.settings.flush();
+    const zwykle = [...windows].filter((w) => !w.isPrivate && w._kartyGotowe);
+    if (!zwykle.length) return;
+    let glowne = pierwsze && !pierwsze.isPrivate ? pierwsze : null;
+    if (!glowne) glowne = zwykle.find((w) => w.win && !w.win.isDestroyed() && w.win.isFocused()) || ostatnioAktywneZwykle;
+    if (glowne && zwykle.includes(glowne)) zwykle.sort((a, b) => (a === glowne ? -1 : b === glowne ? 1 : 0));
+    const okna = zwykle
+      .map((w) => w.tabs.map((t) => t.displayUrl).filter((u) => u && !/^nazuna:/i.test(u)))
+      .filter((l) => l.length);
+    const zmiana = JSON.stringify(okna) !== JSON.stringify(data.settings.get('restoreSessionOkna', null))
+      || JSON.stringify(okna[0] || []) !== JSON.stringify(data.settings.get('restoreSession', null));
+    if (zmiana) {
+      data.settings.set('restoreSessionOkna', okna);
+      // Plaska lista pierwszego okna - dla starszych wersji po ewentualnym cofnieciu.
+      data.settings.set('restoreSession', okna[0] || []);
+      if (!synchronicznie) data.settings.flush();
+    }
+    if (synchronicznie) zapiszUstawieniaOdRazu();
+  } catch (_) {}
+}
+
+/* Synchroniczny zapis settings.json (store.flush() jest asynchroniczny i przy
+   wylaczaniu Windows moze nie zdazyc). Tak samo atomowo: plik tymczasowy
+   i podmiana. Potem zwykly flush, zeby ewentualny starszy zapis w toku
+   nie zostal na dysku jako ostatni. */
+function zapiszUstawieniaOdRazu() {
+  try {
+    const fs = require('fs');
+    const s = data.settings;
+    fs.mkdirSync(path.dirname(s.file), { recursive: true });
+    const tmp = `${s.file}.sesja.tmp`;
+    // fsync przed rename, jak w store.js - inaczej przy wylaczaniu plik bywa pusty.
+    const fd = fs.openSync(tmp, 'w');
+    try { fs.writeSync(fd, JSON.stringify(s.data)); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+    fs.renameSync(tmp, s.file);
+    s.flush();
   } catch (_) {}
 }
 

@@ -64,11 +64,12 @@ const DEFAULT_SETTINGS = {
 
 function init() {
   const dir = app.getPath('userData');
-  settings = new Store(path.join(dir, 'settings.json'), DEFAULT_SETTINGS);
-  bookmarks = new Store(path.join(dir, 'bookmarks.json'), { items: [], nextId: 1 });
+  // kopia: .bak z ostatnia dobra wersja, gdyby plik zepsul sie przy zaniku pradu (store.js).
+  settings = new Store(path.join(dir, 'settings.json'), DEFAULT_SETTINGS, { kopia: true });
+  bookmarks = new Store(path.join(dir, 'bookmarks.json'), { items: [], nextId: 1 }, { kopia: true });
   history = new Store(path.join(dir, 'history.json'), { items: [] });
   downloads = new Store(path.join(dir, 'downloads.json'), { items: [] });
-  extensionsStore = new Store(path.join(dir, 'extensions.json'), { installed: [] });
+  extensionsStore = new Store(path.join(dir, 'extensions.json'), { installed: [] }, { kopia: true });
   siteStore = new Store(path.join(dir, 'sites.json'), { adblockOff: [], zoom: {}, permissions: {}, skroty: [], skrotyUkryte: [], httpZaakceptowane: [], sleepExempt: [] });
 }
 

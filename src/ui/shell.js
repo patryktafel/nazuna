@@ -98,10 +98,19 @@ function collapse() { api.send('ui.popover', { name: null }); document.body.clas
    inne menu, kliknieto poza nim, Escape), proces glowny i tak czeka na
    odpowiedz - bez tego strona wisialaby w nieskonczonosc, jakby nikt nigdy
    nie zareagowal na jej prosbe. Traktujemy takie zamkniecie jak odmowe. */
+let odmowaSierotyAt = 0;
+let odmowySierotOczekujace = 0;      // ile 'popover:hide' po takich odmowach jeszcze przyjdzie
+const odmowaSierotyKlucze = new Set(); // klucze odrzuconych - nie mylic z nowym okienkiem
 function denyOrphanedPermission() {
   if (!popover || popover.name !== 'permission' || popover.el.dataset.answered === '1') return;
   const key = popover.el.dataset.permKey;
-  if (key) api.send('permission.answer', { key, answer: 'deny', remember: false });
+  if (!key) return;
+  popover.el.dataset.answered = '1';
+  // Proces glowny po tej odmowie odesle 'popover:hide' - zapamietujemy, czego ono dotyczy.
+  odmowaSierotyAt = Date.now();
+  odmowySierotOczekujace++;
+  odmowaSierotyKlucze.add(key);
+  api.send('permission.answer', { key, answer: 'deny', remember: false });
 }
 
 function closePopover(silent) {
@@ -198,12 +207,15 @@ let tabTipEl = null;
 let tabTipTimer = null;
 let tabTipNode = null;
 
+/* Dymek wisi w body, nie w #layer: warstwe czyszcza closePopover/forceClose/
+   syncLayer (innerHTML = ''), wiec dymek ginal po pierwszym stanie, a do tego
+   liczyl sie jak otwarty panel (kazdy klik w pasek wolal forceClose). */
 function ensureTabTip() {
-  if (!tabTipEl) {
+  if (!tabTipEl || !tabTipEl.isConnected) {
     tabTipEl = document.createElement('div');
     tabTipEl.className = 'tab-tip';
     tabTipEl.innerHTML = '<b></b><span></span>';
-    el.layer.appendChild(tabTipEl);
+    document.body.appendChild(tabTipEl);
   }
   return tabTipEl;
 }
@@ -716,6 +728,9 @@ function renderBookmarks() {
   const show = state.showBookmarksBar && !state.contentFullScreen;
   el.bookmarksbar.hidden = !show;
   if (!show) return;
+  /* Stany przychodza czesto (ladowanie, tytul). Przebudowa paska w trakcie
+     zmiany nazwy kasowala edytowane pole razem z wpisywanym tekstem. */
+  if (el.bookmarksbar.querySelector('[contenteditable="true"]')) return;
   const items = (state.bookmarks || []).filter((b) => b.parent === 'bar');
   if (!items.length) {
     el.bookmarksbar.innerHTML = '<span class="empty">Pasek zakładek jest pusty. Przeciągnij tu kartę albo kliknij prawym przyciskiem, żeby dodać zakładkę.</span>';
@@ -744,6 +759,8 @@ function faviconFor(url) {
 }
 
 el.bookmarksbar.addEventListener('click', (e) => {
+  // Klik w edytowana nazwe ustawia kursor, a nie otwiera zakladki.
+  if (e.target.closest('[contenteditable="true"]')) return;
   const node = e.target.closest('.bm');
   if (!node || node.dataset.type === 'separator') return;
   if (node.dataset.type === 'folder') {
@@ -770,6 +787,7 @@ el.bookmarksbar.addEventListener('click', (e) => {
 // pomijamy, bo klikniecie w nie i tak nie nawiguje (otwiera podmenu).
 el.bookmarksbar.addEventListener('mousedown', (e) => {
   if (e.button !== 1) return;
+  if (e.target.closest('[contenteditable="true"]')) return; // w trakcie zmiany nazwy nie otwieramy
   const node = e.target.closest('.bm');
   if (!node || node.dataset.type !== 'link') return;
   e.preventDefault();
@@ -799,6 +817,7 @@ function startBmRename(node) {
       api.invoke('bookmarks.update', { id, patch: { title } });
     } else {
       span.textContent = original;
+      renderBookmarks(); // nadrabia stany pominiete w trakcie edycji
     }
   };
   const onBlur = () => finish(true);
@@ -1443,6 +1462,25 @@ function refreshDownloadsPanel(node) {
   const box = node.querySelector('.dl-panel');
   if (!box) return;
   const list = downloadsCache.slice(0, 8);
+  /* Ten sam uklad (te same pobrania w tych samych stanach) = odswiezamy tylko
+     napis z postepem i pasek. Pelne przebudowanie co chwile w trakcie
+     pobierania gubilo klikniecia w Wstrzymaj/Anuluj (jak N26 na stronie). */
+  const uklad = list.map((d) => `${d.id}:${d.state}`).join('|');
+  if (box.dataset.uklad === uklad && list.length) {
+    const wiersze = box.querySelectorAll('.dl-item');
+    list.forEach((d, i) => {
+      const w = wiersze[i];
+      if (!w) return;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = downloadRow(d);
+      const meta = w.querySelector('.dl-meta'), nowaMeta = tmp.querySelector('.dl-meta');
+      if (meta && nowaMeta && meta.textContent !== nowaMeta.textContent) meta.textContent = nowaMeta.textContent;
+      const bar = w.querySelector('.dl-bar i'), nowyBar = tmp.querySelector('.dl-bar i');
+      if (bar && nowyBar) bar.style.width = nowyBar.style.width;
+    });
+    return;
+  }
+  box.dataset.uklad = uklad;
   box.innerHTML = `
     <div class="dl-head"><b>Pobrane</b>
       <button class="btn ghost" data-open-page>Wszystkie</button>
@@ -1660,7 +1698,23 @@ api.on('popover:show', ({ name, payload }) => {
   else if (name === 'downloads') { api.invoke('downloads.list').then((l) => { downloadsCache = l; downloadsPanel(); }); }
   else if (name === 'ext-popup') { closePopover(true); document.body.classList.add('expanded'); }
 });
-api.on('popover:hide', () => closePopover(true));
+api.on('popover:hide', () => {
+  /* Druga prosba o zgode zastepuje pierwsza (ta dostaje odmowe), a proces glowny
+     po tej odmowie odsyla 'popover:hide' z opoznieniem - juz po otwarciu nowego
+     okienka. Bez tego hide zamykal i po cichu odrzucal tez druga prosbe. */
+  // Licznik zamiast jednego klucza: przy trzech prosbach z rzedu przychodza dwa takie hide.
+  const poOdmowie = odmowySierotOczekujace > 0;
+  if (poOdmowie) odmowySierotOczekujace--;
+  const odrzucone = new Set(odmowaSierotyKlucze);
+  if (!odmowySierotOczekujace) odmowaSierotyKlucze.clear();
+  if (poOdmowie && popover && popover.name === 'permission' && popover.el.dataset.answered !== '1' &&
+      !odrzucone.has(popover.el.dataset.permKey) && Date.now() - odmowaSierotyAt < 1500) {
+    layerTouchedAt = Date.now(); // stan "zwiniete" w drodze nie moze skasowac okienka
+    expand('permission'); // proces glowny po hide zwinal warstwe - rozwijamy z powrotem
+    return;
+  }
+  closePopover(true);
+});
 let fsHintTimer = null;
 api.on('fullscreen:hint', () => {
   clearTimeout(fsHintTimer);

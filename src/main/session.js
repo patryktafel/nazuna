@@ -51,7 +51,10 @@ const AUTO_ALLOW = new Set(['fullscreen', 'clipboard-sanitized-write', 'backgrou
 // window-management/window-placement (getScreenDetails - uklad wszystkich monitorow, nie
 // tylko jednego ekranu) to realny sygnal do rozpoznawania urzadzenia - prawdziwy Chrome
 // tez o to pyta, wiec u nas rowniez idzie przez ASK, a nie ciche przyznanie.
-const ASK = new Set(['media', 'geolocation', 'notifications', 'clipboard-read', 'midi', 'midiSysex', 'hid', 'serial', 'usb', 'display-capture', 'idle-detection', 'storage-access', 'window-management', 'window-placement']);
+// fileSystem - odczyt/zapis pliku lub folderu wskazanego przez uzytkownika w oknie
+// wyboru (File System Access API, np. vscode.dev "Open Folder" i potem Ctrl+S).
+// Bez tego bylo odrzucane bez pytania i zapis konczyl sie bledem NotAllowedError.
+const ASK = new Set(['media', 'geolocation', 'notifications', 'clipboard-read', 'midi', 'midiSysex', 'hid', 'serial', 'usb', 'display-capture', 'idle-detection', 'storage-access', 'window-management', 'window-placement', 'fileSystem']);
 
 let permissionPrompt = null;   // set by the window layer
 function setPermissionPrompt(fn) { permissionPrompt = fn; }
@@ -306,6 +309,23 @@ function prepare(ses, efemeryczna) {
       try {
         const odp = await permissionPrompt({ webContents, permission, origin: para, details, strona, osadzona });
         if (odp === 'allow') dodajWyjatek(ses, strona, osadzona);
+        return callback(odp === 'allow');
+      } catch (_) { return callback(false); }
+    }
+
+    /* Dostep do pliku/folderu: zgoda dotyczy KONKRETNEJ sciezki i rodzaju
+       dostepu, a nie calej strony - "zapamietaj" przy jednym pliku nie moze
+       otwierac stronie zapisu wszedzie. Dlatego klucz to strona + sciezka. */
+    if (permission === 'fileSystem') {
+      const sciezka = details && details.filePath ? String(details.filePath) : '';
+      const rodzaj = details && details.fileAccessType === 'readable' ? 'odczyt' : 'zapis';
+      const klucz = `${origin}>${rodzaj}: ${sciezka}`;
+      const pamiec = data.permissionFor(klucz, permission);
+      if (pamiec === 'allow') return callback(true);
+      if (pamiec === 'deny') return callback(false);
+      if (!permissionPrompt) return callback(false);
+      try {
+        const odp = await permissionPrompt({ webContents, permission, origin: klucz, details });
         return callback(odp === 'allow');
       } catch (_) { return callback(false); }
     }

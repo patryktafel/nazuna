@@ -80,12 +80,25 @@ if (!data.settings.get('hardwareAcceleration', true)) app.disableHardwareAcceler
    do wlasnej przegladarki PDF pod nazuna://pdf - nie ma sensu wpierw
    nawigowac na surowy plik://, skoro i tak zaraz mielibysmy go stamtad
    przekierowac. existsSync to tylko zabezpieczenie przed potraktowaniem
-   jakiejs losowej flagi konczacej sie na ".pdf" jako sciezki do pliku. */
-function argToStartUrl(arg) {
+   jakiejs losowej flagi konczacej sie na ".pdf" jako sciezki do pliku.
+   katalog: folder roboczy uruchomienia (second-instance podaje go osobno),
+   zeby wzgledna sciezka nie liczyla sie od folderu pierwszej Nazuny. */
+function argToStartUrl(arg, katalog) {
+  if (typeof arg !== 'string') return null;
   if (/^https?:\/\//i.test(arg)) return arg;
+  /* Instalator kojarzy z Nazuna tez .htm/.html (ProgId "NazunaHTML"), wiec
+     dwuklik zapisanej strony w Eksploratorze przychodzi tu jako sciezka.
+     Bez tej galezi otwierala sie pusta karta. */
+  if (/\.(html?|xhtml)$/i.test(arg)) {
+    try {
+      const pelna = path.resolve(katalog || '', arg);
+      if (fs.existsSync(pelna) && fs.statSync(pelna).isFile()) return require('url').pathToFileURL(pelna).href;
+    } catch (_) { /* nieprawidlowa sciezka - ignorujemy */ }
+    return null;
+  }
   if (/\.pdf$/i.test(arg)) {
     try {
-      const pelna = path.resolve(arg);
+      const pelna = path.resolve(katalog || '', arg);
       if (fs.existsSync(pelna) && fs.statSync(pelna).isFile()) {
         const token = localFiles.zarejestruj(pelna);
         const nazwa = encodeURIComponent(path.basename(pelna));
@@ -100,7 +113,15 @@ const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
-  app.on('second-instance', (_event, argv) => {
+  /* Drugie uruchomienie, zanim pierwsze skonczylo start (np. przez do 60 s
+     czeka na sprawdzenie aktualizacji). Wtedy nie ma jeszcze IPC ani obslugi
+     nazuna:// w sesji paska, wiec okno utworzone w tej chwili nigdy by sie
+     nie pokazalo i zostaloby niewidocznym "zombie" trzymajacym proces.
+     Do konca startu tylko zapamietujemy argumenty, a whenReady je obsluzy. */
+  let startGotowy = false;
+  const czekajaceUruchomienia = [];
+
+  function obsluzDrugieUruchomienie(argv, katalog) {
     /* Pozycje z menu ikony w pasku zadan (jumplist.js) przy dzialajacej juz
        Nazunie. Nowa karta trafia do zwyklego okna, nie do prywatnego. */
     const zadanie = jumplist.zadanieZArgumentow(argv);
@@ -115,7 +136,7 @@ if (!gotLock) {
       win.newTab({ url: W.NEW_TAB });
       return;
     }
-    const url = argv.slice(1).map(argToStartUrl).find(Boolean);
+    const url = argv.slice(1).map((a) => argToStartUrl(a, katalog)).find(Boolean);
     if (win) {
       if (win.win.isMinimized()) win.win.restore();
       win.win.focus();
@@ -123,6 +144,11 @@ if (!gotLock) {
     } else {
       W.createWindow({ urls: url ? [url] : [] });
     }
+  }
+
+  app.on('second-instance', (_event, argv, katalog) => {
+    if (!startGotowy) { czekajaceUruchomienia.push({ argv, katalog }); return; }
+    obsluzDrugieUruchomienie(argv, katalog);
   });
 
   app.whenReady().then(async () => {
@@ -207,31 +233,66 @@ if (!gotLock) {
     powerMonitor.on('unlock-screen', () => { for (const win of W.allWindows()) win.invalidateActiveTab(); });
     starttrace.znacznik('po ipc.register/sessions.forPartition/security.init/privacy/tabSleep');
 
-    const startUrls = process.argv.slice(1).map(argToStartUrl).filter(Boolean);
+    const startUrls = process.argv.slice(1).map((a) => argToStartUrl(a)).filter(Boolean);
     if (process.env.NAZUNA_START) startUrls.push(...process.env.NAZUNA_START.split('|'));
+    // "Nowe okno prywatne" z menu ikony przy zamknietej Nazunie - otwiera sie
+    // tylko okno prywatne, jak w Firefoksie. Rozszerzenia i tak wczytujemy do
+    // zwyklej sesji, zeby byly gotowe w pozniej otwartym zwyklym oknie.
+    const tylkoPrywatne = jumplist.zadanieZArgumentow(process.argv) === 'prywatne';
+    /* Linki z uruchomien, ktore przyszly w trakcie startu, ida od razu do
+       pierwszego okna (jak linki z wlasnej linii polecen). Zadania z menu
+       ikony (nowe okno, okno prywatne) obslugujemy dopiero po createWindow.
+       "Nowa karta" pomijamy - pierwsze okno i tak otwiera sie z karta. */
+    const poStarcie = [];
+    const linkiZKolejki = [];
+    for (const u of czekajaceUruchomienia.splice(0)) {
+      const zadanie = jumplist.zadanieZArgumentow(u.argv);
+      if (zadanie === 'prywatne' || zadanie === 'noweOkno') { poStarcie.push(u); continue; }
+      if (zadanie) continue;
+      const link = u.argv.slice(1).map((a) => argToStartUrl(a, u.katalog)).find(Boolean);
+      if (link) linkiZKolejki.push(link);
+    }
+    if (!tylkoPrywatne) startUrls.push(...linkiZKolejki);
     const startup = data.settings.get('startup', 'newtab');
     let initial = startUrls;
     let aktywna = 0;
+    let dodatkoweOkna = [];
     /* Start z linkiem z innego programu (Nazuna jako domyslna przegladarka)
        nie moze pomijac przywracania - inaczej okno mialo jedna karte, a po
        zamknieciu ta jedna karta nadpisywala zapisana sesje i reszta kart
        przepadala. Jak w Chrome: zapisane karty, a link na koncu i aktywny. */
     if (startup === 'restore') {
-      const saved = data.settings.get('restoreSession', null);
+      /* restoreSessionOkna: karty kazdego zwyklego okna osobno (pierwsze to
+         okno, ktore bylo na wierzchu). Wczesniej zapisywalo sie tylko jedno
+         okno i przy "Zakoncz" z dwoma oknami karty drugiego przepadaly.
+         restoreSession (plaska lista) zostaje dla zapisow ze starszych wersji. */
+      const okna = data.settings.get('restoreSessionOkna', null);
+      const plaska = data.settings.get('restoreSession', null);
+      let poprawne = Array.isArray(okna)
+        ? okna.filter((l) => Array.isArray(l) && l.length).map((l) => l.filter((u) => typeof u === 'string' && u))
+          .filter((l) => l.length)
+        : [];
+      // Lista okien niezgodna z plaska (np. zapis starszej wersji po niej) - wierzymy plaskiej.
+      if (poprawne.length && JSON.stringify(poprawne[0]) !== JSON.stringify(plaska)) poprawne = [];
+      const saved = poprawne.length ? poprawne[0] : plaska;
       if (Array.isArray(saved) && saved.length) {
         initial = [...saved, ...startUrls];
         aktywna = startUrls.length ? saved.length : 0;
       }
+      dodatkoweOkna = poprawne.slice(1);
     }
     if (!initial.length && startup === 'homepage') initial = [data.settings.get('homepage', W.NEW_TAB)];
 
     starttrace.znacznik('przed createWindow');
-    // "Nowe okno prywatne" z menu ikony przy zamknietej Nazunie - otwiera sie
-    // tylko okno prywatne, jak w Firefoksie. Rozszerzenia i tak wczytujemy do
-    // zwyklej sesji, zeby byly gotowe w pozniej otwartym zwyklym oknie.
-    const tylkoPrywatne = jumplist.zadanieZArgumentow(process.argv) === 'prywatne';
+    /* Pozostale okna z zapisanej sesji tworzymy przed glownym, zeby to z
+       linkiem (albo ostatnio aktywne) pokazalo sie na koncu, na wierzchu. */
+    if (!tylkoPrywatne) for (const lista of dodatkoweOkna) W.createWindow({ urls: lista });
     W.createWindow(tylkoPrywatne ? { isPrivate: true } : { urls: initial, aktywna });
+    // Linki nie trafiaja do okna prywatnego - dostaja jedno zwykle okno.
+    if (tylkoPrywatne && linkiZKolejki.length) W.createWindow({ urls: linkiZKolejki });
     starttrace.znacznik('po createWindow (okno jeszcze niewidoczne - buduje sie async)');
+    startGotowy = true;
+    for (const u of poStarcie) obsluzDrugieUruchomienie(u.argv, u.katalog);
     sessions.loadExtensions(sessions.forPartition('persist:nazuna')).catch((err) => console.warn('[ext]', err.message));
     jumplist.start();
 
@@ -262,15 +323,34 @@ if (!gotLock) {
   // (event.preventDefault) i wywolujemy app.quit() ponownie, gdy wszystko juz
   // zapisane - flaga 'zamykanie' pilnuje, zeby nie zapetlic tego w kolko.
   let zamykanie = false;
+  let pytanieOPobrania = false;
   app.on('before-quit', (event) => {
     if (zamykanie) return;
+    /* Trwa pobieranie - jak w Firefoksie pytamy, zanim zamkniemy (inaczej
+       pliki przerywaly sie bez slowa). */
+    const okno = W.allWindows().find((w) => w.win && !w.win.isDestroyed());
+    // Bez otwartego okna nie ma gdzie wrocic po "Anuluj" - ostatnie okno
+    // pyta samo przy zamykaniu (patrz 'close' w window.js).
+    if (!pytanieOPobrania && okno && downloads.ileAktywnych() > 0) {
+      event.preventDefault();
+      pytanieOPobrania = true;
+      const n = downloads.ileAktywnych();
+      dialog.showMessageBox(okno ? okno.win : undefined, {
+        type: 'warning', buttons: ['Zamknij', 'Anuluj'], defaultId: 1, cancelId: 1, noLink: true,
+        title: 'Trwa pobieranie',
+        message: n === 1 ? 'Trwa pobieranie pliku. Zamknąć mimo to?' : `Trwa pobieranie plików (${n}). Zamknąć mimo to?`,
+        detail: 'Niepobrane pliki zostaną przerwane.'
+      }).then(({ response }) => {
+        if (response === 0) app.quit();
+        else pytanieOPobrania = false;
+      }).catch(() => { pytanieOPobrania = false; });
+      return;
+    }
     try {
-      // Okno prywatne moze byc akurat na wierzchu - wtedy bierzemy zwykle.
-      const zwykle = W.allWindows().filter((w) => !w.isPrivate);
-      const focused = W.focusedWindow();
-      const win = focused && !focused.isPrivate ? focused : zwykle[0];
-      // Brak zwyklych okien = ostatnie zamkniete juz zapisalo swoje karty.
-      if (win) W.zapamietajSesje(win);
+      // Karty wszystkich zwyklych okien (prywatne pomija zapamietajSesje),
+      // okno na wierzchu albo ostatnio aktywne jako pierwsze. Brak zwyklych
+      // okien = ostatnie zamkniete juz zapisalo swoje karty i nic tu nie nadpisze.
+      W.zapamietajSesje();
     } catch (_) {}
     zamykanie = true;
     event.preventDefault();

@@ -69,8 +69,16 @@ function pobierz(url, plik, glebokosc = 0) {
     await pobierz(URL, zip);
   } catch (err) {
     console.error(`\nNie udało się pobrać silnika: ${err.message}`);
-    console.error('Nazuna zbuduje się mimo to, ale bez odtwarzania Netfliksa i podobnych.\n');
     try { fs.unlinkSync(zip); } catch (_) {}
+    /* W CI (GitHub Actions ustawia CI=true) budowanie publikuje wydanie dla
+       wszystkich. Cichy powrot do starszego Electrona z node_modules rozeslalby
+       silnik ze znanymi dziurami, wiec przerywamy z kodem bledu. */
+    if (process.env.CI) {
+      console.error('Przerywam budowanie: wydanie bez właściwego silnika byłoby na starszym Electronie.\n');
+      process.exitCode = 1;
+      return;
+    }
+    console.error('Nazuna zbuduje się mimo to, ale na starszym silniku z node_modules (tylko do testów, nie do wydania).\n');
     return;
   }
   console.log('Rozpakowuję...');

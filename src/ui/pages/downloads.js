@@ -10,11 +10,11 @@ function stateLabel(d) {
 }
 
 function render() {
-  page.innerHTML = head('Pobrane', 'download', `<button class="btn" id="dir">Zmień folder</button><button class="btn danger" id="clear">Wyczyść liste</button>`) +
+  page.innerHTML = head('Pobrane', 'download', `<button class="btn" id="dir">Zmień folder</button><button class="btn danger" id="clear">Wyczyść listę</button>`) +
     (items.length ? `<div class="card">${items.map((d) => {
       const pct = d.total ? Math.min(100, Math.round((d.received / d.total) * 100)) : 0;
       const running = d.state === 'progressing' || d.state === 'paused';
-      return `<div class="list-item">
+      return `<div class="list-item" data-row="${d.id}">
         <div class="dl-icon" style="width:34px;height:34px;border-radius:9px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--text-dim)">${iconSvg(d.state === 'completed' ? 'file' : 'download')}</div>
         <div class="main">
           <div class="name">${esc(d.filename)}</div>
@@ -34,7 +34,12 @@ function render() {
     }).join('')}</div>`
       : `<div class="empty">${iconSvg('download')}<div>Nic jeszcze nie pobrano.</div></div>`);
 
-  document.getElementById('clear').addEventListener('click', async () => { items = await api.invoke('downloads.clear'); render(); });
+  document.getElementById('clear').addEventListener('click', async () => {
+    // jak w historii: czyszczenie calej listy tylko po potwierdzeniu
+    if (!confirm('Wyczyścić listę pobranych plików? Same pliki zostaną na dysku.')) return;
+    items = await api.invoke('downloads.clear');
+    render();
+  });
   document.getElementById('dir').addEventListener('click', async () => {
     const dir = await api.invoke('downloads.chooseDir');
     if (dir) toast(`Nowy folder pobierania: ${dir}`);
@@ -50,7 +55,17 @@ page.addEventListener('click', async (e) => {
 
 api.on('download-updated', (d) => {
   const i = items.findIndex((x) => x.id === d.id);
-  if (i >= 0) { items[i] = d; render(); }
+  if (i < 0) return;
+  const prev = items[i];
+  items[i] = d;
+  // zdarzenie przychodzi co ~0,5 s; pelny render podmienia przyciski miedzy mousedown a mouseup
+  // i klik w Wstrzymaj/Anuluj ginie. Przy tym samym stanie zmieniamy tylko tekst i pasek w wierszu.
+  const row = prev.state === d.state && page.querySelector(`[data-row="${CSS.escape(String(d.id))}"]`);
+  if (!row) { render(); return; }
+  const url = row.querySelector('.url');
+  if (url) url.textContent = `${hostOf(d.url)} - ${stateLabel(d)}`;
+  const bar = row.querySelector('.dl-bar > i');
+  if (bar) bar.style.width = `${d.total ? Math.min(100, Math.round((d.received / d.total) * 100)) : 0}%`;
 });
 api.on('download-started', () => load());
 api.on('download-done', () => load());

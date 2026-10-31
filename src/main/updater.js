@@ -47,11 +47,19 @@ function uruchomPowerShell(plik, limitMs) {
   const bezpieczny = plik.replace(/'/g, "''");
   return new Promise((resolve) => {
     execFile('set "PSModulePath=" & chcp 65001 >NUL & powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-InputFormat', 'None', '-Command', `"Get-AuthenticodeSignature -LiteralPath '${bezpieczny}' | ConvertTo-Json -Compress"`],
+      ['-NoProfile', '-NonInteractive', '-InputFormat', 'None', '-Command',
+        /* WzorNiezaufany = tresc bledu CERT_E_UNTRUSTEDROOT w jezyku tego Windowsa;
+           pozwala odroznic "niezaufany certyfikat glowny" od innych bledow, ktore
+           Get-AuthenticodeSignature tez zglasza jako Status 1 (UnknownError). */
+        `"$s = Get-AuthenticodeSignature -LiteralPath '${bezpieczny}'; $s | Add-Member -NotePropertyName WzorNiezaufany -NotePropertyValue (New-Object ComponentModel.Win32Exception(-2146762487)).Message; $s | ConvertTo-Json -Compress"`],
       { shell: true, timeout: limitMs, windowsHide: true },
       (error, stdout, stderr) => resolve({ error, stdout: String(stdout || ''), stderr: String(stderr || '') }));
   });
 }
+
+/* Odcisk (SHA-1) certyfikatu z resources/nazuna-cert.cer (CN=Nazuna, wazny do
+   2041). Przy odnowieniu certyfikatu dopisac nowy odcisk obok starego. */
+const ODCISKI_NAZUNY = ['A56E158A80E250C19D0DFAF9E572FD7673C8E325'];
 
 async function sprawdzPodpis(wystawcy, plik) {
   const { parseDn } = require('builder-util-runtime');
@@ -67,7 +75,22 @@ async function sprawdzPodpis(wystawcy, plik) {
     }
     let dane;
     try { dane = JSON.parse(stdout); } catch (e) { ostatni = `nieczytelna odpowiedz PowerShell: ${e.message}`; continue; }
-    if (dane.Status !== 0) return `podpis instalatora jest nieprawidlowy (Status ${dane.Status})`;
+    /* Status 1 (UnknownError) z bledem "niezaufany certyfikat glowny" znaczy, ze
+       skrot pliku i sam podpis sa poprawne (Windows sprawdza je wczesniej niz
+       lancuch certyfikatow), ale Windows nie ufa naszemu wlasnemu certyfikatowi.
+       Tak jest przy instalacji "tylko dla mnie": instalator nie ma wtedy uprawnien,
+       zeby dodac certyfikat do zaufanych (certutil w installer.nsh), i kazda
+       aktualizacja bylaby odrzucana. Przyjmujemy to tylko wtedy, gdy plik podpisal
+       dokladnie nasz certyfikat (odcisk wpisany na stale). Inne bledy w Status 1,
+       zly skrot (3), brak lub zepsuty podpis (2) i certyfikat jawnie zablokowany
+       w Windows (4, NotTrusted) dalej odrzucamy. */
+    const odcisk = String((dane.SignerCertificate && dane.SignerCertificate.Thumbprint) || '').toUpperCase();
+    const naszCertyfikat = ODCISKI_NAZUNY.includes(odcisk);
+    const niezaufanyKorzen = dane.Status === 1 && !!dane.WzorNiezaufany && dane.StatusMessage === dane.WzorNiezaufany;
+    if (dane.Status !== 0 && !(niezaufanyKorzen && naszCertyfikat)) {
+      return `podpis instalatora jest nieprawidlowy (Status ${dane.Status})`;
+    }
+    if (dane.Status !== 0) log('info', `sprawdzPodpis: Status ${dane.Status}, ale odcisk zgadza sie z certyfikatem Nazuny`);
     if (dane.Path && path.normalize(dane.Path) !== path.normalize(plik)) return 'sprawdzono inny plik niz pobrany';
     const podmiot = parseDn((dane.SignerCertificate && dane.SignerCertificate.Subject) || '');
     const pasuje = wystawcy.some((nazwa) => {

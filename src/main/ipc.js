@@ -425,7 +425,7 @@ const handlers = {
      sesja to nie preferencje, wiec zostaja. */
   'settings.reset': () => {
     const zostaw = {};
-    for (const klucz of ['windowBounds', 'windowMaximized', 'restoreSession']) {
+    for (const klucz of ['windowBounds', 'windowMaximized', 'restoreSession', 'restoreSessionOkna']) {
       if (data.settings.data[klucz] !== undefined) zostaw[klucz] = data.settings.data[klucz];
     }
     data.settings.data = Object.assign(JSON.parse(JSON.stringify(data.DEFAULT_SETTINGS)), zostaw);

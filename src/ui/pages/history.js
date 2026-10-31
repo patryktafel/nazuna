@@ -33,6 +33,8 @@ function render() {
     load();
   });
   document.getElementById('clear').addEventListener('click', async () => {
+    // przycisk stoi obok pola szukania, a kasowanie jest nieodwracalne - pytamy jak przy resecie ustawien
+    if (!confirm('Usunąć całą historię przeglądania? Tego nie da się cofnąć.')) return;
     await api.invoke('history.clear', { since: 0 });
     items = [];
     render();

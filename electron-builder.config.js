@@ -23,6 +23,14 @@ function electronDist() {
   }
   const local = path.join(__dirname, 'electron-wv');
   if (fs.existsSync(path.join(local, 'electron.exe'))) return 'electron-wv';
+  /* Przy publikowaniu (wydaj.bat, npm run dist:publish, CI) nie wolno po cichu
+     brac starszego Electrona z node_modules - auto-update rozeslalby go
+     wszystkim. Lokalny build testowy dalej moze. */
+  const iPub = process.argv.indexOf('--publish');
+  const publikuje = iPub !== -1 && process.argv[iPub + 1] !== 'never';
+  if (publikuje || process.env.CI) {
+    throw new Error('Brak silnika castLabs w folderze electron-wv (npm run pobierz-silnik). Nie publikuję wydania na starszym Electronie z node_modules.');
+  }
   return 'node_modules/electron/dist';
 }
 

@@ -4,16 +4,52 @@ const path = require('path');
 
 /** Tiny debounced JSON store. Atomic writes, survives a crash mid-save. */
 class Store {
-  constructor(file, defaults = {}) {
+  /* opcje.kopia: trzymaj obok plik .bak z ostatnia dobra wersja (zakladki,
+     ustawienia). Nie dla historii i pobran - po "Wyczysc historie" stara
+     kopia lezalaby dalej na dysku. */
+  constructor(file, defaults = {}, opcje = {}) {
     this.file = file;
     this.defaults = defaults;
     this.data = JSON.parse(JSON.stringify(defaults));
     this._timer = null;
     this._chain = Promise.resolve();
+    this._kopia = !!opcje.kopia;
+    /* Brak pliku (pierwsze uruchomienie) to co innego niz zepsuty plik. Kiedys
+       oba przypadki po cichu dawaly wartosci domyslne, a pierwszy zapis
+       nadpisywal zepsuty plik pustym stanem - np. po zaniku pradu wszystkie
+       zakladki znikaly na zawsze. Teraz zepsuty plik odkladamy na bok
+       (.corrupt-<czas>) i probujemy wczytac kopie .bak. */
+    const wczytany = this._wczytaj(file);
+    if (wczytany.ok) {
+      Object.assign(this.data, wczytany.dane);
+    } else if (wczytany.zepsuty) {
+      const bok = `${file}.corrupt-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+      try { fs.renameSync(file, bok); } catch (_) {
+        // Nie da sie odlozyc - nie nadpisuj w tej sesji kopii .bak zlym plikiem.
+        this._kopia = false;
+      }
+      console.error('[store] zepsuty plik, odlozony jako', bok);
+      const zKopii = this._wczytaj(`${file}.bak`);
+      if (zKopii.ok) {
+        Object.assign(this.data, zKopii.dane);
+        console.error('[store] wczytano kopie', `${file}.bak`);
+      }
+    }
+  }
+
+  /* { ok, dane } albo { ok: false, zepsuty } - zepsuty=false gdy pliku po
+     prostu nie ma. */
+  _wczytaj(file) {
+    let tekst;
+    try { tekst = fs.readFileSync(file, 'utf8'); } catch (err) {
+      return { ok: false, zepsuty: err.code !== 'ENOENT' };
+    }
     try {
-      const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-      if (parsed && typeof parsed === 'object') this.data = Object.assign(this.data, parsed);
-    } catch (_) { /* first run, or the file went bad; defaults stay */ }
+      // BOM po recznej edycji w Notatniku to nie zepsuty plik.
+      const parsed = JSON.parse(tekst.replace(/^﻿/, ''));
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return { ok: true, dane: parsed };
+    } catch (_) { /* nizej */ }
+    return { ok: false, zepsuty: true };
   }
 
   get(key, fallback) {
@@ -51,7 +87,19 @@ class Store {
       try {
         await fs.promises.mkdir(path.dirname(this.file), { recursive: true });
         const tmp = `${this.file}.tmp`;
-        await fs.promises.writeFile(tmp, snapshot);
+        /* fsync przed rename: bez niego po naglym zaniku pradu NTFS potrafi
+           zostawic plik po rename pusty albo z zerami. */
+        const uchwyt = await fs.promises.open(tmp, 'w');
+        try {
+          await uchwyt.writeFile(snapshot);
+          await uchwyt.sync();
+        } finally {
+          await uchwyt.close();
+        }
+        if (this._kopia) {
+          // Obecny plik to poprzedni udany zapis - zostaje jako .bak.
+          await fs.promises.copyFile(this.file, `${this.file}.bak`).catch(() => {});
+        }
         await fs.promises.rename(tmp, this.file);
       } catch (err) {
         console.error('[store] nie udało się zapisać', this.file, err.message);

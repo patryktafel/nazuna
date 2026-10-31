@@ -1,6 +1,35 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.92 - 1 listopada 2026
+-------------------------
+
+Poprawki z przegladu: dane, sesja, pobieranie, pasek
+
+- Uszkodzony plik zakladek lub ustawien (np. po zaniku pradu) nie kasuje
+  juz danych: Nazuna wczytuje kopie zapasowa, a zepsuty plik odklada obok.
+- Karty zapisuja sie na biezaco (co najwyzej raz na 5 sekund), wiec wracaja
+  takze po awarii albo wylaczeniu komputera. Przy kilku oknach wracaja
+  wszystkie okna, kazde ze swoimi kartami.
+- Zamkniecie ostatniego okna w trakcie pobierania pyta, czy na pewno.
+  Pobrania przerwane zamknieciem programu nie wisza juz jako "w toku".
+- Przyciski Wstrzymaj/Anuluj na stronie Pobrane i w panelu pobran nie gubia
+  klikniec w trakcie pobierania. "Wyczysc historie" i "Wyczysc liste" pytaja
+  o potwierdzenie.
+- Tekst z dwukropkiem wpisany w pasek (np. "re: spotkanie") trafia do
+  wyszukiwarki zamiast otwierac okno innej aplikacji.
+- Pliki .html otwierane z Eksploratora pokazuja sie w karcie (wczesniej
+  pusta karta). Drugie uruchomienie w trakcie startu nie tworzy juz
+  niewidocznego okna.
+- Dymek z nazwa karty dziala caly czas, druga prosba strony o zgode nie
+  znika po cichu, a zmiana nazwy zakladki na pasku nie otwiera strony i nie
+  gubi wpisywanego tekstu.
+- Strony moga zapisywac do pliku lub folderu wskazanego przez uzytkownika
+  (File System Access) - po zgodzie.
+- Aktualizacje dzialaja tez przy instalacji "tylko dla mnie" (sprawdzany
+  odcisk certyfikatu Nazuny). Budowanie wydania przerywa sie, gdy brakuje
+  wlasciwego silnika, zamiast publikowac starszy.
+
 0.1.91 - 1 listopada 2026
 -------------------------
 

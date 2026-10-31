@@ -85,7 +85,36 @@ function serialise(item, record) {
   };
 }
 
+/* Wpisy, ktore w downloads.json zostaly jako "w toku" albo "wstrzymane", choc
+   po starcie programu nie ma juz za nimi zadnego pobierania (program zamknieto
+   w trakcie, a 'done' nie zdazylo sie zapisac). Bez tego wisialy wiecznie jako
+   trwajace: bez dzialajacych przyciskow, nie do usuniecia "Wyczysc liste" i
+   z licznikiem na przycisku pobierania. Robimy to raz, przy pierwszym attach
+   (sesja domyslna przy starcie), zanim cokolwiek zacznie sie pobierac. */
+let porzadekPoStarcie = false;
+function oznaczPrzerwanePoRestarcie() {
+  if (porzadekPoStarcie) return;
+  porzadekPoStarcie = true;
+  try {
+    let zmiana = false;
+    for (const r of data.downloadsStore.data.items) {
+      if ((r.state === 'progressing' || r.state === 'paused' || r.state === 'interrupted') && !active.has(r.id)) {
+        // 'failed' - interfejs pokazuje "Nie udalo sie pobrac" i kosz
+        r.state = 'failed';
+        r.paused = false;
+        r.speed = 0;
+        zmiana = true;
+      }
+    }
+    if (zmiana) data.downloadsStore.save();
+  } catch (_) {}
+}
+
+/* Ile pobieran naprawde trwa (do pytania przy zamykaniu programu). */
+function ileAktywnych() { return active.size; }
+
 function attach(session) {
+  oznaczPrzerwanePoRestarcie();
   session.on('will-download', (event, item, webContents) => {
     // Ten sam mechanizm co ostrzezenia przy nawigacji (security.js), tylko
     // bez pytania - plik z listy zlosliwych domen po prostu sie nie sciaga,
@@ -234,7 +263,9 @@ function control(id, action, zPrywatnymi = false) {
 }
 
 function clearFinished(zPrywatnymi = false) {
-  const trwa = (r) => r.state === 'progressing' || r.state === 'paused';
+  // Trwa tylko to, za czym stoi zywe pobieranie - sam stan z pliku moze byc
+  // nieaktualny po zamknieciu programu w trakcie.
+  const trwa = (r) => active.has(r.id);
   data.downloadsStore.data.items = data.downloadsStore.data.items.filter(trwa);
   prywatne = prywatne.filter(trwa);
   data.downloadsStore.flush();
@@ -252,4 +283,4 @@ async function chooseDir(parentWindow) {
   return res.filePaths[0];
 }
 
-module.exports = { ustawOknoDla, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir };
+module.exports = { ustawOknoDla, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir, ileAktywnych };

@@ -17,6 +17,8 @@ const HOST_PORT_RE = /^[a-z0-9.-]+:\d{1,5}([/?#]|$)/i;
 const LOCALHOST_RE = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?([/?#]|$)/i;
 const IP_RE = /^\d{1,3}(\.\d{1,3}){3}(:\d+)?(\/|$)/;
 const DOMAIN_RE = /^[^\s/?#@]+\.[a-z]{2,}(:\d+)?([/?#].*)?$/i;
+// Schematy, w ktorych spacja w tresci jest normalna (np. temat maila).
+const SCHEMATY_ZE_SPACJA = new Set(['mailto:', 'tel:', 'sms:', 'magnet:', 'callto:']);
 
 function engine() {
   const key = data.settings.get('searchEngine', 'google');
@@ -46,6 +48,18 @@ function resolve(input) {
   }
   if (SCHEME_RE.test(value)) {
     if (/^(javascript|data):/i.test(value)) return searchUrl(value);
+    /* Zwykly tekst ze spacja i dwukropkiem ("re: spotkanie", "python: listy")
+       tez pasuje do SCHEME_RE - byl brany za adres z protokolem "re:" i
+       zamiast wyszukiwania pokazywalo sie okno "inna aplikacja" albo blad.
+       Ze spacja przepuszczamy tylko znane schematy z tresca (mailto: z
+       tematem itp.) i adresy z "//", ktore naprawde sie parsuja. */
+    if (/\s/.test(value)) {
+      const schemat = value.slice(0, value.indexOf(':') + 1).toLowerCase();
+      const reszta = value.slice(schemat.length);
+      if (SCHEMATY_ZE_SPACJA.has(schemat)) return value;
+      if (!reszta.startsWith('//')) return searchUrl(value);
+      try { new URL(value); } catch (_) { return searchUrl(value); }
+    }
     return value;
   }
   // Serwer na wlasnym komputerze albo router pod adresem IP prawie nigdy nie
