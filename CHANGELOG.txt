@@ -1,6 +1,28 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.93 - 1 listopada 2026
+-------------------------
+
+Poprawki z przegladu: prywatnosc, zgody, pobieranie, rozszerzenia
+
+- Pasek adresu wyroznia domene (jasna), a reszte adresu przygasza - latwiej
+  rozpoznac podrobiona strone. Przy edycji pole pokazuje pelny adres.
+- Okienko zgody (kamera, mikrofon, lokalizacja...) ma krotka zwloke przed
+  aktywacja przyciskow, zeby strona nie mogla podsunac klikniecia "Zezwol".
+- Okno prywatne nie dziedziczy zgod "zezwol" ze zwyklego okna, a tytuly
+  stron z okna prywatnego nie zmieniaja zwyklej historii.
+- Historia i Zakladki nie pobieraja ikonek z setek odwiedzonych stron przy
+  otwarciu.
+- Logi i zrzuty diagnostyczne nie trzymaja pelnych adresow stron; czyszczenie
+  historii usuwa tez zrzuty i odswieza menu ikony na pasku zadan.
+- Strona nie moze zablokowac przegladarki seria okien "Zapisz plik"; lista
+  ryzykownych typow plikow jest pelniejsza (m.in. .url, .iso, .vhd, .chm).
+- Okienka logowania sa sprawdzane pod katem zlosliwych stron jak karty.
+- Rozszerzenia: przed instalacja okno z lista uprawnien, a zainstalowane
+  rozszerzenia aktualizuja sie ze sklepu (sprawdzanie raz na dobe).
+- Strona z migajacym tytulem nie przepisuje historii na dysku co sekunde.
+
 0.1.92 - 1 listopada 2026
 -------------------------
 

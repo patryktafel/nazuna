@@ -121,6 +121,26 @@ function dodajWyjatek(ses, strona, osadzona) {
 function maWyjatek(ses, strona, osadzona) {
   return wyjatkiDlaSesji(ses).has(kluczPary(strona, osadzona));
 }
+/* Zapamietane zgody (kamera, lokalizacja, powiadomienia...) dla danej sesji.
+   Okno prywatne nie moze dziedziczyc ze zwyklego profilu zgody "zezwol" -
+   strona dostalaby kamere czy lokalizacje bez pytania, a permissions.query
+   od razu zdradzaloby, ze to ta sama osoba. Dziedziczymy tylko "odmow"
+   (jak Chrome w incognito). "Zapamietaj" klikniete w oknie prywatnym trzymamy
+   w pamieci tej jednej sesji (zapamietajWSesji), nigdy na dysku. */
+const zgodyPrywatne = new WeakMap();
+function zgodaZapamietana(ses, efemeryczna, klucz, permission) {
+  const trwala = data.permissionFor(klucz, permission);
+  if (!efemeryczna) return trwala;
+  if (trwala === 'deny') return 'deny';
+  const mapa = zgodyPrywatne.get(ses);
+  return (mapa && mapa.get(`${klucz}|${permission}`)) || null;
+}
+function zapamietajWSesji(ses, klucz, permission, odpowiedz) {
+  if (!ses || (odpowiedz !== 'allow' && odpowiedz !== 'deny')) return;
+  let mapa = zgodyPrywatne.get(ses);
+  if (!mapa) { mapa = new Map(); zgodyPrywatne.set(ses, mapa); }
+  mapa.set(`${klucz}|${permission}`, odpowiedz);
+}
 function wczytajWyjatki(ses) {
   // Zapamietane wybory wracaja po ponownym uruchomieniu przegladarki - ale
   // tylko w zwyklych oknach, bo tylko tam cokolwiek trwale zapisujemy.
@@ -302,7 +322,7 @@ function prepare(ses, efemeryczna) {
       const strona = domenyKart.get(webContents.id) || '';
       const osadzona = getDomain(details && details.requestingUrl ? details.requestingUrl : '') || origin;
       const para = kluczPary(strona, osadzona);
-      const pamiec = data.permissionFor(para, permission);
+      const pamiec = zgodaZapamietana(ses, efemeryczna, para, permission);
       if (pamiec === 'allow') { dodajWyjatek(ses, strona, osadzona); return callback(true); }
       if (pamiec === 'deny') return callback(false);
       if (!permissionPrompt) return callback(false);
@@ -320,7 +340,7 @@ function prepare(ses, efemeryczna) {
       const sciezka = details && details.filePath ? String(details.filePath) : '';
       const rodzaj = details && details.fileAccessType === 'readable' ? 'odczyt' : 'zapis';
       const klucz = `${origin}>${rodzaj}: ${sciezka}`;
-      const pamiec = data.permissionFor(klucz, permission);
+      const pamiec = zgodaZapamietana(ses, efemeryczna, klucz, permission);
       if (pamiec === 'allow') return callback(true);
       if (pamiec === 'deny') return callback(false);
       if (!permissionPrompt) return callback(false);
@@ -330,7 +350,7 @@ function prepare(ses, efemeryczna) {
       } catch (_) { return callback(false); }
     }
 
-    const remembered = data.permissionFor(origin, permission);
+    const remembered = zgodaZapamietana(ses, efemeryczna, origin, permission);
     if (remembered === 'allow') return callback(true);
     if (remembered === 'deny') return callback(false);
     if (!permissionPrompt) return callback(false);
@@ -344,7 +364,7 @@ function prepare(ses, efemeryczna) {
     if (AUTO_ALLOW.has(permission)) return true;
     let host = '';
     try { host = new URL(requestingOrigin).hostname; } catch (_) {}
-    return data.permissionFor(host, permission) === 'allow';
+    return zgodaZapamietana(ses, efemeryczna, host, permission) === 'allow';
   });
 
   refreshFlags();
@@ -378,4 +398,4 @@ async function loadExtensions(ses) {
   return loaded;
 }
 
-module.exports = { forPartition, prepare, loadExtensions, bladOdPodgladu, setPermissionPrompt, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, prepared };
+module.exports = { forPartition, prepare, loadExtensions, bladOdPodgladu, setPermissionPrompt, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, zapamietajWSesji, prepared };

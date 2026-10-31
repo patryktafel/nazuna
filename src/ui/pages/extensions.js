@@ -9,6 +9,23 @@ function confidenceTag(level) {
   return `<span class="tag ${cls}">${esc(label)}</span>`;
 }
 
+/* N41: co rozszerzenie moze robic i co znalazlo sprawdzanie aktualizacji. */
+function opisDostepu(e) {
+  const linie = Array.isArray(e.uprawnienia) ? e.uprawnienia : [];
+  let html = linie.length
+    ? `<div class="sub">${e.wszystkieStrony ? '<span class="tag warn">wszystkie strony</span> ' : ''}Uprawnienia: ${esc(linie.join('; '))}</div>`
+    : '<div class="sub">Uprawnienia: brak dostępu do stron i danych</div>';
+  if (e.brakWSklepie) {
+    html += '<div class="sub"><span class="tag low">nie ma go już w sklepie</span> Sklep Chrome nie zna już tego rozszerzenia. Mogło zostać usunięte, także za szkodliwe działanie. Rozważ jego usunięcie.</div>';
+  }
+  if (e.wymagaZgody) {
+    html += `<div class="sub"><span class="tag warn">aktualizacja v${esc(e.wymagaZgody.version)}</span> Nowa wersja chce więcej uprawnień: ${esc((e.wymagaZgody.linie || []).join('; '))}. Kliknij „Zaktualizuj”, jeśli się zgadzasz.</div>`;
+  } else if (e.oczekujacaWersja) {
+    html += `<div class="sub"><span class="tag ok">nowa wersja v${esc(e.oczekujacaWersja)}</span> Zostanie wczytana przy następnym uruchomieniu Nazuny.</div>`;
+  }
+  return html;
+}
+
 function render() {
   const installedIds = new Set(installed.map((e) => e.id));
   page.innerHTML = head('Rozszerzenia', 'puzzle') + `
@@ -38,8 +55,10 @@ function render() {
           <div class="body">
             <div class="title">${esc(e.name)} <span class="tag">v${esc(e.version || '?')}</span> <span class="tag">MV${e.manifestVersion}</span></div>
             <div class="sub">${esc(e.description || 'Bez opisu')}</div>
+            ${opisDostepu(e)}
           </div>
           <div class="ctl">
+            ${e.wymagaZgody ? `<button class="btn" data-install="${e.id}">Zaktualizuj</button>` : ''}
             ${e.optionsPage ? `<button class="iconbtn" data-options="${e.id}" title="Opcje">${iconSvg('settings')}</button>` : ''}
             <button class="iconbtn" data-store="${e.id}" title="Strona w sklepie">${iconSvg('external')}</button>
             <label class="switch" title="Włącz lub wyłącz">
@@ -86,7 +105,8 @@ async function doInstall(value) {
   toast('Pobieram rozszerzenie...');
   try {
     const r = await api.invoke('extensions.install', { input: value });
-    toast(`Zainstalowano ${r.name}`);
+    // Po instalacji od razu mowimy, do czego rozszerzenie ma dostep (N41).
+    toast(`Zainstalowano ${r.name}.${r.wszystkieStrony ? ' Ma dostęp do wszystkich stron, sprawdź uprawnienia na liście.' : ''}`);
     await load();
   } catch (err) {
     toast(String(err.message || err).replace(/^Error: /, ''));

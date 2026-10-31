@@ -414,7 +414,9 @@ class Tab {
 
     wc.on('page-title-updated', (_e, title) => {
       this.title = title;
-      data.updateHistoryTitle(this.url, title);
+      // Okno prywatne nic na dysk - adres odwiedzony wczesniej normalnie
+      // dostawal w zwyklej historii tytul z sesji prywatnej.
+      if (!this.owner.isPrivate) data.updateHistoryTitle(this.url, title);
       sync();
     });
     wc.on('page-favicon-updated', (_e, favicons) => {
@@ -546,7 +548,10 @@ class Tab {
       if (!urls.dozwoloneZeStrony(url, wc.getURL())) return { action: 'deny' };
       if (!zuzyjAktywnosc(wc)) { this.owner.zablokowanoOkno(url); return { action: 'deny' }; }
       const wantsPopup = disposition === 'new-window' && /width=|height=|popup/i.test(features || '');
-      if (wantsPopup) {
+      // Okienko na zlosliwa domene albo http: ostrzezenie pokazuje sie tylko
+      // w karcie (nazuna://warning w okienku nie ma okna Nazuny dla IPC), wiec
+      // taki adres idzie do zwyklej karty, ktora sama go sprawdzi w otworz().
+      if (wantsPopup && !security.sprawdz(url)) {
         /* Okienko (np. logowanie przez Google) na srodku okna Nazuny, na tym
            samym monitorze. Bez podanej pozycji Electron stawial je na
            glownym ekranie - przy Nazunie na drugim monitorze logowanie
@@ -591,6 +596,22 @@ class Tab {
       // Ta sama poprawka rozmiaru co przy zwyklym oknie (monitory.js).
       if (this._granicePopupu) { monitory.ustawGranice(child, this._granicePopupu); this._granicePopupu = null; }
       sledzAktywnosc(child.webContents);
+      /* Straz nawigacji jak w karcie (will-navigate/will-redirect wyzej).
+         Bez niej okienko logowania moglo przejsc albo przekierowac na
+         zlosliwa domene bez slowa, a powrot SSO do aplikacji przez jej
+         protokol cicho przepadal. Ostrzezenia nie da sie pokazac w samym
+         okienku (strona nazuna://warning nie ma tu okna Nazuny), wiec
+         grozny adres trafia do zwyklej karty, ktora pokaze ostrzezenie,
+         a okienko sie zamyka. Zwykle logowanie (https) idzie bez zmian. */
+      const strazOkienka = (event, cel) => {
+        if (urls.zewnetrznyProtokol(cel)) { event.preventDefault(); this.owner.handleExternalProtocol(cel); return; }
+        if (!security.sprawdz(cel)) return;
+        event.preventDefault();
+        this.owner.newTab({ url: cel });
+        try { child.close(); } catch (_) {}
+      };
+      child.webContents.on('will-navigate', (event, cel) => strazOkienka(event, cel));
+      child.webContents.on('will-redirect', (event) => { if (event.isMainFrame) strazOkienka(event, event.url); });
       child.webContents.setWindowOpenHandler(({ url }) => {
         if (!urls.dozwoloneZeStrony(url, child.webContents.getURL())) return { action: 'deny' };
         if (!zuzyjAktywnosc(child.webContents)) { this.owner.zablokowanoOkno(url); return { action: 'deny' }; }
@@ -1449,7 +1470,7 @@ class AppWindow {
           const opis = (e) => { const cs = getComputedStyle(e); const r = e.getBoundingClientRect(); return e.tagName + (e.id ? '#' + e.id : '') + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(' ').filter(Boolean).slice(0, 2).join('.') : '') + ' [' + [cs.position, 'z' + cs.zIndex, 'op' + cs.opacity, 'pe:' + cs.pointerEvents, cs.display, cs.visibility].join(' ') + ' ' + [r.left, r.top, r.width, r.height].map(Math.round).join(',') + ']'; };
           const pod = (x, y) => document.elementsFromPoint(x, y).slice(0, 6).map(opis);
           const nakladki = [...document.querySelectorAll('body *')].filter((e) => { const cs = getComputedStyle(e); if (cs.position !== 'fixed' && cs.position !== 'absolute') return false; const r = e.getBoundingClientRect(); return r.width >= innerWidth * 0.6 && r.height >= 40 && cs.pointerEvents !== 'none' && cs.display !== 'none' && (parseFloat(cs.opacity) < 0.05 || cs.visibility === 'hidden' || cs.backgroundColor === 'rgba(0, 0, 0, 0)'); }).slice(0, 15).map(opis);
-          return { url: location.hostname, kursor: [${wOknie.x}, ${py}], podKursorem: pod(${wOknie.x}, ${py}), gornyPas: [10, 30, 60].map((y) => y + ': ' + pod(innerWidth / 3, y).join(' > ')), nakladki, fullscreen: !!document.fullscreenElement };
+          return { url: ${this.isPrivate ? "'(prywatne)'" : 'location.hostname'}, kursor: [${wOknie.x}, ${py}], podKursorem: pod(${wOknie.x}, ${py}), gornyPas: [10, 30, 60].map((y) => y + ': ' + pod(innerWidth / 3, y).join(' > ')), nakladki, fullscreen: !!document.fullscreenElement };
         })()`, true).catch((e) => String(e));
       }
     } catch (err) { wynik.blad = String(err && err.stack); }
@@ -1513,6 +1534,7 @@ class AppWindow {
        na zwykle przegladanie, co jest dokladnie tym, czego tryb prywatny ma
        unikac. */
     if (remember && !this.isPrivate) data.setPermission(origin, permission, answer);
+    if (remember && this.isPrivate) sessions.zapamietajWSesji(this.session, origin, permission, answer);
     this.closePopover();
     resolve(answer);
   }
@@ -1947,11 +1969,11 @@ function runContextAction(appWindow, id) {
     case 'open-link-window': createWindow({ urls: [params.linkURL] }); break;
     case 'open-link-private': createWindow({ isPrivate: true, urls: [params.linkURL] }); break;
     case 'copy-link': clipboard.writeText(params.linkURL); break;
-    case 'save-link': wc.downloadURL(params.linkURL); break;
+    case 'save-link': downloads.oznaczGest(wc); wc.downloadURL(params.linkURL); break;
     case 'open-image': appWindow.newTab({ url: params.srcURL, background: true }); break;
     case 'copy-image': wc.copyImageAt(params.x, params.y); break;
     case 'copy-image-url': clipboard.writeText(params.srcURL); break;
-    case 'save-image': case 'save-media': wc.downloadURL(params.srcURL); break;
+    case 'save-image': case 'save-media': downloads.oznaczGest(wc); wc.downloadURL(params.srcURL); break;
     case 'copy-media-url': clipboard.writeText(params.srcURL); break;
     case 'undo': wc.undo(); break;
     case 'redo': wc.redo(); break;
@@ -1968,7 +1990,7 @@ function runContextAction(appWindow, id) {
     case 'back': appWindow.goBack(); break;
     case 'forward': appWindow.goForward(); break;
     case 'reload': appWindow.reload(); break;
-    case 'save-page': wc.downloadURL(wc.getURL()); break;
+    case 'save-page': downloads.oznaczGest(wc); wc.downloadURL(wc.getURL()); break;
     case 'print': wc.print({}, () => {}); break;
     case 'inspect': wc.inspectElement(params.x, params.y); break;
     default: break;

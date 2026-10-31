@@ -51,6 +51,7 @@ const el = {
   privateBadge: $('#privateBadge'),
   omnibox: $('#omnibox'),
   address: $('#address'),
+  addressView: $('#addressView'),
   lock: $('#lock'),
   lockLabel: $('#lockLabel'),
   star: $('#star'),
@@ -591,6 +592,32 @@ function adresDoPokazania() {
   return shown && shown !== 'nazuna://newtab' ? shown : '';
 }
 
+/* Rozbicie adresu http(s) na czesci do nakladki z wyroznionym hostem.
+   Dane logowania (user:haslo@) pomijamy: https://www.mbank.pl@zly.xyz/
+   prowadzi na zly.xyz, a w surowym adresie wyglada jak bank. */
+function adresSformatowany(adres) {
+  const m = /^(https?:\/\/)([^/?#]*)(.*)$/i.exec(adres);
+  if (!m) return null;
+  const autorytet = m[2].slice(m[2].lastIndexOf('@') + 1);
+  const h = /^(\[[^\]]*\]|[^:]*)(.*)$/.exec(autorytet);
+  if (!h || !h[1]) return null;
+  return { przed: m[1], host: h[1], reszta: h[2] + m[3] };
+}
+
+/* Nakladka tylko, gdy pole nie ma fokusu i pokazuje dokladnie adres karty.
+   Przy edycji (fokus, wpisany tekst) widac zwykly input z pelnym adresem,
+   wiec zaznaczanie, kopiowanie i wklejanie dzialaja jak dotad. */
+function odswiezWidokAdresu() {
+  const wartosc = el.address.value;
+  const f = document.activeElement !== el.address && !addressDirty && wartosc && wartosc === adresDoPokazania()
+    ? adresSformatowany(wartosc) : null;
+  el.omnibox.classList.toggle('formatowany', !!f);
+  if (!f || el.addressView.dataset.adres === wartosc) return;
+  el.addressView.dataset.adres = wartosc;
+  // \u2066...\u2069 izoluje host jako tekst LTR wewnatrz pola rtl (ucinanie z lewej).
+  el.addressView.innerHTML = `<span>${escapeHtml(f.przed)}</span><span class="host">\u2066${escapeHtml(f.host)}\u2069</span><span class="reszta">${escapeHtml(f.reszta)}</span>`;
+}
+
 function renderToolbar() {
   // Stan z procesu glownego moze dojsc pozniej niz np. lista pobran -
   // bez niego nie ma czego rysowac (wczesniej konczylo sie to bledem).
@@ -607,6 +634,7 @@ function renderToolbar() {
   el.lockLabel.hidden = !state.insecure;
 
   if (!addressDirty && document.activeElement !== el.address) el.address.value = adresDoPokazania();
+  odswiezWidokAdresu();
 
   el.star.innerHTML = iconSvg(state.bookmarked ? 'starFilled' : 'star');
   el.star.classList.toggle('active', !!state.bookmarked);
@@ -985,6 +1013,7 @@ el.bookmarksbar.addEventListener('contextmenu', (e) => {
 
 el.address.addEventListener('focus', () => {
   el.omnibox.classList.add('focused');
+  odswiezWidokAdresu();
   // Zaznaczamy calosc tylko, gdy nikt jeszcze nic nie wpisal - pasek dostaje
   // fokus z powrotem takze po tym, jak nowa karta na chwile go zabrala
   // (patrz newTab w window.js), a wtedy zaznaczenie sprawiloby, ze kolejna
@@ -994,11 +1023,13 @@ el.address.addEventListener('focus', () => {
 el.address.addEventListener('blur', () => {
   el.omnibox.classList.remove('focused');
   addressDirty = false;
+  odswiezWidokAdresu();
   if (popover && popover.name === 'omni') setTimeout(() => { if (popover && popover.name === 'omni') closePopover(); }, 120);
 });
 let suggestTimer = null;
 el.address.addEventListener('input', (e) => {
   addressDirty = true;
+  odswiezWidokAdresu();
   clearTimeout(suggestTimer);
   const value = el.address.value;
   if (!value.trim()) { suggestToken++; omniItems = []; closePopover(); return; }
@@ -1577,15 +1608,21 @@ function permissionPrompt(payload) {
       ${tresc}
       <label class="remember"><span class="switch"><input type="checkbox" id="rememberPerm"><span class="track"></span><span class="thumb"></span></span> Zapamiętaj ten wybór</label>
       <div class="row">
-        <button class="btn" data-answer="deny">Zablokuj</button>
-        <button class="btn primary" data-answer="allow">Zezwól</button>
+        <button class="btn" data-answer="deny" disabled>Zablokuj</button>
+        <button class="btn primary" data-answer="allow" disabled>Zezwól</button>
       </div>
     </div>`);
   node.dataset.permKey = payload.key;
   openPanel('permission', node, el.omnibox.getBoundingClientRect(), { align: 'left' });
+  /* Okienko zawsze wyskakuje w tym samym miejscu, wiec strona moze wywolac
+     prosbe w trakcie podwojnego klikniecia i drugie klikniecie trafi w
+     Zezwol. Jak w Chrome: przez chwile po pokazaniu przyciski nie reaguja. */
+  const pokazanoAt = performance.now();
+  const ZWLOKA_ZGODY_MS = 700;
+  setTimeout(() => node.querySelectorAll('[data-answer]').forEach((b) => { b.disabled = false; }), ZWLOKA_ZGODY_MS);
   node.addEventListener('click', (e) => {
     const b = e.target.closest('[data-answer]');
-    if (!b) return;
+    if (!b || b.disabled || performance.now() - pokazanoAt < ZWLOKA_ZGODY_MS) return;
     node.dataset.answered = '1';
     api.send('permission.answer', {
       key: payload.key,

@@ -77,6 +77,34 @@ function init() {
 
 const HISTORY_CAP = 30000;
 
+/* Sam tytul zapisujemy rzadziej niz wizyty: Gmail/Messenger w karcie w tle
+   przelaczaja tytul co sekunde ("(1) Nowa wiadomosc" / "Gmail"), a kazdy
+   zapis to JSON.stringify calej historii (kilka MB) w procesie glownym.
+   Timer sie nie przesuwa, wiec przy ciaglym miganiu wychodzi najwyzej jeden
+   zapis na TYTUL_ZAPIS_MS. Przy zamknieciu before-quit i tak robi flush
+   (z danych w pamieci), wiec nic nie ginie; przy awarii najwyzej kilka s tytulow. */
+const TYTUL_ZAPIS_MS = 10000;
+let tytulTimer = null;
+function zapiszTytulyPozniej() {
+  if (tytulTimer) return;
+  tytulTimer = setTimeout(() => { tytulTimer = null; history.save(); }, TYTUL_ZAPIS_MS);
+}
+// Zwykly zapis historii obejmuje tez zmienione tytuly - odlozony juz niepotrzebny.
+function zapiszHistorie(odRazu) {
+  if (tytulTimer) { clearTimeout(tytulTimer); tytulTimer = null; }
+  if (odRazu) history.flush(); else history.save();
+}
+
+/* Wolane po usunieciu czegos z historii (jumplist.js odswieza wtedy
+   "Czesto odwiedzane" - Windows trzyma te liste nawet po zamknieciu Nazuny). */
+const poUsunieciuHistorii = [];
+function naUsunieciuHistorii(fn) { if (typeof fn === 'function') poUsunieciuHistorii.push(fn); }
+function powiadomOUsunieciu() {
+  for (const fn of poUsunieciuHistorii) {
+    try { fn(); } catch (err) { console.warn('[history]', err && err.message); }
+  }
+}
+
 function addHistory(url, title) {
   if (!url || /^(nazuna|about|chrome-extension|devtools|data|blob):/i.test(url)) return;
   const items = history.data.items;
@@ -85,18 +113,18 @@ function addHistory(url, title) {
   if (last && last.url === url && now - last.ts < 30000) {
     last.title = title || last.title;
     last.ts = now;
-    history.save();
+    zapiszHistorie();
     return;
   }
   items.unshift({ url, title: title || url, ts: now });
   if (items.length > HISTORY_CAP) items.length = HISTORY_CAP;
-  history.save();
+  zapiszHistorie();
 }
 
 function updateHistoryTitle(url, title) {
   if (!title) return;
   const hit = history.data.items.find((i) => i.url === url);
-  if (hit && hit.title !== title) { hit.title = title; history.save(); }
+  if (hit && hit.title !== title) { hit.title = title; zapiszTytulyPozniej(); }
 }
 
 /* Pasek adresu odpytuje searchHistory() przy kazdym wcisnietym klawiszu, wiec
@@ -138,13 +166,15 @@ function clearHistory(sinceMs) {
     const cut = Date.now() - sinceMs;
     history.data.items = history.data.items.filter((i) => i.ts < cut);
   }
-  history.flush();
+  zapiszHistorie(true);
+  powiadomOUsunieciu();
 }
 
 function removeHistory(urls) {
   const set = new Set(urls);
   history.data.items = history.data.items.filter((i) => !set.has(i.url));
-  history.save();
+  zapiszHistorie();
+  powiadomOUsunieciu();
 }
 
 /* ---------------------------------------------------------------- bookmarks */
@@ -369,7 +399,7 @@ module.exports = {
   get downloadsStore() { return downloads; },
   get extensionsStore() { return extensionsStore; },
   get siteStore() { return siteStore; },
-  addHistory, updateHistoryTitle, searchHistory, clearHistory, removeHistory,
+  addHistory, updateHistoryTitle, searchHistory, clearHistory, removeHistory, naUsunieciuHistorii,
   bookmarkList, isBookmarked, miejsceZakladki, addBookmark, addFolder, addSeparator, updateBookmark, removeBookmark, removeBookmarkByUrl, moveBookmark,
   adblockAllowed, setAdblockForSite, siteZoom, setSiteZoom, permissionFor, setPermission,
   isSleepExempt, setSleepExempt,

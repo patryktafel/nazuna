@@ -57,6 +57,7 @@ const ipc = require('./ipc');
 const widevine = require('./widevine');
 const updater = require('./updater');
 const security = require('./security');
+const extensions = require('./extensions');
 const privacy = require('./privacy');
 const W = require('./window');
 const localFiles = require('./localFiles');
@@ -293,7 +294,13 @@ if (!gotLock) {
     starttrace.znacznik('po createWindow (okno jeszcze niewidoczne - buduje sie async)');
     startGotowy = true;
     for (const u of poStarcie) obsluzDrugieUruchomienie(u.argv, u.katalog);
+    // Aktualizacje rozszerzen pobrane w poprzedniej sesji wchodza przed wczytaniem.
+    try { extensions.zastosujAktualizacje(); } catch (err) { console.warn('[ext] aktualizacje:', err.message); }
     sessions.loadExtensions(sessions.forPartition('persist:nazuna')).catch((err) => console.warn('[ext]', err.message));
+    // Sprawdzanie nowych wersji rozszerzen w sklepie - samo pilnuje "raz na dobe".
+    const sprawdzRozszerzenia = () => extensions.sprawdzAktualizacje().then(() => W.broadcastAll('extensions:changed')).catch(() => {});
+    setTimeout(sprawdzRozszerzenia, 2 * 60 * 1000).unref();
+    setInterval(sprawdzRozszerzenia, 6 * 60 * 60 * 1000).unref();
     jumplist.start();
 
     // Modul odszyfrowywania DRM dociaga sie z serwerow Google przy pierwszym

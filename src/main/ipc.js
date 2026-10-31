@@ -14,6 +14,7 @@ const widevine = require('./widevine');
 const defaultBrowser = require('./defaultBrowser');
 const updater = require('./updater');
 const security = require('./security');
+const diagnostics = require('./diagnostics');
 const privacy = require('./privacy');
 const { SEARCH_ENGINES, APP_NAME, rozstrzygnijMotyw } = require('./constants');
 const W = require('./window');
@@ -117,7 +118,7 @@ async function clearBrowsingData(win, options) {
     if (opts.cookies) await ses.clearStorageData({ storages: ['cookies'] }).catch(() => {});
     if (opts.storage) await ses.clearStorageData({ storages: ['localstorage', 'indexdb', 'websql', 'cachestorage', 'serviceworkers', 'shadercache'] }).catch(() => {});
   }
-  if (opts.history) data.clearHistory(0);
+  if (opts.history) { data.clearHistory(0); diagnostics.wyczysc(); }
   if (opts.downloads) downloads.clearFinished();
   return true;
 }
@@ -287,7 +288,19 @@ const handlers = {
   'extensions.list': () => extensions.list(),
   'extensions.catalog': () => catalog,
   'extensions.install': async (win, p) => {
-    const record = await extensions.install(p.input);
+    /* Przed instalacja pokazujemy, o co rozszerzenie prosi (dostep do stron,
+       historii, pobran...) - wczesniej instalowalo sie bez slowa. */
+    const record = await extensions.install(p.input, {
+      potwierdz: async (info) => {
+        const { response } = await dialog.showMessageBox(win.win, {
+          type: 'question', buttons: ['Zainstaluj', 'Anuluj'], defaultId: 1, cancelId: 1, noLink: true,
+          title: 'Instalacja rozszerzenia',
+          message: `Zainstalować „${info.nazwa}”${info.wersja ? ' ' + info.wersja : ''}?`,
+          detail: info.linie && info.linie.length ? 'To rozszerzenie:\n• ' + info.linie.join('\n• ') : 'To rozszerzenie nie prosi o dostęp do stron ani danych.'
+        });
+        return response === 0;
+      }
+    });
     await reloadExtensions();
     W.broadcastAll('extensions:changed');
     return extensions.describe(record);
@@ -600,6 +613,8 @@ async function reloadExtensions() {
         for (const ext of host.getAllExtensions()) host.removeExtension(ext.id);
       } catch (_) {}
     }
+    // Wszystko odpiete - teraz bezpiecznie podmienic pobrane aktualizacje rozszerzen.
+    try { extensions.zastosujAktualizacje(); } catch (err) { console.warn('[ext] aktualizacje:', err.message); }
     const done = new Set();
     for (const w of W.windows) {
       if (w.isPrivate || done.has(w.session)) continue;   // rozszerzenia nie wchodzą do okien prywatnych

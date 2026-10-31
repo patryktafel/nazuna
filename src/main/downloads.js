@@ -30,11 +30,19 @@ function defaultDir() {
   return app.getPath('downloads');
 }
 
-/* Pliki, ktore po dwukliku uruchamiaja kod. Takich nie zapisujemy po cichu. */
+/* Pliki, ktore po dwukliku uruchamiaja kod. Takich nie zapisujemy po cichu.
+   Druga czesc to typy, ktore Chrome tez uznaje za niebezpieczne: skroty i
+   pliki Eksploratora (.url, .library-ms, .searchconnector-ms, .scf) potrafia
+   wyslac hash hasla do obcego serwera juz przez samo lezenie w Pobranych,
+   a obrazy dyskow (.iso, .vhd) i pomoc .chm przemycaja w srodku skrypty.
+   Wpisy malymi literami - isRisky porownuje rozszerzenie po toLowerCase. */
 const RISKY = new Set([
   '.exe', '.msi', '.msix', '.appx', '.bat', '.cmd', '.com', '.scr', '.pif', '.hta',
   '.ps1', '.psm1', '.vbs', '.vbe', '.js', '.jse', '.wsf', '.wsh', '.jar', '.reg',
-  '.lnk', '.dll', '.cpl', '.msc', '.msp', '.gadget', '.apk', '.sh'
+  '.lnk', '.dll', '.cpl', '.msc', '.msp', '.gadget', '.apk', '.sh',
+  '.url', '.library-ms', '.searchconnector-ms', '.scf', '.settingcontent-ms',
+  '.appref-ms', '.application', '.xbap', '.chm', '.hlp', '.iso', '.img', '.vhd',
+  '.vhdx', '.xll', '.msh', '.ws', '.wsc', '.sct', '.inf', '.ps1xml', '.psc1', '.mst'
 ]);
 
 /** Nazwa pliku pochodzi ze strony, wiec nie moze wskazywac na inny katalog. */
@@ -110,6 +118,45 @@ function oznaczPrzerwanePoRestarcie() {
   } catch (_) {}
 }
 
+/* Seria okien "Zapisz plik". Okno zapisu jest synchroniczne i na czas jego
+   otwarcia staje caly proces glowny (wszystkie karty, pasek). Strona mogla
+   klikac z JS ukryty link <a download="x.exe"> w petli i po kazdym "Anuluj"
+   od razu dostawala kolejne okno - przegladarki nie dalo sie nawet zamknac.
+   Dlatego po anulowaniu kolejne okno z tej samej karty pokazujemy dopiero po
+   prawdziwym kliknieciu albo klawiszu w niej (jak przy wyskakujacych oknach
+   w window.js), a bez tego pobranie przepada po cichu. Asynchroniczne okno
+   odpada: setSavePath dziala tylko wewnatrz will-download. */
+const GEST_MS = 5000;
+const poAnulowaniu = new WeakMap(); // webContents (albo sesja) -> czas "Anuluj"
+const gesty = new WeakMap();        // webContents -> czas ostatniego prawdziwego wejscia
+const sledzone = new WeakSet();
+function sledzGesty(wc) {
+  if (!wc || sledzone.has(wc)) return;
+  sledzone.add(wc);
+  try {
+    wc.on('before-input-event', (_e, input) => {
+      if (input && input.type === 'keyDown' && input.key !== 'Escape') gesty.set(wc, Date.now());
+    });
+    wc.on('before-mouse-event', (_e, mysz) => {
+      if (mysz && (mysz.type === 'mouseDown' || mysz.type === 'mouseUp')) gesty.set(wc, Date.now());
+    });
+  } catch (_) {}
+}
+function oknoZapisuDozwolone(klucz, wc) {
+  const anulowano = poAnulowaniu.get(klucz);
+  if (!anulowano) return true;
+  const gest = wc ? gesty.get(wc) : 0;
+  if (gest && gest > anulowano && Date.now() - gest < GEST_MS) {
+    poAnulowaniu.delete(klucz); // jedno klikniecie = jedno okno
+    return true;
+  }
+  return false;
+}
+
+/* Pobranie zlecone z menu Nazuny ("Zapisz obraz/link/strone jako") to tez
+   swiadomy wybor uzytkownika, choc klik trafil w pasek, a nie w karte. */
+function oznaczGest(wc) { if (wc) gesty.set(wc, Date.now()); }
+
 /* Ile pobieran naprawde trwa (do pytania przy zamykaniu programu). */
 function ileAktywnych() { return active.size; }
 
@@ -144,6 +191,9 @@ function attach(session) {
     } else {
       let rodzic = null;
       try { rodzic = oknoDla(webContents); } catch (_) {}
+      const klucz = webContents || session;
+      sledzGesty(webContents);
+      if (!oknoZapisuDozwolone(klucz, webContents)) { event.preventDefault(); return; }
       if (rodzic) {
         const ext = path.extname(filename).replace(/^\./, '');
         const wybor = dialog.showSaveDialogSync(rodzic, {
@@ -152,7 +202,8 @@ function attach(session) {
           filters: ext ? [{ name: ext.toUpperCase(), extensions: [ext] }, { name: 'Wszystkie pliki', extensions: ['*'] }] : []
         });
         // Anulowane okno zapisu = brak pobierania, tak jak w Chrome.
-        if (!wybor) { event.preventDefault(); return; }
+        if (!wybor) { poAnulowaniu.set(klucz, Date.now()); event.preventDefault(); return; }
+        poAnulowaniu.delete(klucz);
         item.setSavePath(wybor);
       }
       // Bez znanego okna zostaje domyslne okno zapisu Electrona.
@@ -283,4 +334,4 @@ async function chooseDir(parentWindow) {
   return res.filePaths[0];
 }
 
-module.exports = { ustawOknoDla, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir, ileAktywnych };
+module.exports = { ustawOknoDla, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir, ileAktywnych, oznaczGest };

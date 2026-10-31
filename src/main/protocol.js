@@ -93,7 +93,13 @@ function handleFor(session) {
         return new Response(`Błąd: ${err.message}`, { status: 500, headers: { 'content-type': 'text/plain; charset=utf-8' } });
       } finally {
         const trwalo = Date.now() - poczatek;
-        if (trwalo >= PROG_WOLNE_MS) starttrace.znacznik(`nazuna:// wolne (${trwalo}ms): ${request.url}`);
+        // Tylko host i sciezka, bez query: nazuna://warning?url=..., pdf?src=... niosa
+        // odwiedzany adres (takze z okna prywatnego), a start.log zyje tygodniami.
+        if (trwalo >= PROG_WOLNE_MS) {
+          let bezQuery = '?';
+          try { const u = new URL(request.url); bezQuery = `nazuna://${u.hostname}${u.pathname}`; } catch (_) {}
+          starttrace.znacznik(`nazuna:// wolne (${trwalo}ms): ${bezQuery}`);
+        }
       }
     });
   }

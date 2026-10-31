@@ -35,7 +35,10 @@
       <div class="omnibox" id="omnibox">
         <span class="lock" id="lock"></span>
         <span class="lock-label" id="lockLabel" hidden>Niezabezpieczona</span>
-        <input id="address" type="text" spellcheck="false" autocomplete="off" placeholder="Wpisz adres albo wyszukaj">
+        <div class="adres-pole">
+          <input id="address" type="text" spellcheck="false" autocomplete="off" placeholder="Wpisz adres albo wyszukaj">
+          <div class="adres-widok" id="addressView" aria-hidden="true"></div>
+        </div>
         <div class="omni-actions">
           <button class="omni-btn" id="zoomChip" hidden title="Powiększenie"></button>
           <button class="omni-btn" id="shield" title="Bloker reklam"></button>

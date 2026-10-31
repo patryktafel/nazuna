@@ -5,8 +5,14 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function favicon(url) {
-  try { return `${new URL(url).origin}/favicon.ico`; } catch (_) { return ''; }
+/* Zastepcza ikona strony: pierwsza litera domeny. Dawniej bralismy
+   <origin>/favicon.ico, ale wtedy samo otwarcie historii czy zakladek
+   laczylo sie z kazdym serwisem z listy (setki zapytan z naszym IP),
+   a favicon nigdzie lokalnie nie przechowujemy. */
+function favLitera(url) {
+  const h = hostOf(url) || String(url || '');
+  const z = (h.match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
+  return `<span class="fav fav-litera" aria-hidden="true">${esc(z)}</span>`;
 }
 
 function hostOf(url) {
@@ -78,13 +84,4 @@ function odswiezWyglad() {
 
 odswiezWyglad();
 
-/* Ikona strony, ktorej nie ma (brak favicon.ico). Atrybut onerror w HTML-u
-   nic tu nie robi, bo polityka CSP tych stron nie wpuszcza skryptow
-   wpisanych w znaczniki - zostawala wiec ikonka zepsutego obrazka. Jeden
-   nasluch na calej stronie (faza przechwytywania, bo "error" obrazka nie
-   babelkuje) zalatwia to dla wszystkich list naraz. */
-document.addEventListener('error', (e) => {
-  const t = e.target;
-  if (t && t.tagName === 'IMG' && t.classList.contains('fav')) t.style.visibility = 'hidden';
-}, true);
 if (api.on) api.on('settings:changed', odswiezWyglad);

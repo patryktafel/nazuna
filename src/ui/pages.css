@@ -51,6 +51,9 @@ body { overflow-y: auto; }
 .list-item:hover { background: rgba(var(--tint), 0.04); }
 .list-item:active { background: rgba(var(--tint), 0.07); }
 .list-item img.fav, .list-item .icon { width: 16px; height: 16px; flex: none; border-radius: 3px; }
+/* Litera zamiast favicony (pagekit.js favLitera) - bez zapytan do stron z listy */
+.list-item .fav-litera { width: 16px; height: 16px; flex: none; border-radius: 4px; display: flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 650; line-height: 1; color: var(--text-dim); background: rgba(var(--tint), 0.10); }
 .list-item .main { flex: 1; min-width: 0; }
 .list-item .name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list-item .url { font-size: 11.5px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }

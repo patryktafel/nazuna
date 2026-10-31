@@ -48,7 +48,7 @@ function rowHtml(b) {
   const doMenu = miejsce(b) === 'bar';
   const folder = b.parent && !['bar', 'menu', 'other'].includes(b.parent) ? items.find((x) => x.id === b.parent) : null;
   return `<div class="list-item" draggable="true" data-id="${esc(b.id)}" data-url="${esc(b.url || '')}" data-type="${b.type}">
-    ${isFolder ? iconSvg('folder') : `<img class="fav" src="${esc(favicon(b.url))}">`}
+    ${isFolder ? iconSvg('folder') : favLitera(b.url)}
     <div class="main">
       <div class="name" contenteditable="false" data-title>${esc(b.title)}</div>
       ${isFolder ? `<div class="url">Folder${folder ? ` w: ${esc(folder.title)}` : ''}</div>` : `<div class="url">${folder ? `${iconSvg('folder')} ${esc(folder.title)} · ` : ''}${esc(b.url)}</div>`}

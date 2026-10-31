@@ -85,7 +85,13 @@ function ustaw() {
 let zegar = null;
 function start() {
   ustaw();
-  if (!zegar) zegar = setInterval(ustaw, 30 * 60 * 1000);
+  if (!zegar) {
+    zegar = setInterval(ustaw, 30 * 60 * 1000);
+    /* Po wyczyszczeniu/usunieciu historii od razu - inaczej "Czesto
+       odwiedzane" z usunietymi stronami zostawalo do 30 min, a po zamknieciu
+       Nazuny az do nastepnego startu. */
+    data.naUsunieciuHistorii(ustaw);
+  }
 }
 
 /* Ktore z zadan menu przyszlo w argumentach uruchomienia (albo null). */

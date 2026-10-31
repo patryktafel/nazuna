@@ -85,6 +85,17 @@ function bezpiecznyBounds(view) {
 const UKRYTE = '(okno prywatne)';
 function prywatna(tab) { return !!(tab && tab.owner && tab.owner.isPrivate); }
 
+/* Ze zwyklych okien tez nie trzymamy pelnych adresow: sciezka, query i hash
+   potrafia niesc tokeny (reset hasla, #access_token=...), a do diagnozy
+   zawieszenia wystarczy sama strona (origin). */
+function skrocAdres(url) {
+  if (!url || typeof url !== 'string') return url;
+  try {
+    const u = new URL(url);
+    return u.host ? `${u.protocol}//${u.host}` : u.protocol;
+  } catch (_) { return '(adres)'; }
+}
+
 function stanWszystkichOkien(windows) {
   const wynik = [];
   for (const w of windows) {
@@ -97,9 +108,10 @@ function stanWszystkichOkien(windows) {
         expanded: !!w.expanded,
         tabs: w.tabs.map((t) => ({
           id: t.id,
-          url: ukryj ? UKRYTE : t.url,
-          displayUrl: ukryj ? UKRYTE : t.displayUrl,
-          title: ukryj ? UKRYTE : t.title,
+          url: ukryj ? UKRYTE : skrocAdres(t.url),
+          displayUrl: ukryj ? UKRYTE : skrocAdres(t.displayUrl),
+          // Tytul to tez historia przegladania; do diagnozy wystarczy, czy jest.
+          title: ukryj ? UKRYTE : (t.title ? '(jest)' : ''),
           loading: !!t.loading,
           ladujeSieOdMs: t._ladowanieOd ? Date.now() - t._ladowanieOd : null,
           sleeping: !!t.sleeping,
@@ -145,7 +157,7 @@ function sledzKarte(tab) {
   if (!wc) return;
   const znacznik = (typ, dodatkowe = {}) => {
     const wpis = { tabId: tab.id, url: tab.url, ...dodatkowe };
-    if (prywatna(tab)) wpis.url = UKRYTE;
+    wpis.url = prywatna(tab) ? UKRYTE : skrocAdres(wpis.url);
     zdarzenie(typ, wpis);
   };
 
@@ -194,7 +206,7 @@ function start(pobierzOkna) {
         const trwa = Date.now() - t._ladowanieOd;
         if (trwa > PROG_ZAWIESZENIA_MS && !zrzuconeDlaLadowania.has(t.id)) {
           zrzuconeDlaLadowania.add(t.id);
-          zdarzenie('podejrzenie-zawieszenia', { tabId: t.id, url: w.isPrivate ? UKRYTE : t.url, trwaMs: trwa });
+          zdarzenie('podejrzenie-zawieszenia', { tabId: t.id, url: w.isPrivate ? UKRYTE : skrocAdres(t.url), trwaMs: trwa });
           zrzuc('stuck-loading', windows);
         }
       }
@@ -205,4 +217,16 @@ function start(pobierzOkna) {
   if (watchdogTimer.unref) watchdogTimer.unref();
 }
 
-module.exports = { zdarzenie, sledzKarte, przelaczenieKarty, usypianie, budzenie, start, zrzuc, folder };
+/* "Wyczysc historie" ma nie zostawiac adresow w zrzutach: kasujemy pliki
+   .json z diagnostyka/ (zrzuty zawieszen i klikania) i pierscien w pamieci. */
+function wyczysc() {
+  try { pierscien.length = 0; } catch (_) {}
+  try {
+    const dir = folder();
+    for (const f of fs.readdirSync(dir)) {
+      if (f.endsWith('.json')) { try { fs.unlinkSync(path.join(dir, f)); } catch (_) {} }
+    }
+  } catch (_) {}
+}
+
+module.exports = { zdarzenie, sledzKarte, przelaczenieKarty, usypianie, budzenie, start, zrzuc, folder, wyczysc };
