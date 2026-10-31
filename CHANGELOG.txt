@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.90 - 1 listopada 2026
+-------------------------
+
+Poprawki bezpieczenstwa (rozszerzenia, strony wewnetrzne)
+
+- Usuniecie rozszerzenia wczytanego z folderu juz nie kasuje tego folderu
+  z dysku - rozszerzenie jest tylko odlaczane. Z dysku znikaja wylacznie
+  kopie pobrane ze sklepu. Przed usunieciem Nazuna pyta o potwierdzenie.
+- Zwykla strona nie moze juz otworzyc w nowej karcie stron nazuna://,
+  plikow lokalnych (file://) ani adresow chrome:// i view-source:.
+- Przycisk "przejdz mimo to" na stronie ostrzezenia otwiera tylko adres
+  zapamietany przez przegladarke (http/https) - podstawiony adres nie
+  moze juz uruchomic kodu na stronie ostrzezenia.
+- Pobieranie z podgladu PDF i tekstu przyjmuje tylko adresy http/https.
+
 0.1.89 - 31 pazdziernika 2026
 -----------------------------
 

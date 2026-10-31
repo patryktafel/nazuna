@@ -525,6 +525,7 @@ class Tab {
     przyciskiWsteczDalej(wc, () => this.owner);
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
       if (disposition === 'save-to-disk') return { action: 'allow' };
+      if (!urls.dozwoloneZeStrony(url, wc.getURL())) return { action: 'deny' };
       if (!zuzyjAktywnosc(wc)) { this.owner.zablokowanoOkno(url); return { action: 'deny' }; }
       const wantsPopup = disposition === 'new-window' && /width=|height=|popup/i.test(features || '');
       if (wantsPopup) {
@@ -573,6 +574,7 @@ class Tab {
       if (this._granicePopupu) { monitory.ustawGranice(child, this._granicePopupu); this._granicePopupu = null; }
       sledzAktywnosc(child.webContents);
       child.webContents.setWindowOpenHandler(({ url }) => {
+        if (!urls.dozwoloneZeStrony(url, child.webContents.getURL())) return { action: 'deny' };
         if (!zuzyjAktywnosc(child.webContents)) { this.owner.zablokowanoOkno(url); return { action: 'deny' }; }
         this.owner.newTab({ url });
         return { action: 'deny' };
@@ -1849,6 +1851,9 @@ function runContextAction(appWindow, id) {
   const { tab, params } = ctx;
   const wc = ctx.wc || (tab && tab.wc);
   if (!wc) return;
+  // Linki i obrazki ze strony WWW: bez nazuna://, file:// itp. (patrz urls.dozwoloneZeStrony).
+  const zeStrony = wc.getURL();
+  if (/^open-(link|image)/.test(id) && !urls.dozwoloneZeStrony(id === 'open-image' ? params.srcURL : params.linkURL, zeStrony)) return;
   switch (id) {
     case 'open-link-tab': appWindow.newTab({ url: params.linkURL, background: true }); break;
     case 'open-link-window': createWindow({ urls: [params.linkURL] }); break;

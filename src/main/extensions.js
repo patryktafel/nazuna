@@ -208,9 +208,18 @@ function setEnabled(id, enabled) {
   return rec;
 }
 
+/* Kasujemy z dysku tylko wlasne kopie z folderu Extensions. Rozszerzenie
+   wczytane "z folderu" lezy u uzytkownika (np. jego projekt na Pulpicie) -
+   takie tylko odpinamy, pliki zostaja. Wczesniej rmrf szedl po kazdej
+   sciezce i potrafil skasowac cudzy folder bez Kosza. */
+function wNaszymFolderze(p) {
+  const rel = path.relative(extensionsDir(), path.resolve(p));
+  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
 function remove(id) {
   const rec = data.extensionsStore.data.installed.find((e) => e.id === id);
-  if (rec) rmrf(rec.path);
+  if (rec && !rec.unpacked && wNaszymFolderze(rec.path)) rmrf(rec.path);
   data.extensionsStore.data.installed = data.extensionsStore.data.installed.filter((e) => e.id !== id);
   describeCache.delete(id);
   data.extensionsStore.flush();

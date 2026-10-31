@@ -196,11 +196,19 @@ const handlers = {
   'security.proceed': (win, p, sender) => {
     // Karta, na ktorej kliknieto przycisk - nie zawsze ta aktywna.
     const tab = (sender && win.tabs.find((t) => t.wc === sender)) || win.activeTab();
-    if (!tab || !p.url) return;
-    security.zapamietajWyjatek(p.typ, p.url); // http - zapamietuje, zlosliwe domeny - nic nie robi
+    if (!tab || !tab.wc) return;
+    /* Cel bierzemy z tego, co zapamietal proces glowny przy pokazaniu
+       ostrzezenia, a nie z ?url= strony - inaczej 'javascript:...' w tym
+       parametrze wykonywal sie w nazuna://warning z pelnym mostem do
+       przegladarki. Adres ze strony tylko awaryjnie (np. karta przywrocona
+       z sesji) i tylko http/https. Typ tez liczymy sami. */
+    const cel = tab.warnUrl || String(p.url || '');
+    if (!/^https?:\/\//i.test(cel)) return;
+    const zagrozenie = security.sprawdz(cel);
+    if (zagrozenie) security.zapamietajWyjatek(zagrozenie.typ, cel); // http - zapamietuje, zlosliwe domeny - nic nie robi
     tab.errorUrl = null;
     tab.warnUrl = null;
-    tab.wc.loadURL(p.url).catch(() => {});
+    tab.wc.loadURL(cel).catch(() => {});
   },
 
   /* ---------------------------------------------------------------- find */
@@ -293,6 +301,16 @@ const handlers = {
     return extensions.describe(record);
   },
   'extensions.remove': async (win, p) => {
+    const rec = extensions.records().find((e) => e.id === p.id);
+    if (!rec) return extensions.list();
+    const nazwa = extensions.describe(rec).name || 'to rozszerzenie';
+    const { response } = await dialog.showMessageBox(win.win, {
+      type: 'question', buttons: ['Usuń', 'Anuluj'], defaultId: 1, cancelId: 1, noLink: true,
+      title: 'Usuwanie rozszerzenia',
+      message: `Usunąć „${nazwa}”?`,
+      detail: rec.unpacked ? 'Rozszerzenie zostanie odłączone. Pliki w jego folderze zostaną na dysku.' : ''
+    });
+    if (response !== 0) return extensions.list();
     extensions.remove(p.id);
     await reloadExtensions();
     W.broadcastAll('extensions:changed');
@@ -509,7 +527,8 @@ const handlers = {
       if (sciezka) shell.showItemInFolder(sciezka);
       return;
     }
-    if (url && sender && !sender.isDestroyed()) sender.downloadURL(url);
+    // Tak jak viewer.fetch: tylko adresy z sieci (bez file:// i innych schematow).
+    if (/^https?:\/\//i.test(url) && sender && !sender.isDestroyed()) sender.downloadURL(url);
   },
   /* Warstwa powiadomien w rogu okna (src/ui/toast.js, pokazToast w window.js). */
   'toast.gotowy': (win) => win.toastGotowy(),

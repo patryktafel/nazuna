@@ -90,4 +90,18 @@ function zewnetrznyProtokol(url) {
   try { return !PRZEGLADALNE_SCHEMATY.has(new URL(url).protocol); } catch (_) { return false; }
 }
 
-module.exports = { resolve, searchUrl, looksLikeUrl, prettyHost, hostOf, engine, bezpieczneZewnetrzne, zewnetrznyProtokol };
+/* Adres, ktory zwykla strona WWW chce otworzyc w nowej karcie/oknie
+   (window.open, target=_blank, menu "Otworz w nowej karcie"). Straz
+   will-navigate tego nie widzi, a karta z nazuna:// dostaje most do
+   przegladarki - wiec strony wewnetrzne, pliki lokalne i adresy Chromium
+   moze otwierac tylko inna strona nazuna://. */
+const ZAKAZANE_ZE_STRONY = /^\s*(nazuna|file|chrome|chrome-extension|devtools|view-source|javascript):/i;
+function dozwoloneZeStrony(cel, zrodlo) {
+  cel = String(cel || ''); zrodlo = String(zrodlo || '');
+  if (!ZAKAZANE_ZE_STRONY.test(cel)) return true;
+  if (/^nazuna:/i.test(zrodlo)) return true;
+  // Rozszerzenie otwierajace wlasne strony (np. opcje) z karty rozszerzenia.
+  return /^chrome-extension:/i.test(zrodlo) && /^\s*chrome-extension:/i.test(cel);
+}
+
+module.exports = { dozwoloneZeStrony, resolve, searchUrl, looksLikeUrl, prettyHost, hostOf, engine, bezpieczneZewnetrzne, zewnetrznyProtokol };
