@@ -14,6 +14,8 @@ class Store {
     this._timer = null;
     this._chain = Promise.resolve();
     this._kopia = !!opcje.kopia;
+    // opcje.opoznienieZapisu: co ile ms najczesciej zapisywac (domyslnie 300).
+    this._opoznienie = opcje.opoznienieZapisu || 300;
     /* Brak pliku (pierwsze uruchomienie) to co innego niz zepsuty plik. Kiedys
        oba przypadki po cichu dawaly wartosci domyslne, a pierwszy zapis
        nadpisywal zepsuty plik pustym stanem - np. po zaniku pradu wszystkie
@@ -70,7 +72,7 @@ class Store {
 
   save() {
     if (this._timer) return;
-    this._timer = setTimeout(() => this.flush(), 300);
+    this._timer = setTimeout(() => this.flush(), this._opoznienie);
   }
 
   /* Asynchroniczny zapis, zeby duzy plik (np. 30 tysiecy wpisow historii) nie

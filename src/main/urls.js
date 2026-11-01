@@ -17,6 +17,17 @@ const HOST_PORT_RE = /^[a-z0-9.-]+:\d{1,5}([/?#]|$)/i;
 const LOCALHOST_RE = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?([/?#]|$)/i;
 const IP_RE = /^\d{1,3}(\.\d{1,3}){3}(:\d+)?(\/|$)/;
 const DOMAIN_RE = /^[^\s/?#@]+\.[a-z]{2,}(:\d+)?([/?#].*)?$/i;
+/* Koncowki plikow, ktore nie sa prawdziwymi domenami. Wprost, bo biblioteka
+   tldts-experimental nie zna domen jednoczlonowych (dla .pl i .js zwraca to
+   samo). Zadnej z tych koncowek nie ma na liscie IANA; .md, .py, .rs, .sh,
+   .zip czy .mov sa tam, wiec nie moga tu trafic (point.md, docs.rs). */
+const KONCOWKI_PLIKOW = new Set(('html htm xhtml shtml js mjs cjs jsx ts tsx vue svelte css scss sass less '
+  + 'json xml yml yaml toml ini cfg conf log txt rtf csv tsv tmp bak lock markdown mdx pdf doc docx xls xlsx '
+  + 'ppt pptx odt ods odp epub tex exe msi dll bat cmd sys lnk jpg jpeg png gif bmp webp svg ico tif tiff heic psd '
+  + 'wav flac ogg aac wma opus avi mkv webm wmv flv rar tar gz tgz xz iso apk deb rpm dmg jar class '
+  + 'kt php rb go cpp hpp cxx cs lua swift sql db sqlite bin dat ipynb pyc pyw ttf otf woff eot').split(' '));
+/* .md, .py i .sh to prawdziwe domeny krajowe, wiec tylko typowe nazwy plikow. */
+const NAZWA_PLIKU_RE = /^((readme|changelog|license|contributing|todo)\.md|(main|setup)\.py|install\.sh)$/i;
 // Schematy, w ktorych spacja w tresci jest normalna (np. temat maila).
 const SCHEMATY_ZE_SPACJA = new Set(['mailto:', 'tel:', 'sms:', 'magnet:', 'callto:']);
 
@@ -29,11 +40,19 @@ function searchUrl(query) {
   return engine().search.replace('%s', encodeURIComponent(query));
 }
 
+/* "node.js" czy "index.html" konczyly sie bledem DNS zamiast wyszukiwania. Port
+   albo sciezka ("node.js/", "plik.txt:8080") to swiadomy adres, wiec zostaja. */
+function toNazwaPliku(value) {
+  const host = value.match(/^[^/?#]+/)[0];
+  if (/:\d+$/.test(host) || value[host.length] === '/') return false;
+  return NAZWA_PLIKU_RE.test(host) || KONCOWKI_PLIKOW.has(host.slice(host.lastIndexOf('.') + 1).toLowerCase());
+}
+
 function looksLikeUrl(input) {
   const value = input.trim();
   if (!value || /\s/.test(value)) return false;
   if (LOCALHOST_RE.test(value) || IP_RE.test(value)) return true;
-  return DOMAIN_RE.test(value);
+  return DOMAIN_RE.test(value) && !toNazwaPliku(value);
 }
 
 /** Zamienia to, co wpisal uzytkownik, na cos, co da sie wczytac. */

@@ -69,6 +69,8 @@ api.on('download-updated', (d) => {
 });
 api.on('download-started', () => load());
 api.on('download-done', () => load());
+// np. "Wyczysc dane przegladania" w Ustawieniach w innej karcie
+api.on('downloads:changed', () => load());
 
 async function load() { items = await api.invoke('downloads.list'); render(); }
 load();

@@ -25,8 +25,46 @@ function toggleRow(key, title, sub) {
   </div>`;
 }
 
+/* Pole tekstowe zapisujemy w trakcie pisania (a nie dopiero przy utracie
+   fokusu), bo Ctrl+W zamyka karte bez zadnego zdarzenia change. */
+const POLE_TEKSTOWE = 'input[data-key][type="text"], input[data-key]:not([type])';
+let doZapisu = null;
+
+function zapiszPoleZaChwile(node) {
+  if (doZapisu) clearTimeout(doZapisu.timer);
+  doZapisu = { key: node.dataset.key, value: node.value, timer: setTimeout(zapiszPoleTeraz, 400) };
+}
+
+// Bez render(): przebudowa strony w trakcie pisania tylko by migala. Stad tez
+// aktualizacja podpisu - rozgloszenie wlasnego zapisu nie ma nic przerysowywac.
+function zapiszPoleTeraz() {
+  if (!doZapisu) return;
+  const { key, value, timer } = doZapisu;
+  clearTimeout(timer);
+  doZapisu = null;
+  api.invoke('settings.set', { patch: { [key]: value } }).then((values) => {
+    cfg.values = values;
+    podpisRysunku = podpis();
+  }).catch(() => {});
+}
+
+window.addEventListener('pagehide', zapiszPoleTeraz);
+document.addEventListener('visibilitychange', () => { if (document.hidden) zapiszPoleTeraz(); });
+
+/* Stan, od ktorego zalezy wyglad strony. Odswiezenie z rozgloszenia przerysowuje
+   ja tylko wtedy, gdy ten stan naprawde sie zmienil. */
+let podpisRysunku = '';
+function podpis() {
+  return JSON.stringify([cfg.values, cfg.downloadDir, document.documentElement.dataset.motyw]);
+}
+
 function render() {
   const v = cfg.values;
+  // Przerysowanie (np. zmiana motywu systemu) nie moze skasowac tekstu, ktory ktos wlasnie pisze.
+  const akt = document.activeElement;
+  const pisane = akt && akt.matches(POLE_TEKSTOWE)
+    ? { key: akt.dataset.key, value: akt.value, start: akt.selectionStart, end: akt.selectionEnd }
+    : null;
   page.innerHTML = head('Ustawienia', 'settings') + `
     <div class="card" id="defaultBrowserCard">
       <h2>Domyślna przeglądarka</h2>
@@ -156,6 +194,14 @@ function render() {
       </div>
     </div>`;
 
+  podpisRysunku = podpis();
+  const pole = pisane && page.querySelector(`input[data-key="${pisane.key}"]`);
+  if (pole) {
+    pole.value = pisane.value;
+    pole.focus();
+    pole.setSelectionRange(pisane.start, pisane.end);
+  }
+
   page.querySelectorAll('[data-accent]').forEach((b) => b.addEventListener('click', () => save({ accent: b.dataset.accent })));
   document.getElementById('chooseDir').addEventListener('click', async () => {
     const dir = await api.invoke('downloads.chooseDir');
@@ -249,18 +295,31 @@ async function save(patch) {
 /* Przy okazji pobieramy swieze wartosci: zmiana mogla przyjsc spoza tej
    karty (np. pasek zakladek ukryty z menu albo druga karta ustawien), a
    render() ze starym cfg cofalby przelaczniki do poprzedniego stanu. */
-document.addEventListener('motyw:gotowy', () => { if (cfg && cfg.values) load(); });
+document.addEventListener('motyw:gotowy', async () => {
+  if (!cfg || !cfg.values) return;
+  cfg = await api.invoke('settings.get');
+  document.documentElement.dataset.accent = cfg.values.accent || 'violet';
+  if (podpis() !== podpisRysunku) render();
+});
 
 page.addEventListener('change', (e) => {
   const node = e.target.closest('[data-key]');
   if (!node) return;
+  if (node.matches(POLE_TEKSTOWE)) { zapiszPoleZaChwile(node); zapiszPoleTeraz(); return; }
   const key = node.dataset.key;
   const value = node.type === 'checkbox' ? node.checked : node.value;
   save({ [key]: value });
 });
 page.addEventListener('keydown', (e) => {
-  const node = e.target.closest('input[data-key][type="text"], input[data-key]:not([type])');
-  if (node && e.key === 'Enter') { save({ [node.dataset.key]: node.value }); toast('Zapisano'); }
+  const node = e.target.closest(POLE_TEKSTOWE);
+  if (node && e.key === 'Enter') { zapiszPoleZaChwile(node); zapiszPoleTeraz(); toast('Zapisano'); }
+  // Ctrl+W i Alt+F4 obsluguje proces glowny i niszczy karte od razu, bez pagehide; sam
+  // Ctrl lub Alt jeszcze tu dociera, wiec to ostatnia okazja na zapis tego, co czeka.
+  if (node && (e.key === 'Control' || e.key === 'Alt')) zapiszPoleTeraz();
+});
+page.addEventListener('input', (e) => {
+  const node = e.target.closest(POLE_TEKSTOWE);
+  if (node) zapiszPoleZaChwile(node);
 });
 
 function clearDialog() {

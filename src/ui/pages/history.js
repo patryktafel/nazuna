@@ -2,7 +2,9 @@ const page = document.getElementById('page');
 let items = [];
 let query = '';
 
-function render() {
+/* Sam naglowek z polem szukania rysujemy raz. Przebudowywanie pola przy kazdym
+   wyniku potrafilo cofnac kursor, gdy kolejna litera wpadla w trakcie zapytania. */
+function renderLista() {
   const grouped = [];
   let lastDay = null;
   for (const item of items) {
@@ -11,9 +13,7 @@ function render() {
     grouped.push(item);
   }
 
-  page.innerHTML = head('Historia', 'clock', `
-    <input class="field search" id="search" type="search" placeholder="Szukaj w historii" value="${esc(query)}">
-    <button class="btn danger" id="clear">Wyczyść historię</button>`) +
+  document.getElementById('lista').innerHTML =
     (items.length ? `<div class="card">${grouped.map((row) => row.header
       ? `<div class="section-date">${esc(row.header)}</div>`
       : `<div class="list-item" data-url="${esc(row.url)}">
@@ -26,6 +26,12 @@ function render() {
            <div class="acts"><button class="iconbtn danger" data-remove="${esc(row.url)}" title="Usuń">${iconSvg('trash')}</button></div>
          </div>`).join('')}</div>`
       : `<div class="empty">${iconSvg('clock')}<div>${query ? 'Nic nie pasuje do tego wyszukiwania.' : 'Historia jest pusta.'}</div></div>`);
+}
+
+function zbudujStrone() {
+  page.innerHTML = head('Historia', 'clock', `
+    <input class="field search" id="search" type="search" placeholder="Szukaj w historii">
+    <button class="btn danger" id="clear">Wyczyść historię</button>`) + '<div id="lista"></div>';
 
   const search = document.getElementById('search');
   search.addEventListener('input', () => {
@@ -37,7 +43,7 @@ function render() {
     if (!confirm('Usunąć całą historię przeglądania? Tego nie da się cofnąć.')) return;
     await api.invoke('history.clear', { since: 0 });
     items = [];
-    render();
+    renderLista();
     toast('Historia wyczyszczona');
   });
 }
@@ -57,19 +63,21 @@ page.addEventListener('click', async (e) => {
 });
 
 let timer = null;
-async function load() {
+let nrZapytania = 0;
+function load() {
   clearTimeout(timer);
+  const nr = ++nrZapytania;
   timer = setTimeout(async () => {
-    const focused = document.activeElement && document.activeElement.id === 'search';
-    const pos = focused ? document.activeElement.selectionStart : null;
-    items = await api.invoke('history.search', { query, limit: 500 });
-    render();
-    if (focused) {
-      const s = document.getElementById('search');
-      s.focus();
-      if (pos !== null) s.setSelectionRange(pos, pos);
-    }
+    const wynik = await api.invoke('history.search', { query, limit: 500 });
+    // odpowiedz na starsze zapytanie: uzytkownik pisze dalej, nie pokazujemy nieaktualnej listy
+    if (nr !== nrZapytania) return;
+    items = wynik;
+    renderLista();
   }, 90);
 }
 
+// np. "Wyczysc dane przegladania" w Ustawieniach w innej karcie
+api.on('history:changed', load);
+
+zbudujStrone();
 load();

@@ -8,6 +8,12 @@ on:
     tags:
       - 'v*'
 
+# GITHUB_TOKEN tylko do odczytu: to wystarcza do pobrania kodu, a publikacja
+# idzie osobnym tokenem RELEASE_TOKEN (nazuna-updates). Przejeta zaleznosc
+# uruchomiona przy budowaniu nie moze wiec nic wypchnac do tego repozytorium.
+permissions:
+  contents: read
+
 jobs:
   build:
     # NSIS (instalator dla Windows) trzeba budowac na prawdziwym Windowsie -
@@ -17,17 +23,22 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Pobierz kod
-        uses: actions/checkout@v4
+        # Akcje przypiete do konkretnego commita (przy tagu mozna po cichu
+        # podmienic kod). persist-credentials: false - token nie zostaje w
+        # .git/config, gdzie moglyby go przeczytac skrypty zaleznosci.
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Ustaw Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20'
 
       - name: Zainstaluj zaleznosci
         run: npm ci --no-audit --no-fund
 
-      # Ta sama komenda co w wydaj.bat: buduje liste blokera, pobiera silnik
+      # Te same kroki co w wydaj.bat (droga awaryjna): buduje liste blokera, pobiera silnik
       # z obsluga DRM, sklada instalator i publikuje go na nazuna-updates.
       # RELEASE_TOKEN to sekret repozytorium (Settings -> Secrets and
       # variables -> Actions) z dostepem do zapisu w nazuna-updates.

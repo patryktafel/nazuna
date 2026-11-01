@@ -4,6 +4,7 @@ const code = params.get('code') || '';
 const description = params.get('description') || '';
 
 const REASONS = {
+  'awaria': ['Ta karta uległa awarii', 'Kliknij „Spróbuj ponownie”, żeby wczytać ją od nowa.'],
   '-105': ['Nie znaleziono tej domeny', 'Sprawdź, czy adres nie ma literówki.'],
   '-106': ['Brak połączenia z internetem', 'Wygląda na to, ze komputer nie ma dostepu do sieci.'],
   '-109': ['Serwer nie odpowiada', 'Adres jest poprawny, ale nikt pod nim nie odbiera.'],

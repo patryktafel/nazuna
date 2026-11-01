@@ -18,7 +18,10 @@ const el = {
   next: document.getElementById('next'),
   zoomIn: document.getElementById('zoomIn'),
   zoomOut: document.getElementById('zoomOut'),
-  download: document.getElementById('download')
+  download: document.getElementById('download'),
+  haslo: document.getElementById('haslo'),
+  hasloBlad: document.getElementById('hasloBlad'),
+  hasloPole: document.getElementById('hasloPole')
 };
 
 el.prev.innerHTML = iconSvg('chevronUp');
@@ -47,6 +50,10 @@ let scale = 1;
 const MIN_SCALE = 0.4, MAX_SCALE = 3.5, KROK = 0.15;
 let pdfDoc = null;
 const pageEntries = [];
+/* Warstwa tekstu powstaje w tle dla calego dokumentu, bo Ctrl+F widzi tylko to,
+   co jest w DOM. Przy bardzo dlugich plikach dalsze strony dostaja ja dopiero
+   przy przewinieciu, zeby karta nie puchla. */
+const MAX_STRON_TEKSTU_W_TLE = 500;
 
 function ustawZoomLabel() { el.zoomLabel.textContent = `${Math.round(scale * 100)}%`; }
 
@@ -54,11 +61,115 @@ function ustawRozmiarKontenera(entry) {
   const viewport = entry.page.getViewport({ scale });
   entry.container.style.width = `${Math.ceil(viewport.width)}px`;
   entry.container.style.height = `${Math.ceil(viewport.height)}px`;
+  // Warstwa tekstu sama skaluje sie z tej zmiennej, wiec zoom nie musi jej budowac od nowa.
+  // userUnit: viewport.scale go nie zawiera, a rozmiar strony tak (duze formaty, np. rysunki).
+  entry.container.style.setProperty('--total-scale-factor', String(viewport.scale * viewport.userUnit));
+}
+
+/* Skok do miejsca w tym samym dokumencie (spis tresci, przypisy). */
+async function idzDoCelu(cel) {
+  try {
+    const d = typeof cel === 'string' ? await pdfDoc.getDestination(cel) : cel;
+    if (!Array.isArray(d)) return;
+    const indeks = d[0] && typeof d[0] === 'object' ? await pdfDoc.getPageIndex(d[0]) : d[0];
+    const entry = pageEntries[indeks];
+    if (!entry) return;
+    const tryb = d[1] && d[1].name;
+    const gora = tryb === 'XYZ' ? d[3] : (tryb === 'FitH' || tryb === 'FitBH') ? d[2] : null;
+    const odGoryStrony = typeof gora === 'number'
+      ? Math.max(0, entry.page.getViewport({ scale }).convertToViewportPoint(0, gora)[1])
+      : 0;
+    const roznica = entry.container.getBoundingClientRect().top - el.scroll.getBoundingClientRect().top;
+    el.scroll.scrollBy({ top: roznica + odGoryStrony });
+  } catch (err) {
+    console.warn('[pdf] link wewnetrzny', err && err.message);
+  }
+}
+
+/* Same linki zamiast calego AnnotationLayer z pdf.js: tamten wnosi formularze,
+   skrypty i zalaczniki, ktorych podglad nie potrzebuje. Plik PDF jest obcy, a ta
+   strona ma most do przegladarki, wiec przepuszczamy tylko http(s) i mailto. */
+async function dodajLinki(entry) {
+  const adnotacje = await entry.page.getAnnotations({ intent: 'display' });
+  const linki = adnotacje.filter((a) => a.subtype === 'Link');
+  if (!linki.length) return;
+  const v = entry.page.getViewport({ scale: 1 });
+  const warstwa = document.createElement('div');
+  warstwa.className = 'warstwaLinkow';
+  for (const a of linki) {
+    const link = document.createElement('a');
+    if (a.url && /^(https?:|mailto:)/i.test(a.url)) {
+      link.href = a.url;
+      link.title = a.url;   // cel widoczny przed kliknieciem: tekst linku w PDF moze klamac
+      link.rel = 'noopener noreferrer';
+      if (/^http/i.test(a.url)) link.target = '_blank';   // PDF zostaje otwarty w tej karcie
+    } else if (a.dest) {
+      link.href = '#';
+      link.addEventListener('click', (e) => { e.preventDefault(); idzDoCelu(a.dest); });
+    } else {
+      continue;
+    }
+    const [x1, y1] = v.convertToViewportPoint(a.rect[0], a.rect[1]);
+    const [x2, y2] = v.convertToViewportPoint(a.rect[2], a.rect[3]);
+    link.style.left = `${(100 * Math.min(x1, x2) / v.width).toFixed(3)}%`;
+    link.style.top = `${(100 * Math.min(y1, y2) / v.height).toFixed(3)}%`;
+    link.style.width = `${(100 * Math.abs(x2 - x1) / v.width).toFixed(3)}%`;
+    link.style.height = `${(100 * Math.abs(y2 - y1) / v.height).toFixed(3)}%`;
+    warstwa.appendChild(link);
+  }
+  if (warstwa.childElementCount) entry.container.appendChild(warstwa);
+}
+
+async function dodajTekst(entry) {
+  const warstwa = document.createElement('div');
+  warstwa.className = 'textLayer';
+  entry.container.appendChild(warstwa);
+  const tekst = new pdfjsLib.TextLayer({
+    textContentSource: entry.page.streamTextContent(),
+    container: warstwa,
+    viewport: entry.page.getViewport({ scale })
+  });
+  await tekst.render();
+  // Bez tego elementu ciagniecie zaznaczenia przez pusty obszar strony skacze
+  // na koniec dokumentu (rozwiazanie z przegladarki pdf.js).
+  const koniec = document.createElement('div');
+  koniec.className = 'endOfContent';
+  warstwa.appendChild(koniec);
+  warstwa.addEventListener('pointerdown', () => warstwa.classList.add('selecting'));
+}
+document.addEventListener('pointerup', () => {
+  for (const w of document.querySelectorAll('.textLayer.selecting')) w.classList.remove('selecting');
+});
+
+/* Raz na strone: blad w tekscie czy linkach nie moze zepsuc samego obrazu strony. */
+function zbudujWarstwy(entry) {
+  if (!entry.warstwy) {
+    entry.warstwy = (async () => {
+      try { await dodajTekst(entry); } catch (err) { console.warn('[pdf] tekst strony', entry.pageNum, err && err.message); }
+      // Linki po tekscie, zeby lezaly nad nim i dalo sie w nie kliknac.
+      try { await dodajLinki(entry); } catch (err) { console.warn('[pdf] linki strony', entry.pageNum, err && err.message); }
+    })();
+  }
+  return entry.warstwy;
+}
+
+async function warstwyWTle() {
+  const ile = Math.min(pageEntries.length, MAX_STRON_TEKSTU_W_TLE);
+  for (let i = 0; i < ile; i++) {
+    await zbudujWarstwy(pageEntries[i]);
+    await new Promise((r) => requestIdleCallback(r, { timeout: 300 }));
+  }
 }
 
 async function renderPage(entry) {
+  zbudujWarstwy(entry);
   if (entry.rendered || entry.rendering) return;
   entry.rendering = true;
+  /* Zoom w trakcie rysowania: renderPage z ustawZoom widzi jeszcze "rendering"
+     i wychodzi, wiec po przerwaniu trzeba narysowac strone od nowa. Inaczej
+     zostawala biala kartka w starym rozmiarze pod warstwa tekstu w nowym. */
+  const skalaRysowania = scale;
+  let ponow = false;
   try {
     const dpr = window.devicePixelRatio || 1;
     const viewport = entry.page.getViewport({ scale: scale * dpr });
@@ -69,13 +180,15 @@ async function renderPage(entry) {
     const ctx = entry.canvas.getContext('2d');
     entry.renderTask = entry.page.render({ canvasContext: ctx, viewport });
     await entry.renderTask.promise;
-    entry.rendered = true;
+    if (skalaRysowania === scale) entry.rendered = true; else ponow = true;
   } catch (err) {
-    if (!err || err.name !== 'RenderingCancelledException') console.warn('[pdf] strona', entry.pageNum, err && err.message);
+    if (err && err.name === 'RenderingCancelledException') ponow = true;
+    else console.warn('[pdf] strona', entry.pageNum, err && err.message);
   } finally {
     entry.rendering = false;
     entry.renderTask = null;
   }
+  if (ponow) przerenderujWidoczne();
 }
 
 function przerenderujWidoczne() {
@@ -130,6 +243,44 @@ el.zoomOut.addEventListener('click', () => ustawZoom(scale - KROK));
 
 el.download.addEventListener('click', () => { if (src) api.send('viewer.download', { url: src }); });
 
+/* Podglad pobiera plik drugi raz (patrz podmienNaPodglad w session.js), a link
+   jednorazowy albo wygasly juz wtedy nie odda tresci. Mowimy wiec, co sie
+   stalo, i dajemy zwykle pobranie jako druga szanse. */
+function pokazBladPobierania(tekst) {
+  el.status.textContent = tekst;
+  if (!/^https?:/i.test(src)) return;
+  const przycisk = document.createElement('button');
+  przycisk.className = 'btn';
+  przycisk.textContent = 'Pobierz oryginał';
+  przycisk.addEventListener('click', () => api.send('viewer.download', { url: src }));
+  el.status.append(document.createElement('br'), przycisk);
+}
+function opisBledu(resp) {
+  if (resp && [401, 403, 404, 410].includes(resp.status)) {
+    return `Serwer nie oddał pliku drugi raz (kod ${resp.status}). Link mógł być jednorazowy, wygasnąć albo wymagać zalogowania.`;
+  }
+  return `Nie udało się otworzyć pliku${resp && resp.error ? ' (' + resp.error + ')' : resp && resp.status ? ' (kod ' + resp.status + ')' : ''}.`;
+}
+
+/* pdf.js sam wola te funkcje, gdy plik wymaga hasla, i po kazdym blednym hasle.
+   Hasla nigdzie nie zapisujemy: idzie tylko do watku pdf.js. */
+function poprosOHaslo(podajHaslo, powod) {
+  el.status.textContent = '';
+  el.hasloBlad.textContent = powod === pdfjsLib.PasswordResponses.INCORRECT_PASSWORD ? 'Błędne hasło. Spróbuj jeszcze raz.' : '';
+  el.haslo.hidden = false;
+  el.hasloPole.value = '';
+  el.hasloPole.focus();
+  el.haslo.onsubmit = (e) => {
+    e.preventDefault();
+    const haslo = el.hasloPole.value;
+    if (!haslo) return;
+    el.hasloPole.value = '';
+    el.haslo.hidden = true;
+    el.status.textContent = 'Wczytuję dokument...';
+    podajHaslo(haslo);
+  };
+}
+
 async function start() {
   if (!src) { el.status.textContent = 'Brak adresu pliku do otwarcia.'; el.toolbar.style.visibility = 'hidden'; return; }
   el.status.textContent = 'Pobieram plik...';
@@ -137,24 +288,32 @@ async function start() {
   try {
     resp = await api.invoke('viewer.fetch', { url: src });
   } catch (err) {
-    el.status.textContent = `Nie udało się pobrać pliku: ${err.message}`;
+    pokazBladPobierania(`Nie udało się pobrać pliku: ${err.message}`);
     return;
   }
   if (!resp || !resp.ok) {
-    el.status.textContent = `Nie udało się otworzyć pliku${resp && resp.error ? ' (' + resp.error + ')' : resp && resp.status ? ' (kod ' + resp.status + ')' : ''}.`;
+    pokazBladPobierania(opisBledu(resp));
     return;
   }
   el.status.textContent = 'Wczytuję dokument...';
   try {
-    pdfDoc = await pdfjsLib.getDocument({
+    const zadanie = pdfjsLib.getDocument({
       data: resp.bytes,
       cMapUrl: 'nazuna://ui/vendor/pdfjs/cmaps/',
       cMapPacked: true,
       standardFontDataUrl: 'nazuna://ui/vendor/pdfjs/standard_fonts/',
       isEvalSupported: false
-    }).promise;
+    });
+    zadanie.onPassword = poprosOHaslo;
+    pdfDoc = await zadanie.promise;
   } catch (err) {
-    el.status.textContent = `To nie jest poprawny plik PDF (${err.message}).`;
+    // Pierwsza odpowiedz byla PDF-em, a teraz serwer odsyla strone WWW: to
+    // zwykle "link wygasl" albo logowanie, a nie uszkodzony plik.
+    if (/text\/html/i.test(String(resp.contentType || ''))) {
+      pokazBladPobierania('Serwer zamiast pliku PDF odesłał stronę WWW. Link mógł być jednorazowy, wygasnąć albo wymagać zalogowania.');
+    } else {
+      el.status.textContent = `To nie jest poprawny plik PDF (${err.message}).`;
+    }
     return;
   }
   el.status.textContent = '';
@@ -173,6 +332,7 @@ async function start() {
   ustawZoomLabel();
   el.pageInfo.textContent = `1 / ${pdfDoc.numPages}`;
   przerenderujWidoczne();
+  warstwyWTle();
 }
 
 start();

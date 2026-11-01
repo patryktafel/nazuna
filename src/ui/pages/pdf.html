@@ -29,9 +29,53 @@
   .tbtn .icon { width: 17px; height: 17px; }
   #scroll { position: absolute; top: 46px; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; }
   #pages { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 24px 16px 60px; }
-  .pdf-page { background: #fff; box-shadow: var(--shadow-float); border-radius: 2px; overflow: hidden; }
+  .pdf-page {
+    position: relative; background: #fff; box-shadow: var(--shadow-float); border-radius: 2px; overflow: hidden;
+    --total-scale-factor: 1; --scale-round-x: 1px; --scale-round-y: 1px;
+  }
   .pdf-page canvas { display: block; }
-  #status { position: absolute; top: 46%; left: 0; right: 0; text-align: center; color: var(--text-faint); font-size: 13px; }
+  /* Warstwa tekstu z pdf.js (web/pdf_viewer.css): przezroczyste napisy nad
+     canvasem, dzieki ktorym dziala zaznaczanie, kopiowanie i Ctrl+F. Mnozenie
+     kolorow, zeby podswietlenie wyszukiwania nie zakrywalo liter dokumentu. */
+  .textLayer {
+    position: absolute; inset: 0; overflow: clip; line-height: 1; text-align: initial; z-index: 0;
+    transform-origin: 0 0; letter-spacing: normal; word-spacing: normal; forced-color-adjust: none;
+    color-scheme: only light; mix-blend-mode: multiply;
+    --min-font-size: 1;
+    --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+    --min-font-size-inv: calc(1 / var(--min-font-size));
+  }
+  .textLayer :is(span, br) {
+    color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; user-select: text;
+  }
+  .textLayer > :not(.endOfContent) {
+    z-index: 1;
+    --font-height: 0;
+    font-size: calc(var(--text-scale-factor) * var(--font-height));
+    --scale-x: 1;
+    --rotate: 0deg;
+    transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+  }
+  .textLayer ::selection { background: rgba(0, 0, 255, .25); color: transparent; }
+  .textLayer br::selection { background: transparent; }
+  .textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; user-select: none; }
+  .textLayer.selecting .endOfContent { top: 0; }
+  .textLayer[data-main-rotation="90"] { transform: rotate(90deg) translateY(-100%); }
+  .textLayer[data-main-rotation="180"] { transform: rotate(180deg) translate(-100%, -100%); }
+  .textLayer[data-main-rotation="270"] { transform: rotate(270deg) translateX(-100%); }
+  .warstwaLinkow { position: absolute; inset: 0; pointer-events: none; }
+  .warstwaLinkow a { position: absolute; pointer-events: auto; cursor: pointer; border-radius: 2px; }
+  .warstwaLinkow a:hover { background: rgba(0, 90, 255, .14); }
+  #status { position: absolute; top: 46%; left: 0; right: 0; text-align: center; color: var(--text-faint); font-size: 13px; padding: 0 24px; }
+  #status .btn { margin-top: 12px; }
+  #haslo { position: absolute; top: 40%; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; color: var(--text-dim); }
+  #haslo[hidden] { display: none; }
+  #hasloBlad { color: var(--danger); }
+  #hasloBlad:empty { display: none; }
+  #hasloPole {
+    width: 240px; height: 32px; padding: 0 10px; border-radius: 8px; outline: none;
+    background: var(--bg-raised); border: 1px solid var(--border-strong); color: var(--text);
+  }
 </style>
 </head>
 <body>
@@ -50,6 +94,12 @@
   </div>
   <div id="scroll"><div id="pages"></div></div>
   <div id="status"></div>
+  <form id="haslo" hidden>
+    <div>Ten plik PDF jest chroniony hasłem.</div>
+    <div id="hasloBlad"></div>
+    <input id="hasloPole" type="password" autocomplete="off" spellcheck="false" placeholder="Hasło" aria-label="Hasło do pliku PDF">
+    <button class="btn primary" type="submit">Otwórz</button>
+  </form>
   <script src="nazuna://ui/icons.js"></script>
   <script type="module" src="pdf.js"></script>
 </body>

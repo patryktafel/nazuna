@@ -67,7 +67,10 @@ function init() {
   // kopia: .bak z ostatnia dobra wersja, gdyby plik zepsul sie przy zaniku pradu (store.js).
   settings = new Store(path.join(dir, 'settings.json'), DEFAULT_SETTINGS, { kopia: true });
   bookmarks = new Store(path.join(dir, 'bookmarks.json'), { items: [], nextId: 1 }, { kopia: true });
-  history = new Store(path.join(dir, 'history.json'), { items: [] });
+  /* Historia zapisuje sie cala (do 30 tysiecy wpisow, kilka MB), a kazda zmiana
+     strony prosi o zapis. Timer sie nie przesuwa, wiec wychodzi najwyzej jeden
+     zapis na 5 s; before-quit robi flush, a przy awarii ginie najwyzej te 5 s. */
+  history = new Store(path.join(dir, 'history.json'), { items: [] }, { opoznienieZapisu: 5000 });
   downloads = new Store(path.join(dir, 'downloads.json'), { items: [] });
   extensionsStore = new Store(path.join(dir, 'extensions.json'), { installed: [] }, { kopia: true });
   siteStore = new Store(path.join(dir, 'sites.json'), { adblockOff: [], zoom: {}, permissions: {}, skroty: [], skrotyUkryte: [], httpZaakceptowane: [], sleepExempt: [] });
@@ -82,7 +85,8 @@ const HISTORY_CAP = 30000;
    zapis to JSON.stringify calej historii (kilka MB) w procesie glownym.
    Timer sie nie przesuwa, wiec przy ciaglym miganiu wychodzi najwyzej jeden
    zapis na TYTUL_ZAPIS_MS. Przy zamknieciu before-quit i tak robi flush
-   (z danych w pamieci), wiec nic nie ginie; przy awarii najwyzej kilka s tytulow. */
+   (z danych w pamieci), wiec nic nie ginie; przy awarii najwyzej kilkanascie s
+   tytulow (ten timer plus opoznienie zapisu historii z init). */
 const TYTUL_ZAPIS_MS = 10000;
 let tytulTimer = null;
 function zapiszTytulyPozniej() {
@@ -173,7 +177,8 @@ function clearHistory(sinceMs) {
 function removeHistory(urls) {
   const set = new Set(urls);
   history.data.items = history.data.items.filter((i) => !set.has(i.url));
-  zapiszHistorie();
+  // Od razu, jak przy czyszczeniu: usuniety adres nie ma czekac na dysku na zapis.
+  zapiszHistorie(true);
   powiadomOUsunieciu();
 }
 

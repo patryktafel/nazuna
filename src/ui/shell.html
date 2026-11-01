@@ -14,7 +14,7 @@
            renderTabs/miejsceWstawienia), zeby zawsze stac tuz przy ostatniej
            karcie, a nie przy prawej krawedzi calego, elastycznego pudelka
            #tabs, ktore przy malej liczbie kart bywa od nich szersze. -->
-      <div class="tabs" id="tabs">
+      <div class="tabs" id="tabs" role="tablist" aria-label="Karty">
         <button class="tab-add" id="newtab" title="Nowa karta (Ctrl+T)"></button>
       </div>
       <div class="strip-spacer"></div>
@@ -36,29 +36,29 @@
         <span class="lock" id="lock"></span>
         <span class="lock-label" id="lockLabel" hidden>Niezabezpieczona</span>
         <div class="adres-pole">
-          <input id="address" type="text" spellcheck="false" autocomplete="off" placeholder="Wpisz adres albo wyszukaj">
+          <input id="address" type="text" spellcheck="false" autocomplete="off" placeholder="Wpisz adres albo wyszukaj" role="combobox" aria-label="Adres strony lub wyszukiwanie" aria-autocomplete="list" aria-expanded="false" aria-controls="omniLista">
           <div class="adres-widok" id="addressView" aria-hidden="true"></div>
         </div>
         <div class="omni-actions">
           <button class="omni-btn" id="zoomChip" hidden title="Powiększenie"></button>
-          <button class="omni-btn" id="shield" title="Bloker reklam"></button>
+          <button class="omni-btn" id="shield" title="Bloker reklam" aria-haspopup="true"></button>
           <button class="omni-btn" id="webstoreInstall" hidden title="Zainstaluj to rozszerzenie w Nazunie"></button>
           <button class="omni-btn" id="star" title="Dodaj do zakładek (Ctrl+D)"></button>
         </div>
       </div>
 
       <div class="ext-slot" id="extSlot" style="display:flex;gap:2px"></div>
-      <button class="tool" id="bookmarksBtn" title="Zakładki"></button>
-      <button class="tool" id="downloads" title="Pobrane (Ctrl+J)"></button>
-      <button class="tool" id="menu" title="Menu"></button>
+      <button class="tool" id="bookmarksBtn" title="Zakładki" aria-haspopup="true"></button>
+      <button class="tool" id="downloads" title="Pobrane (Ctrl+J)" aria-haspopup="true"></button>
+      <button class="tool" id="menu" title="Menu" aria-haspopup="true"></button>
     </div>
 
-    <div class="bookmarksbar" id="bookmarksbar" hidden></div>
+    <div class="bookmarksbar" id="bookmarksbar" role="toolbar" aria-label="Pasek zakładek" hidden></div>
 
     <div class="findbar" id="findbar" hidden>
       <div class="wrap">
-        <input id="findInput" type="text" placeholder="Znajdź na stronie" spellcheck="false">
-        <span class="count" id="findCount"></span>
+        <input id="findInput" type="text" placeholder="Znajdź na stronie" aria-label="Znajdź na stronie" spellcheck="false">
+        <span class="count" id="findCount" role="status"></span>
         <button class="omni-btn" id="findPrev" title="Poprzedni"></button>
         <button class="omni-btn" id="findNext" title="Następny"></button>
         <button class="omni-btn" id="findClose" title="Zamknij (Esc)"></button>

@@ -1,6 +1,31 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.94 - 1 listopada 2026
+-------------------------
+
+Poprawki z przegladu: drobne usterki, podglad PDF, budowanie
+
+- Podglad PDF: zaznaczanie i kopiowanie tekstu, szukanie (Ctrl+F), klikalne
+  linki, zrozumialy komunikat przy pliku z haslem.
+- Pasek: zakladki i rozszerzenia, ktore sie nie mieszcza, sa pod przyciskiem
+  ">>"; pole adresu nie kurczy sie do zera; karty i menu dzialaja z klawiatury
+  i maja opisy dla czytnikow ekranu; akcent w jasnym motywie jest czytelny.
+- Karta po awarii pokazuje strone bledu z przyciskiem "Sprobuj ponownie".
+- Po restarcie wraca aktywna karta kazdego okna oraz podglady PDF i tekstu z
+  sieci. Nowe okno z menu ikony otwiera sie przesuniete wzgledem starego.
+- Kazde okno prywatne ma wlasny falszywy odcisk przegladarki.
+- Wpisanie w pasek "node.js", "index.html" czy "plik.txt" szuka zamiast
+  probowac otworzyc adres. Historia zapisuje sie na dysk rzadziej.
+- Strony: otwarta Historia i Pobrane odswiezaja sie po wyczyszczeniu danych,
+  strona startowa zapisuje sie w trakcie pisania, dlugie adresy na stronach
+  bledu mieszcza sie na ekranie, szukanie w historii nie przestawia kursora.
+- Przy wlaczonej blokadzie obcych ciasteczek skrypty w obcych ramkach tez ich
+  nie widza (poza Service Workerami).
+- Budowanie: sprawdzanie sumy kontrolnej silnika, mniejsze uprawnienia workflow,
+  przypiete akcje, nowsza biblioteka zip, bezpieczniejsze polecenia w rejestrze
+  i skrypt wydan bez niepodpisanych instalatorow.
+
 0.1.93 - 1 listopada 2026
 -------------------------
 

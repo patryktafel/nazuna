@@ -76,6 +76,25 @@ el.copy.addEventListener('click', () => {
 });
 el.download.addEventListener('click', () => { if (src) api.send('viewer.download', { url: src }); });
 
+/* Podglad pobiera plik drugi raz (patrz podmienNaPodglad w session.js), a link
+   jednorazowy albo wygasly juz wtedy nie odda tresci. Mowimy wiec, co sie
+   stalo, i dajemy zwykle pobranie jako druga szanse. */
+function pokazBladPobierania(tekst) {
+  el.status.textContent = tekst;
+  if (!/^https?:/i.test(src)) return;
+  const przycisk = document.createElement('button');
+  przycisk.className = 'btn';
+  przycisk.textContent = 'Pobierz oryginał';
+  przycisk.addEventListener('click', () => api.send('viewer.download', { url: src }));
+  el.status.append(document.createElement('br'), przycisk);
+}
+function opisBledu(resp) {
+  if (resp && [401, 403, 404, 410].includes(resp.status)) {
+    return `Serwer nie oddał pliku drugi raz (kod ${resp.status}). Link mógł być jednorazowy, wygasnąć albo wymagać zalogowania.`;
+  }
+  return `Nie udało się otworzyć pliku${resp && resp.error ? ' (' + resp.error + ')' : resp && resp.status ? ' (kod ' + resp.status + ')' : ''}.`;
+}
+
 async function start() {
   if (!src) { el.status.textContent = 'Brak adresu pliku do otwarcia.'; return; }
   el.status.textContent = 'Pobieram...';
@@ -83,11 +102,17 @@ async function start() {
   try {
     resp = await api.invoke('viewer.fetch', { url: src });
   } catch (err) {
-    el.status.textContent = `Nie udało się pobrać pliku: ${err.message}`;
+    pokazBladPobierania(`Nie udało się pobrać pliku: ${err.message}`);
     return;
   }
   if (!resp || !resp.ok) {
-    el.status.textContent = `Nie udało się otworzyć pliku${resp && resp.error ? ' (' + resp.error + ')' : resp && resp.status ? ' (kod ' + resp.status + ')' : ''}.`;
+    pokazBladPobierania(opisBledu(resp));
+    return;
+  }
+  // Pierwsza odpowiedz byla tekstem, a teraz serwer odsyla strone WWW: to
+  // zwykle "link wygasl" albo logowanie, a nie tresc pliku.
+  if (/text\/html/i.test(String(resp.contentType || ''))) {
+    pokazBladPobierania('Serwer zamiast pliku odesłał stronę WWW. Link mógł być jednorazowy, wygasnąć albo wymagać zalogowania.');
     return;
   }
   // Kodowanie z naglowka serwera (np. windows-1250 w starszych polskich

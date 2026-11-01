@@ -118,8 +118,8 @@ async function clearBrowsingData(win, options) {
     if (opts.cookies) await ses.clearStorageData({ storages: ['cookies'] }).catch(() => {});
     if (opts.storage) await ses.clearStorageData({ storages: ['localstorage', 'indexdb', 'websql', 'cachestorage', 'serviceworkers', 'shadercache'] }).catch(() => {});
   }
-  if (opts.history) { data.clearHistory(0); diagnostics.wyczysc(); }
-  if (opts.downloads) downloads.clearFinished();
+  if (opts.history) { data.clearHistory(0); diagnostics.wyczysc(); W.broadcastAll('history:changed'); }
+  if (opts.downloads) { downloads.clearFinished(); W.broadcastAll('downloads:changed'); }
   return true;
 }
 
@@ -230,6 +230,8 @@ const handlers = {
   'ui.expand': (win) => win.setExpanded(true),
   'ui.collapse': (win) => { if (!win.popover) win.setExpanded(false); },
   'ui.popover': (win, p) => { win.popover = p.name || null; win.setExpanded(!!p.name); },
+  // Esc w panelu otwartym z klawiatury: fokus wraca na przycisk paska, nie na strone.
+  'ui.fokusPaska': (win) => { try { win.shell.focus(); } catch (_) {} },
   'menu.action': (win, p) => menuAction(win, p.id, p.value),
   'context.action': (win, p) => W.runContextAction(win, p.id),
   'permission.answer': (win, p) => win.resolvePermission(p.key, p.answer, p.remember),
@@ -281,7 +283,12 @@ const handlers = {
   'downloads.control': (win, p) => downloads.control(p.id, p.action, win.isPrivate),
   'downloads.clear': (win) => downloads.clearFinished(win.isPrivate),
   'downloads.panel': (win) => win.toggleDownloadsPanel(),
-  'downloads.chooseDir': (win) => downloads.chooseDir(win.win),
+  'downloads.chooseDir': async (win) => {
+    const dir = await downloads.chooseDir(win.win);
+    // Otwarte Ustawienia pokazuja ten folder, wiec musza sie odswiezyc.
+    if (dir) W.broadcastAll('settings:changed');
+    return dir;
+  },
   'downloads.dir': () => downloads.defaultDir(),
 
   /* ---------------------------------------------------------- extensions */
@@ -438,7 +445,7 @@ const handlers = {
      sesja to nie preferencje, wiec zostaja. */
   'settings.reset': () => {
     const zostaw = {};
-    for (const klucz of ['windowBounds', 'windowMaximized', 'restoreSession', 'restoreSessionOkna']) {
+    for (const klucz of ['windowBounds', 'windowMaximized', 'restoreSession', 'restoreSessionOkna', 'restoreSessionAktywne']) {
       if (data.settings.data[klucz] !== undefined) zostaw[klucz] = data.settings.data[klucz];
     }
     data.settings.data = Object.assign(JSON.parse(JSON.stringify(data.DEFAULT_SETTINGS)), zostaw);

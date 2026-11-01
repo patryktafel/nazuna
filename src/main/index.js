@@ -197,7 +197,7 @@ if (!gotLock) {
     adblock.onCountChanged((webContentsId) => {
       for (const win of W.allWindows()) {
         const active = win.activeTab();
-        if (active && !active.wc.isDestroyed() && active.wc.id === webContentsId) win.scheduleSync();
+        if (active && !active.wc.isDestroyed() && active.wc.id === webContentsId) win.scheduleSyncLicznika();
       }
     });
 
@@ -276,18 +276,24 @@ if (!gotLock) {
       // Lista okien niezgodna z plaska (np. zapis starszej wersji po niej) - wierzymy plaskiej.
       if (poprawne.length && JSON.stringify(poprawne[0]) !== JSON.stringify(plaska)) poprawne = [];
       const saved = poprawne.length ? poprawne[0] : plaska;
+      const zapisaneAktywne = data.settings.get('restoreSessionAktywne', null);
+      const aktywnaOkna = (i, lista) => {
+        const n = Array.isArray(zapisaneAktywne) ? zapisaneAktywne[i] : 0;
+        return Number.isInteger(n) && n >= 0 && n < lista.length ? n : 0;
+      };
       if (Array.isArray(saved) && saved.length) {
         initial = [...saved, ...startUrls];
-        aktywna = startUrls.length ? saved.length : 0;
+        // Karta, na ktorej skonczono. Zapis plaski ze starszych wersji nie ma tej informacji.
+        aktywna = startUrls.length ? saved.length : (poprawne.length ? aktywnaOkna(0, saved) : 0);
       }
-      dodatkoweOkna = poprawne.slice(1);
+      dodatkoweOkna = poprawne.slice(1).map((urls, i) => ({ urls, aktywna: aktywnaOkna(i + 1, urls) }));
     }
     if (!initial.length && startup === 'homepage') initial = [data.settings.get('homepage', W.NEW_TAB)];
 
     starttrace.znacznik('przed createWindow');
     /* Pozostale okna z zapisanej sesji tworzymy przed glownym, zeby to z
        linkiem (albo ostatnio aktywne) pokazalo sie na koncu, na wierzchu. */
-    if (!tylkoPrywatne) for (const lista of dodatkoweOkna) W.createWindow({ urls: lista });
+    if (!tylkoPrywatne) for (const okno of dodatkoweOkna) W.createWindow(okno);
     W.createWindow(tylkoPrywatne ? { isPrivate: true } : { urls: initial, aktywna });
     // Linki nie trafiaja do okna prywatnego - dostaja jedno zwykle okno.
     if (tylkoPrywatne && linkiZKolejki.length) W.createWindow({ urls: linkiZKolejki });
@@ -366,7 +372,8 @@ if (!gotLock) {
       data.historyStore.flush(),
       data.bookmarksStore.flush(),
       data.downloadsStore.flush(),
-      data.siteStore.flush()
+      data.siteStore.flush(),
+      data.extensionsStore.flush()
     ]).finally(() => app.quit());
   });
 

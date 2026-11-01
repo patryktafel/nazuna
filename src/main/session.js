@@ -95,7 +95,7 @@ function ustawDomeneKarty(id, url) {
   const d = getDomain(String(url || '')) || '';
   if (d) domenyKart.set(id, d); else domenyKart.delete(id);
 }
-function zapomnijKarte(id) { domenyKart.delete(id); }
+function zapomnijKarte(id) { domenyKart.delete(id); zapomnijRefererKarty(id); }
 
 /* Wyjatki od blokady obcych ciasteczek, przyznane przez uzytkownika w okienku
    "Dostep do danych witryny". Klucz to PARA: strona w pasku adresu i domena
@@ -117,6 +117,31 @@ function wyjatkiDlaSesji(ses) {
 function kluczPary(strona, osadzona) { return `${strona}>${osadzona}`; }
 function dodajWyjatek(ses, strona, osadzona) {
   if (strona && osadzona) wyjatkiDlaSesji(ses).add(kluczPary(strona, osadzona));
+}
+/* Flagi dla preloadu web.js: blokada document.cookie/cookieStore w obcych
+   ramkach plus pary ze zgoda storage-access tej sesji. Przy wylaczonym
+   ustawieniu pusto, wiec nic sie nie zmienia. */
+function flagiObcychCiasteczek(partition) {
+  if (data.settings.get('blockThirdPartyCookies', true) === false) return [];
+  const flagi = ['--nazuna-blokuj-obce-ciasteczka'];
+  try {
+    const wyjatki = [...wyjatkiDlaSesji(forPartition(partition))].slice(-200); // limit dlugosci wiersza polecen
+    if (wyjatki.length) flagi.push(`--nazuna-wyjatki-ciasteczek=${encodeURIComponent(wyjatki.join(','))}`);
+  } catch (_) {}
+  return flagi;
+}
+/* Zgoda storage-access: dopisz wyjatek i odblokuj ramki juz otwarte. Odpowiedz
+   z lekkim opoznieniem, zeby wiadomosc dotarla do ramki przed dalszym kodem po
+   await requestStorageAccess(). */
+function zgodaNaDaneRamki(ses, wc, strona, osadzona, callback) {
+  dodajWyjatek(ses, strona, osadzona);
+  if (!obceCiasteczka) return callback(true);
+  try {
+    for (const f of wc.mainFrame.framesInSubtree) {
+      try { f.send('nazuna:obce-ciasteczka-zgoda', kluczPary(strona, osadzona)); } catch (_) {}
+    }
+  } catch (_) {}
+  setTimeout(() => callback(true), 30);
 }
 function maWyjatek(ses, strona, osadzona) {
   return wyjatkiDlaSesji(ses).has(kluczPary(strona, osadzona));
@@ -182,6 +207,25 @@ const doPodgladu = new Set();   // id kart, ktorych nawigacje wlasnie podmieniam
 /* Czy blad ladowania tej karty to tylko skutek podmiany na podglad (a nie
    prawdziwy problem do pokazania). Jednorazowe - zdejmuje znacznik. */
 function bladOdPodgladu(wcId) { return doPodgladu.delete(wcId); }
+/* Podglad pobiera plik drugi raz (viewer.fetch w ipc.js), a serwer chroniacy
+   pliki refererem odrzucal takie zadanie bez tego naglowka. Zapamietujemy wiec,
+   skad naprawde przyszla karta, a onBeforeSendHeaders dokleja to do powtorki.
+   Sam fetch tego nie umie: session.fetch pomija opcje referrer, a jawny naglowek
+   Referer konczy sie bledem (sprawdzone na Electronie 43). Tylko w pamieci,
+   jeden wpis na karte. Sesja we wpisie, zeby okno prywatne nie dostalo referera
+   z karty zwyklej (i odwrotnie), gdy obie otworza ten sam plik. */
+const refererPodgladow = new Map();   // adres pliku -> { wcId, ses, referer }
+function zapomnijRefererKarty(wcId) {
+  for (const [url, wpis] of refererPodgladow) {
+    if (wpis.wcId === wcId) refererPodgladow.delete(url);
+  }
+}
+/* Powtorka przychodzi bez karty (session.fetch z procesu glownego), wiec zadania
+   stron o ten sam adres nic nie dostaja. */
+function refererDoPowtorki(details, ses) {
+  const wpis = details.webContentsId === undefined ? refererPodgladow.get(details.url) : null;
+  return wpis && wpis.ses === ses ? wpis.referer : '';
+}
 function naglowek(headers, nazwa) {
   if (!headers) return '';
   for (const klucz of Object.keys(headers)) {
@@ -195,7 +239,7 @@ function naglowek(headers, nazwa) {
 function typZasobu(headers) {
   return naglowek(headers, 'content-type').split(';')[0].trim().toLowerCase();
 }
-function podmienNaPodglad(details) {
+function podmienNaPodglad(details, ses) {
   if (details.resourceType !== 'mainFrame') return false;
   if (/^nazuna:/i.test(details.url)) return false;
   // Tylko prawdziwa tresc (2xx). Przekierowanie (3xx) tez potrafi miec typ
@@ -214,6 +258,8 @@ function podmienNaPodglad(details) {
   const wc = webContents.fromId(details.webContentsId);
   if (!wc || wc.isDestroyed()) return false;
   const cel = `nazuna://${widok}?src=${encodeURIComponent(details.url)}`;
+  zapomnijRefererKarty(wc.id);
+  if (details.referrer) refererPodgladow.set(details.url, { wcId: wc.id, ses, referer: details.referrer });
   // Anulowanie ponizej konczy oryginalna nawigacje bledem ERR_BLOCKED_BY_CLIENT,
   // a karta (did-fail-load w window.js) reaguje na blad strona nazuna://error.
   // Bez tego znacznika to, ktora nawigacja wygra, bylo kwestia przypadku -
@@ -278,6 +324,10 @@ function prepare(ses, efemeryczna) {
          obowiazkiem prawnym. W Europie nie zdejmuje banera, ale nic nie kosztuje
          i mowi wprost: nie zgadzam sie na handel moimi danymi. */
       headers['Sec-GPC'] = '1';
+      if (refererPodgladow.size && !headers['Referer'] && !headers['referer']) {
+        const referer = refererDoPowtorki(details, ses);
+        if (referer) headers['Referer'] = referer;
+      }
       if (obceCiasteczka && obce(ses, details)) {
         delete headers['Cookie'];
         delete headers['cookie'];
@@ -294,7 +344,7 @@ function prepare(ses, efemeryczna) {
     // Ta sama zasada co wyzej w onBeforeSendHeaders - callback musi zostac
     // wywolany zawsze, inaczej to zadanie wisi w nieskonczonosc.
     try {
-      if (podmienNaPodglad(details)) return callback({ cancel: true });
+      if (podmienNaPodglad(details, ses)) return callback({ cancel: true });
       if (!obceCiasteczka || !obce(ses, details)) return callback({});
       const h = details.responseHeaders;
       if (!h) return callback({});
@@ -323,13 +373,13 @@ function prepare(ses, efemeryczna) {
       const osadzona = getDomain(details && details.requestingUrl ? details.requestingUrl : '') || origin;
       const para = kluczPary(strona, osadzona);
       const pamiec = zgodaZapamietana(ses, efemeryczna, para, permission);
-      if (pamiec === 'allow') { dodajWyjatek(ses, strona, osadzona); return callback(true); }
+      if (pamiec === 'allow') return zgodaNaDaneRamki(ses, webContents, strona, osadzona, callback);
       if (pamiec === 'deny') return callback(false);
       if (!permissionPrompt) return callback(false);
       try {
         const odp = await permissionPrompt({ webContents, permission, origin: para, details, strona, osadzona });
-        if (odp === 'allow') dodajWyjatek(ses, strona, osadzona);
-        return callback(odp === 'allow');
+        if (odp === 'allow') return zgodaNaDaneRamki(ses, webContents, strona, osadzona, callback);
+        return callback(false);
       } catch (_) { return callback(false); }
     }
 
@@ -398,4 +448,4 @@ async function loadExtensions(ses) {
   return loaded;
 }
 
-module.exports = { forPartition, prepare, loadExtensions, bladOdPodgladu, setPermissionPrompt, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, zapamietajWSesji, prepared };
+module.exports = { forPartition, prepare, loadExtensions, bladOdPodgladu, setPermissionPrompt, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, zapamietajWSesji, flagiObcychCiasteczek, prepared };

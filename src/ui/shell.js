@@ -65,8 +65,21 @@ const el = {
   findCount: $('#findCount'),
   layer: $('#layer'),
   scrim: $('#scrim'),
-  loadbar: $('#loadbar')
+  loadbar: $('#loadbar'),
+  toolbar: $('.toolbar')
 };
+
+/* Czy ostatnie wejscie bylo z klawiatury. Tylko wtedy przenosimy fokus do menu. */
+let klawiatura = false;
+let powrotFokusu = null;   // element, ktory otworzyl panel z klawiatury (wraca po Escape)
+window.addEventListener('keydown', () => { klawiatura = true; }, true);
+window.addEventListener('mousedown', () => { klawiatura = false; }, true);
+/* Karty, zakladki i pozycje menu maja tabindex dla klawiatury, wiec klik mysza
+   dalby im fokus i np. Enter po kliknieciu zakladki otworzylby ja drugi raz.
+   Po myszy zostaje wiec jak dawniej: fokus nie zostaje na tych elementach. */
+document.addEventListener('focusin', (e) => {
+  if (!klawiatura && e.target.matches && e.target.matches('.tab, .bm, .menu-item, .bm-row')) e.target.blur();
+});
 
 function setIcon(node, name) { if (node) node.innerHTML = iconSvg(name); }
 
@@ -114,8 +127,14 @@ function denyOrphanedPermission() {
   api.send('permission.answer', { key, answer: 'deny', remember: false });
 }
 
+function omniAria(otwarte) {
+  el.address.setAttribute('aria-expanded', otwarte ? 'true' : 'false');
+  el.address.removeAttribute('aria-activedescendant');
+}
+
 function closePopover(silent) {
   denyOrphanedPermission();
+  omniAria(false);
   if (popover) { popover.el.remove(); popover = null; }
   el.layer.querySelectorAll('.bm-sub, .bm-ctx').forEach((n) => n.remove());
   el.layer.innerHTML = '';
@@ -123,9 +142,104 @@ function closePopover(silent) {
   document.body.classList.remove('expanded');
 }
 
+/* Panele z pozycjami do chodzenia strzalkami. Bez 'context' (fokus zostaje w polu,
+   do ktorego ma trafic Wklej), 'omni' (fokus zostaje w pasku adresu) i okienek
+   z pytaniem (zgoda nie moze dostac fokusu, zeby nikt nie zatwierdzil jej Enterem). */
+const PANELE_KLAWIATURY = new Set(['menu', 'tabmenu', 'extmenu', 'extwiecej', 'bmfolder', 'bmwiecej', 'bmbarmenu', 'bmmenu', 'shield', 'bookmarks', 'downloads']);
+const NAZWY_PANELI = {
+  menu: 'Menu', tabmenu: 'Menu karty', extmenu: 'Menu rozszerzenia', extwiecej: 'Pozostałe rozszerzenia',
+  bmfolder: 'Folder zakładek', bmwiecej: 'Pozostałe zakładki', bmbarmenu: 'Menu paska zakładek', bmmenu: 'Menu zakładki',
+  context: 'Menu kontekstowe', shield: 'Bloker treści', bookmarks: 'Zakładki', downloads: 'Pobrane'
+};
+
+function dodajRole(root) {
+  root.querySelectorAll('.menu-item, .bm-row').forEach((n) => {
+    n.setAttribute('role', 'menuitem');
+    n.tabIndex = -1;
+    if (n.classList.contains('disabled')) n.setAttribute('aria-disabled', 'true');
+    if (n.matches('.bm-row[data-type="folder"]')) n.setAttribute('aria-haspopup', 'true');
+  });
+  root.querySelectorAll('.menu-sep').forEach((n) => n.setAttribute('role', 'separator'));
+}
+
+function opiszPanel(name, node) {
+  if (name === 'omni') return; // lista podpowiedzi ma wlasne role (requestSuggestions)
+  const pytanie = node.querySelector('.prompt');
+  node.setAttribute('role', pytanie || name === 'downloads' ? 'dialog' : 'menu');
+  const naglowek = node.querySelector('h3');
+  node.setAttribute('aria-label', NAZWY_PANELI[name] || (naglowek ? naglowek.textContent.trim() : 'Okienko'));
+  dodajRole(node);
+}
+
+function zapamietajPowrotFokusu(name) {
+  const a = document.activeElement;
+  if (popover && popover.el.contains(a)) return; // panel zastepuje panel: powrot bez zmian
+  // Menu strony i prosba o zgode wychodza ze strony: po Esc fokus ma wrocic tam, nie na pasek.
+  powrotFokusu = klawiatura && PANELE_KLAWIATURY.has(name) && a && a !== document.body && a !== el.address ? a : null;
+}
+
+function pozycjePanelu(p) {
+  return [...p.querySelectorAll('.menu-item:not(.disabled), .bm-row, button:not([disabled])')];
+}
+
+/* preventScroll: warstwa moze byc jeszcze zwinieta do wysokosci paska, a zwykle
+   focus() przewinalby wtedy caly dokument. Liste przewijamy recznie. */
+function ustawFokus(n) {
+  n.focus({ preventScroll: true });
+  const lista = n.closest('.bm-list, .menu-przewijane');
+  if (!lista) return;
+  const r = n.getBoundingClientRect();
+  const l = lista.getBoundingClientRect();
+  if (r.top < l.top) lista.scrollTop -= l.top - r.top;
+  else if (r.bottom > l.bottom) lista.scrollTop += r.bottom - l.bottom;
+}
+
+function otworzPodmenuKlawiatura(wiersz) {
+  openBmSubmenu(wiersz);
+  const sub = el.layer.querySelector('.bm-sub');
+  const pierwsza = sub && pozycjePanelu(sub)[0];
+  if (pierwsza) ustawFokus(pierwsza);
+}
+
+el.layer.addEventListener('keydown', (e) => {
+  const p = e.target.closest && e.target.closest('.panel');
+  if (!p || p.querySelector('.prompt')) return; // okienka z pytaniem obsluguja klawisze same
+  const wiersz = e.target.closest('.menu-item, .bm-row');
+  const folder = wiersz && wiersz.matches('.bm-row[data-type="folder"]');
+  const wPodmenu = p.classList.contains('bm-sub');
+  if (wiersz && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    if (e.repeat) return; // przytrzymany Enter z przycisku menu nie wybiera od razu pierwszej pozycji
+    if (!folder) wiersz.click();
+    else if (!wPodmenu) otworzPodmenuKlawiatura(wiersz);
+    return;
+  }
+  if (e.key === 'ArrowRight' && folder && !wPodmenu) { e.preventDefault(); otworzPodmenuKlawiatura(wiersz); return; }
+  if (e.key === 'ArrowLeft' && wPodmenu) {
+    e.preventDefault();
+    const rodzic = el.layer.querySelector('.bm-row.open');
+    p.remove();
+    if (rodzic) { rodzic.classList.remove('open'); ustawFokus(rodzic); }
+    return;
+  }
+  const lista = pozycjePanelu(p);
+  if (!lista.length) return;
+  const i = lista.indexOf(document.activeElement);
+  let cel = -1;
+  if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) cel = (i + 1) % lista.length;
+  else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) cel = (i - 1 + lista.length) % lista.length;
+  else if (e.key === 'Home') cel = 0;
+  else if (e.key === 'End') cel = lista.length - 1;
+  if (cel < 0) return;
+  e.preventDefault();
+  ustawFokus(lista[cel]);
+});
+
 function openPanel(name, node, anchorRect, opts = {}) {
+  zapamietajPowrotFokusu(name);
   closePopover(true);
   node.classList.add('panel');
+  opiszPanel(name, node);
   el.layer.appendChild(node);
   popover = { name, el: node };
   layerTouchedAt = Date.now();
@@ -144,6 +258,13 @@ function openPanel(name, node, anchorRect, opts = {}) {
   if (y + h > view.height - pad) y = Math.max(pad, view.height - h - pad);
   node.style.left = `${Math.round(x)}px`;
   node.style.top = `${Math.round(y)}px`;
+  // Po wyjsciu z biezacego zdarzenia, bo np. panel Pobranych dopiero sie wypelnia.
+  if (klawiatura && PANELE_KLAWIATURY.has(name)) {
+    setTimeout(() => {
+      const pierwsza = popover && popover.el === node ? pozycjePanelu(node)[0] : null;
+      if (pierwsza) ustawFokus(pierwsza);
+    }, 0);
+  }
   return node;
 }
 
@@ -152,6 +273,7 @@ el.scrim.addEventListener('mousedown', () => forceClose());
 /** Wyjscie awaryjne: czysci warstwe i mowi procesowi glownemu, zeby ja zwinal. */
 function forceClose() {
   denyOrphanedPermission();
+  omniAria(false);
   layerTouchedAt = 0;
   if (popover) { popover.el.remove(); popover = null; }
   el.layer.innerHTML = '';
@@ -256,7 +378,35 @@ el.tabs.addEventListener('wheel', (e) => {
   e.preventDefault();
 }, { passive: false });
 // Zmiana szerokosci okna zmienia, czy pelne karty sie mieszcza.
-window.addEventListener('resize', () => { if (state && Array.isArray(state.tabs)) renderTabs(); });
+window.addEventListener('resize', () => {
+  if (state && Array.isArray(state.tabs)) renderTabs();
+  // Szerokosc decyduje tez o tym, co sie miesci na pasku (N51, N52).
+  if (state) { renderExtensions(); renderBookmarks(); }
+});
+
+/* Wspolne dla kart i paska zakladek: strzalki w poziomie, Home i End. */
+function strzalkiPoziomo(e, lista) {
+  if (e.altKey || e.ctrlKey || !lista.length) return;
+  const i = lista.indexOf(e.target);
+  let cel = -1;
+  if (e.key === 'ArrowRight') cel = (i + 1) % lista.length;
+  else if (e.key === 'ArrowLeft') cel = (i - 1 + lista.length) % lista.length;
+  else if (e.key === 'Home') cel = 0;
+  else if (e.key === 'End') cel = lista.length - 1;
+  if (cel < 0) return;
+  e.preventDefault();
+  lista[cel].focus();
+}
+
+el.tabs.addEventListener('keydown', (e) => {
+  if (!e.target.matches('.tab')) return;
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    api.send('tab.select', { id: Number(e.target.dataset.id) });
+    return;
+  }
+  strzalkiPoziomo(e, [...el.tabs.querySelectorAll('.tab:not(.tab-leave)')]);
+});
 function poRenderzeKart() {
   el.tabs.classList.toggle('przewijane', el.tabs.scrollWidth > el.tabs.clientWidth + 1);
   if (state.activeTabId !== ostatniaAktywna) {
@@ -306,7 +456,8 @@ function renderTabs() {
       node.className = 'tab tab-enter';
       node.addEventListener('animationend', () => node.classList.remove('tab-enter'), { once: true });
       node.dataset.id = String(tab.id);
-      node.innerHTML = '<span class="lead"></span><span class="label"></span><button class="audio"></button><button class="tab-close"></button>';
+      node.setAttribute('role', 'tab');
+      node.innerHTML = '<span class="lead"></span><span class="label"></span><button class="audio" tabindex="-1"></button><button class="tab-close" tabindex="-1" aria-label="Zamknij kartę"></button>';
       node.querySelector('.tab-close').innerHTML = iconSvg('close');
       node.addEventListener('mousedown', (e) => {
         hideTabTip();
@@ -336,6 +487,9 @@ function renderTabs() {
     if (kids[index] !== node) el.tabs.insertBefore(node, kids[index] || el.newtab);
 
     node.classList.toggle('active', tab.active);
+    // Tabem wchodzi sie na aktywna karte, po pozostalych chodzi sie strzalkami.
+    node.tabIndex = tab.active ? 0 : -1;
+    node.setAttribute('aria-selected', tab.active ? 'true' : 'false');
     const lead = node.querySelector('.lead');
     if (tab.loading) {
       if (!lead.querySelector('.spinner')) lead.innerHTML = '<span class="spinner"></span>';
@@ -360,6 +514,7 @@ function renderTabs() {
     node.dataset.tipTitle = text;
     node.dataset.tipUrl = tab.url || '';
     node.dataset.tipSleeping = tab.sleeping ? '1' : '';
+    node.setAttribute('aria-label', tab.sleeping ? `${text} (uśpiona)` : text);
     if (tabTipNode === node) fillTabTip(node);
     node.classList.toggle('sleeping', !!tab.sleeping);
     node.classList.toggle('narrow', waskieKarty);
@@ -454,7 +609,7 @@ function pokazWskaznikZakladki(cel) {
   }
   const pas = el.bookmarksbar.getBoundingClientRect();
   const przed = cel.beforeId ? el.bookmarksbar.querySelector(`.bm[data-id="${CSS.escape(cel.beforeId)}"]`) : null;
-  const wszystkie = el.bookmarksbar.querySelectorAll('.bm');
+  const wszystkie = el.bookmarksbar.querySelectorAll('.bm:not(.ukryta)');
   let lewo = 8;
   if (przed) lewo = przed.getBoundingClientRect().left - pas.left;
   else if (wszystkie.length) lewo = wszystkie[wszystkie.length - 1].getBoundingClientRect().right - pas.left;
@@ -624,6 +779,8 @@ function renderToolbar() {
   if (!state) return;
   $('#back').classList.toggle('disabled', !state.canGoBack);
   $('#forward').classList.toggle('disabled', !state.canGoForward);
+  $('#back').setAttribute('aria-disabled', state.canGoBack ? 'false' : 'true');
+  $('#forward').setAttribute('aria-disabled', state.canGoForward ? 'false' : 'true');
   setIcon($('#reload'), state.loading ? 'stop' : 'reload');
   $('#reload').title = state.loading ? 'Zatrzymaj (Esc)' : 'Odśwież (F5)';
   updateLoadbar();
@@ -638,6 +795,7 @@ function renderToolbar() {
 
   el.star.innerHTML = iconSvg(state.bookmarked ? 'starFilled' : 'star');
   el.star.classList.toggle('active', !!state.bookmarked);
+  el.star.setAttribute('aria-pressed', state.bookmarked ? 'true' : 'false');
   // Male "odbicie" gwiazdki przy dodaniu/usunieciu zakladki (patrz .bump w
   // shell.css) - tylko gdy to naprawde zmiana na TEJ SAMEJ karcie (klikniecie
   // gwiazdki), a nie efekt przeskoczenia na inna karte o innym stanie
@@ -693,9 +851,44 @@ function renderToolbar() {
 // Ustawienie i brak wyliczonego koloru po prostu zdejmuja nadpisanie,
 // wracajac do zwyklego, stalego akcentu z Ustawien.
 let siteAccentApplied = false;
+
+/* Kontrast koloru z bialym wedlug WCAG. W jasnym motywie biale jest i tlo (prawie),
+   i napis na akcencie (--on-accent), wiec jedna miara wystarczy. */
+function kontrastZBialym([r, g, b]) {
+  const k = (v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  return 1.05 / (0.2126 * k(r) + 0.7152 * k(g) + 0.0722 * k(b) + 0.05);
+}
+
+function przyciemnijDoKontrastu(rgb, cel) {
+  // Mnozenie wszystkich skladowych zachowuje odcien favicony.
+  let wynik = rgb;
+  for (let m = 1; m > 0 && kontrastZBialym(wynik) < cel; m -= 0.04) wynik = rgb.map((v) => Math.round(v * m));
+  return wynik;
+}
+
+/* Proces glowny liczy akcent z favicony pod ciemny motyw (jasny, a strong jeszcze
+   jasniejszy). Na jasnym tle zolta albo jasnozielona ikona dawala prawie niewidoczne
+   gwiazdke, procent powiekszenia i liczbe na plakietce. Progi jak w najjasniejszym
+   stalym akcencie jasnego motywu (amber w theme.css: ok. 4:1 i 5,3:1). */
+function akcentDlaMotywu(a, motyw) {
+  if (motyw !== 'jasny') return a;
+  const m = /^#([0-9a-f]{6})$/i.exec(String(a.accent || ''));
+  if (!m) return a;
+  const n = parseInt(m[1], 16);
+  const baza = przyciemnijDoKontrastu([n >> 16, (n >> 8) & 255, n & 255], 4);
+  const mocny = przyciemnijDoKontrastu(baza, 5.5);
+  const hex = (rgb) => `#${rgb.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+  return {
+    accent: hex(baza),
+    accentStrong: hex(mocny),
+    accentDim: `rgba(${baza.join(', ')}, 0.13)`,
+    accentRing: `rgba(${baza.join(', ')}, 0.26)`
+  };
+}
+
 function applySiteAccent() {
   const enabled = !state.settings || state.settings.siteAccentEnabled !== false;
-  const a = enabled ? state.siteAccent : null;
+  const a = enabled && state.siteAccent ? akcentDlaMotywu(state.siteAccent, state.motyw) : null;
   const root = document.documentElement.style;
   if (a) {
     root.setProperty('--accent', a.accent);
@@ -712,41 +905,97 @@ function applySiteAccent() {
   }
 }
 
+const OMNI_MIN = 180;      // to samo co min-width .omnibox w shell.css
+const EXT_NA_PASKU = 6;
+const EXT_SZEROKOSC = 36;  // przycisk 34 + odstep 2
+
+/* Ile przyciskow rozszerzen zmiesci sie obok pola adresu o minimalnej szerokosci.
+   Reszta trafia pod przycisk ">>", inaczej w waskim oknie pole adresu znikalo. */
+function ileRozszerzenNaPasku(liczba) {
+  const dzieci = [...el.toolbar.children];
+  let zajete = 20 + 12 + 4 * (dzieci.length - 1); // padding paska, margines pola, odstepy
+  for (const d of dzieci) if (d !== el.omnibox && d !== el.extSlot) zajete += d.offsetWidth;
+  const wolne = el.toolbar.clientWidth - zajete - OMNI_MIN;
+  if (liczba <= EXT_NA_PASKU && liczba * EXT_SZEROKOSC - 2 <= wolne) return liczba;
+  return Math.max(0, Math.min(EXT_NA_PASKU, Math.floor((wolne + 2) / EXT_SZEROKOSC) - 1));
+}
+
+function uruchomRozszerzenie(ext, rect) {
+  if (ext.hasPopup) api.send('extensions.popup', { id: ext.id, rect });
+  else api.send('tab.new', { url: `nazuna://extensions` });
+}
+
+function menuRozszerzenia(ext, rect) {
+  const node = panel(menuHtml([
+    { id: 'options', label: 'Opcje rozszerzenia', icon: 'settings', enabled: !!ext.optionsPage },
+    { id: 'manage', label: 'Zarządzaj rozszerzeniami', icon: 'puzzle' },
+    { type: 'separator' },
+    { id: 'remove', label: 'Usuń rozszerzenie', icon: 'trash', danger: true }
+  ]));
+  openPanel('extmenu', node, rect);
+  node.addEventListener('click', (ev) => {
+    const it = ev.target.closest('.menu-item');
+    if (!it) return;
+    if (it.dataset.id === 'options') api.send('extensions.options', { id: ext.id });
+    if (it.dataset.id === 'manage') api.send('tab.new', { url: 'nazuna://extensions' });
+    if (it.dataset.id === 'remove') api.invoke('extensions.remove', { id: ext.id });
+    closePopover();
+  });
+}
+
+function pozostaleRozszerzenia(lista, przycisk) {
+  if (popover && popover.name === 'extwiecej') { closePopover(); return; }
+  const kotwica = przycisk.getBoundingClientRect();
+  const node = panel(menuHtml(lista.map((x) => ({ id: x.id, label: x.title || x.name, icon: 'puzzle' }))));
+  openPanel('extwiecej', node, kotwica);
+  const znajdz = (t) => {
+    const it = t.closest('.menu-item');
+    return it ? lista.find((x) => x.id === it.dataset.id) : null;
+  };
+  node.addEventListener('click', (ev) => {
+    const ext = znajdz(ev.target);
+    if (!ext) return;
+    closePopover();
+    uruchomRozszerzenie(ext, kotwica.toJSON());
+  });
+  node.addEventListener('contextmenu', (ev) => {
+    ev.preventDefault();
+    const ext = znajdz(ev.target);
+    if (ext) menuRozszerzenia(ext, kotwica);
+  });
+}
+
 function renderExtensions() {
+  // Pasek bywa schowany (strona w pelnym ekranie): nie ma czego mierzyc.
+  if (!el.toolbar.clientWidth) return;
   const list = state.extensions || [];
-  const current = [...el.extSlot.children].map((n) => n.dataset.id).join(',');
-  const next = list.map((e) => e.id).join(',');
-  if (current === next) return;
+  const ile = ileRozszerzenNaPasku(list.length);
+  const uklad = `${list.map((e) => e.id).join(',')}|${ile}`;
+  if (el.extSlot.dataset.uklad === uklad) return;
+  el.extSlot.dataset.uklad = uklad;
   el.extSlot.innerHTML = '';
-  for (const ext of list.slice(0, 6)) {
+  for (const ext of list.slice(0, ile)) {
     const b = document.createElement('button');
     b.className = 'tool';
     b.dataset.id = ext.id;
     b.title = ext.title || ext.name;
     b.innerHTML = ext.icon ? `<img class="ext-icon" src="${escapeHtml(ext.icon)}">` : iconSvg('puzzle');
-    b.addEventListener('click', () => {
-      if (ext.hasPopup) api.send('extensions.popup', { id: ext.id, rect: b.getBoundingClientRect().toJSON() });
-      else api.send('tab.new', { url: `nazuna://extensions` });
-    });
+    b.addEventListener('click', () => uruchomRozszerzenie(ext, b.getBoundingClientRect().toJSON()));
     b.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      const node = panel(menuHtml([
-        { id: 'options', label: 'Opcje rozszerzenia', icon: 'settings', enabled: !!ext.optionsPage },
-        { id: 'manage', label: 'Zarządzaj rozszerzeniami', icon: 'puzzle' },
-        { type: 'separator' },
-        { id: 'remove', label: 'Usuń rozszerzenie', icon: 'trash', danger: true }
-      ]));
-      openPanel('extmenu', node, b.getBoundingClientRect());
-      node.addEventListener('click', (ev) => {
-        const it = ev.target.closest('.menu-item');
-        if (!it) return;
-        if (it.dataset.id === 'options') api.send('extensions.options', { id: ext.id });
-        if (it.dataset.id === 'manage') api.send('tab.new', { url: 'nazuna://extensions' });
-        if (it.dataset.id === 'remove') api.invoke('extensions.remove', { id: ext.id });
-        closePopover();
-      });
+      menuRozszerzenia(ext, b.getBoundingClientRect());
     });
     el.extSlot.appendChild(b);
+  }
+  if (ile < list.length) {
+    const w = document.createElement('button');
+    w.className = 'tool ext-wiecej';
+    w.title = 'Pozostałe rozszerzenia';
+    w.setAttribute('aria-haspopup', 'true');
+    w.textContent = '»';
+    const reszta = list.slice(ile);
+    w.addEventListener('click', () => pozostaleRozszerzenia(reszta, w));
+    el.extSlot.appendChild(w);
   }
 }
 
@@ -760,14 +1009,19 @@ function renderBookmarks() {
      zmiany nazwy kasowala edytowane pole razem z wpisywanym tekstem. */
   if (el.bookmarksbar.querySelector('[contenteditable="true"]')) return;
   const items = (state.bookmarks || []).filter((b) => b.parent === 'bar');
+  /* Bez zmian = bez przebudowy i mierzenia przy kazdym stanie (a stany przychodza czesto). */
+  const uklad = `${el.bookmarksbar.clientWidth}|${JSON.stringify(items)}`;
+  if (el.bookmarksbar.dataset.uklad === uklad) return;
+  el.bookmarksbar.dataset.uklad = uklad;
   if (!items.length) {
     el.bookmarksbar.innerHTML = '<span class="empty">Pasek zakładek jest pusty. Przeciągnij tu kartę albo kliknij prawym przyciskiem, żeby dodać zakładkę.</span>';
     return;
   }
   el.bookmarksbar.innerHTML = items.map((b) => {
-    if (b.type === 'separator') return `<div class="bm bm-sep" data-id="${b.id}" data-type="separator"></div>`;
+    if (b.type === 'separator') return `<div class="bm bm-sep" role="separator" data-id="${b.id}" data-type="separator"></div>`;
     const ico = b.type === 'folder' ? iconSvg('folder') : `<span class="fav">${iconSvg('globe')}</span>`;
-    return `<div class="bm" data-id="${b.id}" data-url="${escapeHtml(b.url || '')}" data-type="${b.type}" title="${escapeHtml(b.title)}">${ico}<span>${escapeHtml(b.title)}</span></div>`;
+    const rola = b.type === 'folder' ? 'role="button" aria-haspopup="true"' : 'role="link"';
+    return `<div class="bm" ${rola} tabindex="-1" data-id="${b.id}" data-url="${escapeHtml(b.url || '')}" data-type="${b.type}" title="${escapeHtml(b.title)}">${ico}<span>${escapeHtml(b.title)}</span></div>`;
   }).join('');
   el.bookmarksbar.querySelectorAll('.bm[data-type="link"]').forEach((row) => {
     const holder = row.querySelector('.fav');
@@ -777,7 +1031,99 @@ function renderBookmarks() {
     img.addEventListener('load', () => { if (holder.isConnected) holder.replaceWith(img); });
     img.src = faviconFor(row.dataset.url);
   });
+  dopasujPasekZakladek();
 }
+
+/* Co sie nie miesci, chowamy i dajemy przycisk ">>" z lista. Wczesniej te zakladki
+   byly po prostu uciete i nie dalo sie ich kliknac. */
+function dopasujPasekZakladek() {
+  const bar = el.bookmarksbar;
+  const wszystkie = [...bar.querySelectorAll('.bm')];
+  const prawa = bar.getBoundingClientRect().right - 8;
+  const ostatnia = wszystkie[wszystkie.length - 1];
+  if (ostatnia && ostatnia.getBoundingClientRect().right > prawa) {
+    const granica = prawa - 32; // miejsce na sam przycisk
+    const od = wszystkie.findIndex((n) => n.getBoundingClientRect().right > granica);
+    wszystkie.slice(od).forEach((n) => n.classList.add('ukryta'));
+    const w = document.createElement('button');
+    w.className = 'bm-wiecej pop-trigger';
+    w.title = 'Pozostałe zakładki';
+    w.setAttribute('aria-haspopup', 'true');
+    w.textContent = '»';
+    bar.appendChild(w);
+  }
+  const pierwsza = wszystkie.find((n) => !n.classList.contains('ukryta') && n.dataset.type !== 'separator');
+  if (pierwsza) pierwsza.tabIndex = 0;
+}
+
+function pokazFolderZakladek(id, kotwica, align) {
+  const children = (state.bookmarks || []).filter((b) => b.parent === id);
+  const items = children.length
+    ? children.map((c) => ({ id: `open:${c.id}`, label: c.title, icon: c.type === 'folder' ? 'folder' : 'globe' }))
+    : [{ id: 'none', label: 'Pusty folder', enabled: false }];
+  const p = panel(menuHtml(items));
+  openPanel('bmfolder', p, kotwica, { align });
+  p.addEventListener('click', (ev) => {
+    const it = ev.target.closest('.menu-item');
+    if (!it || !it.dataset.id.startsWith('open:')) return;
+    const b = state.bookmarks.find((x) => x.id === it.dataset.id.slice(5));
+    if (b && b.url) api.send('nav.go', { input: b.url });
+    closePopover();
+  });
+}
+
+function pokazPozostaleZakladki(przycisk) {
+  if (popover && popover.name === 'bmwiecej') { closePopover(); return; }
+  const kotwica = przycisk.getBoundingClientRect();
+  const zakladka = (id) => (state.bookmarks || []).find((x) => x.id === id);
+  const items = [...el.bookmarksbar.querySelectorAll('.bm.ukryta')].map((n) => zakladka(n.dataset.id)).filter(Boolean)
+    .map((b) => (b.type === 'separator'
+      ? { type: 'separator' }
+      : { id: `open:${b.id}`, label: b.title, icon: b.type === 'folder' ? 'folder' : 'globe' }));
+  while (items.length && items[0].type === 'separator') items.shift();
+  const p = panel(menuHtml(items), 'menu-przewijane');
+  // Moze byc tych zakladek wiecej, niz wejdzie na wysokosc okna.
+  const wys = ((state && state.viewport) || { height: window.innerHeight }).height;
+  p.style.maxHeight = `${Math.max(120, Math.round(wys - kotwica.bottom - 16))}px`;
+  openPanel('bmwiecej', p, kotwica);
+  const znajdz = (t) => {
+    const it = t.closest('.menu-item');
+    return it ? zakladka(it.dataset.id.slice(5)) : null;
+  };
+  p.addEventListener('click', (ev) => {
+    const b = znajdz(ev.target);
+    if (!b) return;
+    if (b.type === 'folder') { pokazFolderZakladek(b.id, kotwica); return; }
+    api.send('nav.go', { input: b.url });
+    closePopover();
+  });
+  p.addEventListener('mousedown', (ev) => {
+    el.layer.querySelectorAll('.bm-ctx').forEach((n) => n.remove());
+    if (ev.button !== 1) return;
+    const b = znajdz(ev.target);
+    if (!b || b.type !== 'link') return;
+    ev.preventDefault();
+    api.send('tab.new', { url: b.url, background: true });
+    closePopover();
+  });
+  p.addEventListener('contextmenu', (ev) => {
+    ev.preventDefault();
+    const b = znajdz(ev.target);
+    // bmContextMenu czyta z wiersza tylko dataset.
+    if (b) bmContextMenu({ dataset: { id: b.id, type: b.type, url: b.url || '' } }, ev.clientX, ev.clientY);
+  });
+}
+
+el.bookmarksbar.addEventListener('keydown', (e) => {
+  // Cel to .bm, a nie edytowana nazwa w srodku: strzalki przy zmianie nazwy ruszaja kursor.
+  if (!e.target.matches('.bm, .bm-wiecej')) return;
+  if (e.target.matches('.bm') && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    e.target.click();
+    return;
+  }
+  strzalkiPoziomo(e, [...el.bookmarksbar.querySelectorAll('.bm:not(.ukryta):not(.bm-sep), .bm-wiecej')]);
+});
 
 function faviconFor(url) {
   try {
@@ -789,22 +1135,12 @@ function faviconFor(url) {
 el.bookmarksbar.addEventListener('click', (e) => {
   // Klik w edytowana nazwe ustawia kursor, a nie otwiera zakladki.
   if (e.target.closest('[contenteditable="true"]')) return;
+  const wiecej = e.target.closest('.bm-wiecej');
+  if (wiecej) { pokazPozostaleZakladki(wiecej); return; }
   const node = e.target.closest('.bm');
   if (!node || node.dataset.type === 'separator') return;
   if (node.dataset.type === 'folder') {
-    const children = (state.bookmarks || []).filter((b) => b.parent === node.dataset.id);
-    const items = children.length
-      ? children.map((c) => ({ id: `open:${c.id}`, label: c.title, icon: c.type === 'folder' ? 'folder' : 'globe' }))
-      : [{ id: 'none', label: 'Pusty folder', enabled: false }];
-    const p = panel(menuHtml(items));
-    openPanel('bmfolder', p, node.getBoundingClientRect(), { align: 'left' });
-    p.addEventListener('click', (ev) => {
-      const it = ev.target.closest('.menu-item');
-      if (!it || !it.dataset.id.startsWith('open:')) return;
-      const b = state.bookmarks.find((x) => x.id === it.dataset.id.slice(5));
-      if (b && b.url) api.send('nav.go', { input: b.url });
-      closePopover();
-    });
+    pokazFolderZakladek(node.dataset.id, node.getBoundingClientRect(), 'left');
     return;
   }
   api.send('nav.go', { input: node.dataset.url });
@@ -858,8 +1194,10 @@ function startBmRename(node) {
 }
 
 function openDialogPanel(name, node) {
+  zapamietajPowrotFokusu(name);
   closePopover(true);
   node.classList.add('panel');
+  opiszPanel(name, node);
   el.layer.appendChild(node);
   popover = { name, el: node };
   layerTouchedAt = Date.now();
@@ -1072,7 +1410,7 @@ el.address.addEventListener('keydown', (e) => {
 
 function omniListHtml() {
   return omniItems.map((s, i) => `
-    <div class="omni-item" data-i="${i}">
+    <div class="omni-item" role="option" id="omniOpt${i}" aria-selected="false" data-i="${i}">
       ${iconSvg(s.kind === 'search' ? 'search' : s.kind === 'history' ? 'clock' : s.kind === 'bookmark' ? 'star' : 'globe')}
       <span class="txt">${escapeHtml(s.title)}</span>
       <span class="sub">${escapeHtml(s.subtitle || '')}</span>
@@ -1124,19 +1462,26 @@ async function requestSuggestions(query, dopisywanie = false) {
     const list = popover.el.querySelector('.omni-list');
     if (list) {
       list.innerHTML = omniListHtml();
+      el.address.removeAttribute('aria-activedescendant'); // zaznaczenie wyzerowane wyzej
       popover.el.style.width = `${el.omnibox.offsetWidth}px`;
       return;
     }
   }
-  const node = panel(`<div class="omni-list">${omniListHtml()}</div>`);
+  const node = panel(`<div class="omni-list" id="omniLista" role="listbox" aria-label="Podpowiedzi">${omniListHtml()}</div>`);
   node.style.width = `${el.omnibox.offsetWidth}px`;
   node.addEventListener('mousedown', onOmniMouseDown);
   openPanel('omni', node, el.omnibox.getBoundingClientRect(), { align: 'left' });
+  omniAria(true);
 }
 
 function highlightOmni() {
   if (!popover || popover.name !== 'omni') return;
-  popover.el.querySelectorAll('.omni-item').forEach((n, i) => n.classList.toggle('sel', i === omniIndex));
+  popover.el.querySelectorAll('.omni-item').forEach((n, i) => {
+    n.classList.toggle('sel', i === omniIndex);
+    n.setAttribute('aria-selected', i === omniIndex ? 'true' : 'false');
+  });
+  if (omniIndex >= 0) el.address.setAttribute('aria-activedescendant', `omniOpt${omniIndex}`);
+  else el.address.removeAttribute('aria-activedescendant');
   if (omniIndex >= 0) el.address.value = omniItems[omniIndex].kind === 'search' ? omniItems[omniIndex].title : omniItems[omniIndex].value;
   else el.address.value = omniQuery;   // strzalka wrocila do "nic nie wybrane" - przywracamy to, co user faktycznie wpisal
 }
@@ -1212,7 +1557,7 @@ function odswiezPanelZakladek() {
   el.layer.querySelectorAll('.bm-sub').forEach((n) => n.remove());
   const lista = popover.el.querySelector('.bm-list');
   const menu = [...bookmarkChildren('menu'), ...bookmarkChildren('other')];
-  if (lista) { lista.innerHTML = bmListHtml(menu); attachFavicons(lista); }
+  if (lista) { lista.innerHTML = bmListHtml(menu); attachFavicons(lista); dodajRole(lista); }
 }
 
 el.layer.addEventListener('dragstart', (e) => {
@@ -1324,6 +1669,8 @@ function openBmSubmenu(row) {
   const sub = document.createElement('div');
   sub.className = 'panel bm-sub';
   sub.innerHTML = bmListHtml(bookmarkChildren(row.dataset.id));
+  sub.setAttribute('role', 'menu');
+  dodajRole(sub);
   el.layer.appendChild(sub);
   attachFavicons(sub);
 
@@ -1364,7 +1711,10 @@ function bmContextMenu(row, x, y) {
     { type: 'separator' },
     { id: 'remove', label: 'Usuń', icon: 'trash', danger: true }
   ]);
+  menu.setAttribute('role', 'menu');
+  dodajRole(menu);
   el.layer.appendChild(menu);
+  if (klawiatura) { const pierwsza = pozycjePanelu(menu)[0]; if (pierwsza) pierwsza.focus({ preventScroll: true }); }
 
   const view = (state && state.viewport) || { width: window.innerWidth, height: window.innerHeight };
   menu.style.left = `${Math.round(Math.max(8, Math.min(view.width - menu.offsetWidth - 8, x)))}px`;
@@ -1395,9 +1745,9 @@ function mainMenu() {
     { type: 'separator' },
     { type: 'custom', html: `<div class="menu-row">
         <span class="label">Powiększenie</span>
-        <button class="tool" data-zoom="out">${iconSvg('zoomOut')}</button>
+        <button class="tool" data-zoom="out" title="Pomniejsz">${iconSvg('zoomOut')}</button>
         <span class="zoom-value" data-zoom-value>${zoom}%</span>
-        <button class="tool" data-zoom="in">${iconSvg('zoomIn')}</button>
+        <button class="tool" data-zoom="in" title="Powiększ">${iconSvg('zoomIn')}</button>
         <button class="tool" data-zoom="reset" title="Reset">${iconSvg('check')}</button>
       </div>` },
     { type: 'separator' },
@@ -1430,7 +1780,10 @@ function mainMenu() {
     const item = e.target.closest('.menu-item');
     if (!item || item.classList.contains('disabled')) return;
     api.send('menu.action', { id: item.dataset.id });
-    if (!['zoom-in', 'zoom-out', 'zoom-reset'].includes(item.dataset.id)) closePopover(true);
+    // Tej pozycji proces glowny nie zamyka (menuAction w ipc.js), wiec sami mowimy mu,
+    // ze menu juz nie ma. Po cichu zostawala przezroczysta warstwa na calej stronie.
+    if (item.dataset.id === 'toggle-bookmarks-bar') closePopover();
+    else if (!['zoom-in', 'zoom-out', 'zoom-reset'].includes(item.dataset.id)) closePopover(true);
   });
 }
 
@@ -1682,8 +2035,23 @@ el.findInput.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keydown', (e) => {
+  // Menu otwarte mysza: pierwsza strzalka wchodzi na jego pozycje.
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && popover && PANELE_KLAWIATURY.has(popover.name) && !el.layer.contains(document.activeElement)) {
+    const pierwsza = pozycjePanelu(popover.el)[0];
+    if (pierwsza) { e.preventDefault(); ustawFokus(pierwsza); }
+    return;
+  }
   if (e.key !== 'Escape') return;
-  if (popover || el.layer.firstChild || document.body.classList.contains('expanded')) { forceClose(); return; }
+  if (popover || el.layer.firstChild || document.body.classList.contains('expanded')) {
+    const wroc = powrotFokusu;
+    powrotFokusu = null;
+    forceClose();
+    /* Panel otwarty z klawiatury: fokus wraca na to, co go otworzylo. Proces glowny
+       przy Escape oddaje fokus stronie, stad prosba o powrot na pasek (bez obslugi
+       w ipc.js jest po prostu ignorowana). */
+    if (wroc && wroc.isConnected) { api.send('ui.fokusPaska'); wroc.focus({ preventScroll: true }); }
+    return;
+  }
   if (state && state.findOpen) { api.send('find.close'); return; }
   if (document.activeElement === el.address) { addressDirty = false; el.address.blur(); renderToolbar(); }
 });
@@ -1725,7 +2093,7 @@ function syncLayer(next) {
   } else {
     if (!settled) return;
     document.body.classList.remove('expanded');
-    if (hasPanel) { el.layer.innerHTML = ''; popover = null; }
+    if (hasPanel) { el.layer.innerHTML = ''; popover = null; omniAria(false); }
   }
 }
 

@@ -5,8 +5,23 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const crypto = require('crypto');
+const { pipeline } = require('stream');
 
 const WERSJA = '43.8.3';
+
+/* Oczekiwane SHA-256 paczek dla WERSJA (z SHASUMS256.txt wydania castLabs,
+   sprawdzone na pobranym pliku). Silnik wchodzi do podpisanego instalatora i
+   przez aktualizacje trafia do wszystkich, wiec nie ufamy temu, co akurat
+   lezy w wydaniu na GitHubie. Przy zmianie WERSJA trzeba tu wpisac nowe sumy:
+   bez nich skrypt przerwie, a w komunikacie poda sume pobranego pliku. */
+const SUMY = {
+  '43.8.3': {
+    'win32-x64': '87fb77020834178ab6c6cbb8362b761eb287a21bacd669c5ad0eaa3078cff9e2',
+    'darwin-arm64': '814b71cd20982363415c98bcb674ebe7dd38056b78178431777eb60e1c37d114',
+    'linux-x64': '7b18a7753da4b5777eb3d32a59e305c239a21caf6aee9332e94970286034172b'
+  }
+};
 
 /* Domyslnie pobieramy silnik dla Windows. Uruchomienie z argumentem --mac
    sciaga wariant dla Macow z procesorem Apple, do osobnego folderu, zeby oba
@@ -44,10 +59,18 @@ function pobierz(url, plik, glebokosc = 0) {
         const proc = total ? Math.floor((pobrane / total) * 100) : 0;
         if (proc >= ostatnio + 10) { ostatnio = proc; process.stdout.write(`   ${proc}%\n`); }
       });
-      res.pipe(out);
-      out.on('finish', () => out.close(() => resolve()));
-      out.on('error', reject);
+      /* pipeline zglasza tez blad strumienia odpowiedzi: przy samym res.pipe
+         urwane polaczenie moglo zostawic niepelny plik albo nigdy sie nie
+         skonczyc. */
+      pipeline(res, out, (err) => (err ? reject(err) : resolve()));
     }).on('error', reject);
+  });
+}
+
+function sumaPliku(plik) {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256');
+    pipeline(fs.createReadStream(plik), hash, (err) => (err ? reject(err) : resolve(hash.digest('hex'))));
   });
 }
 
@@ -79,6 +102,19 @@ function pobierz(url, plik, glebokosc = 0) {
       return;
     }
     console.error('Nazuna zbuduje się mimo to, ale na starszym silniku z node_modules (tylko do testów, nie do wydania).\n');
+    return;
+  }
+  /* Niezgodna suma przerywa zawsze, nie tylko w CI: zla paczka nie moze zostac
+     rozpakowana, a kod bledu zatrzymuje dalsze kroki "npm run dist*". */
+  const oczekiwana = (SUMY[WERSJA] || {})[WARIANT];
+  const suma = await sumaPliku(zip);
+  if (suma !== oczekiwana) {
+    console.error(`\nSuma SHA-256 silnika się nie zgadza (${WERSJA}, ${WARIANT}).`);
+    console.error(`  oczekiwana: ${oczekiwana || 'brak wpisu w SUMY'}`);
+    console.error(`  pobrany plik: ${suma}`);
+    console.error('Przerywam. Przy nowej wersji silnika wpisz sumę z SHASUMS256.txt wydania castLabs do SUMY w tools/pobierz-electron-wv.js.\n');
+    try { fs.unlinkSync(zip); } catch (_) {}
+    process.exitCode = 1;
     return;
   }
   console.log('Rozpakowuję...');

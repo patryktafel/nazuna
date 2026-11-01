@@ -37,11 +37,34 @@ const NEW_TAB = 'nazuna://newtab';
    ten "fałszywy" odcisk tez sie zmienia miedzy uruchomieniami. */
 const fpSeed = crypto.randomBytes(8).toString('hex');
 
-function pageFlags() {
+/* Okno prywatne dostaje wlasne ziarno, osobne dla kazdej partycji. Przy wspolnym
+   ta sama strona widziala identyczny odcisk w oknie zwyklym i prywatnym, wiec
+   mogla polaczyc wizyte prywatna z kontem. Wyliczane z ziarna i nazwy partycji:
+   wszystkie karty partycji (tez wyrwane i obudzone) maja ten sam, staly odczyt. */
+function ziarnoOdcisku(partition) {
+  if (!partition || partition.startsWith('persist:')) return fpSeed;
+  return crypto.createHash('sha256').update(`${fpSeed}|${partition}`).digest('hex').slice(0, 16);
+}
+
+function pageFlags(partition) {
   const flags = [];
   if (!data.settings.get('passkeys', false)) flags.push('--nazuna-bez-kluczy');
-  if (data.settings.get('fingerprintProtection', true)) flags.push(`--nazuna-fp-seed=${fpSeed}`);
+  if (data.settings.get('fingerprintProtection', true)) flags.push(`--nazuna-fp-seed=${ziarnoOdcisku(partition)}`);
+  flags.push(...sessions.flagiObcychCiasteczek(partition));
   return flags;
+}
+
+/* Adresy zakladek z menu do gwiazdki w pasku. state() idzie przy kazdym
+   odswiezeniu paska, a data.isBookmarked liczy cala liste od nowa, wiec przy
+   tysiacach zakladek przycinalo. Kasowane w broadcastAll('bookmarks:changed'). */
+let adresyMenuZakladek = null;
+function wMenuZakladek(url) {
+  if (!adresyMenuZakladek) {
+    adresyMenuZakladek = new Set(data.bookmarkList()
+      .filter((b) => b.type === 'link' && data.miejsceZakladki(b.parent) === 'menu')
+      .map((b) => b.url));
+  }
+  return adresyMenuZakladek.has(url);
 }
 
 function motywTeraz() {
@@ -340,7 +363,7 @@ class Tab {
         nodeIntegrationInSubFrames: true,
         // Flagi czytane przez preload z process.argv. Kosztuja zero: nie ma
         // tu zadnej komunikacji miedzy procesami przy wczytywaniu strony.
-        additionalArguments: pageFlags(),
+        additionalArguments: pageFlags(this.owner.partition),
         spellcheck: data.settings.get('spellcheckEnabled', false),
         partition: this.owner.partition,
         backgroundThrottling: true,
@@ -402,6 +425,41 @@ class Tab {
       this.warnUrl = null;
       this.wc.loadURL(target).catch(() => {});
     }
+  }
+
+  /* Proces strony padl (brak pamieci, blad GPU, zabity): widok zostawal bialy,
+     bez slowa wyjasnienia. Karta w tle po prostu zasypia i odbuduje sie po
+     kliknieciu. Karta na wierzchu pokazuje strone bledu z "Sprobuj ponownie".
+     Zadna z tych drog nie przeladowuje sama, wiec strona padajaca przy kazdym
+     wczytaniu nie zapetli sie. */
+  _poAwarii(wc, powod) {
+    if (wc !== this.wc || wc.isDestroyed()) return;
+    const okno = this.owner;
+    // Karta "na zapas" z martwym procesem dalaby biala nowa karte - newTab zbuduje swieza.
+    if (okno._spareTab === this) { okno._spareTab = null; this.destroy(); return; }
+    if (!okno.tabs.includes(this)) return;
+    if (this.id !== okno.activeTabId) { this.sleep(); okno.scheduleSync(); return; }
+    /* Padla sama strona bledu albo ostrzezenia: bez ponownego ladowania (petla).
+       Przy ostrzezeniu tym bardziej: "Sprobuj ponownie" poszedlby wprost na grozny adres. */
+    if (this.errorUrl || this.warnUrl) { this.title = 'Karta przestała odpowiadać'; okno.scheduleSync(); return; }
+    this.errorUrl = this.url;
+    // Kody Electrona po angielsku ("oom", "crashed") nic uzytkownikowi nie mowia.
+    const powodPoPolsku = {
+      oom: 'brak pamięci',
+      'memory-eviction': 'brak pamięci',
+      crashed: 'błąd strony lub przeglądarki',
+      'abnormal-exit': 'błąd strony lub przeglądarki',
+      killed: 'proces został zamknięty z zewnątrz',
+      'launch-failed': 'nie udało się uruchomić procesu',
+      'integrity-failure': 'nie udało się uruchomić procesu'
+    }[powod] || 'nieznany';
+    const params = new URLSearchParams({
+      url: this.url,
+      code: 'awaria',
+      description: `Proces tej karty przestał działać. Powód: ${powodPoPolsku}`
+    });
+    wc.loadURL(`nazuna://error/?${params.toString()}`).catch(() => {});
+    okno.scheduleSync();
   }
 
   wire() {
@@ -538,7 +596,16 @@ class Tab {
     wc.on('leave-html-full-screen', () => this.owner.setContentFullScreen(false));
     wc.on('context-menu', (_e, params) => this.owner.showContextMenu(this, params));
     wc.on('before-input-event', (event, input) => this.owner.handleShortcut(event, input));
-    wc.on('render-process-gone', () => { this.title = 'Karta przestała odpowiadać'; this.loading = false; sync(); });
+    wc.on('render-process-gone', (_e, szczegoly) => {
+      this.loading = false;
+      this.audible = false;
+      const powod = szczegoly && szczegoly.reason;
+      if (powod === 'clean-exit') this.title = 'Karta przestała odpowiadać';
+      // Odroczone: niszczenie widoku albo nowa nawigacja w trakcie tego zdarzenia
+      // bywa zawodne, a karta mogla w tej chwili zostac zamknieta.
+      else setImmediate(() => this._poAwarii(wc, powod));
+      sync();
+    });
     wc.on('destroyed', () => { adblock.forget(wc.id); sessions.zapomnijKarte(wc.id); sync(); });
 
     sledzAktywnosc(wc);
@@ -581,7 +648,7 @@ class Tab {
               contextIsolation: true,
               sandbox: true,
               nodeIntegrationInSubFrames: true,
-              additionalArguments: pageFlags(),
+              additionalArguments: pageFlags(this.owner.partition),
               partition: this.owner.partition
             }
           }
@@ -735,20 +802,22 @@ class AppWindow {
        - kolejne okno (Ctrl+N, nowe okno prywatne) przy juz otwartym: na tym
          samym monitorze co okno, z ktorego je otwarto, lekko przesuniete, jak
          w Chrome. Wczesniej kazde nowe okno ladowalo dokladnie w miejscu
-         ostatnio zamknietego - czesto na innym monitorze i jedno na drugim;
+         ostatnio zamknietego - czesto na innym monitorze i jedno na drugim.
+         Przy menu ikony na pasku zadan zadne okno nie ma fokusu - wtedy
+         zrodlem jest ostatnio aktywne (zrodloNowegoOkna);
        - pierwsze okno: tam, gdzie bylo ostatnio, o ile ten monitor dalej
          istnieje. Okno zapamietane na odlaczonym monitorze trafia na srodek
          glownego ekranu zamiast poza ekran. */
     let cel;
     let maksymalizuj = false;
-    const zrodlo = bounds ? null : [...windows].find((w) => w.win && !w.win.isDestroyed() && w.win.isFocused()) || null;
+    const zrodlo = bounds ? null : zrodloNowegoOkna();
     if (bounds && Number.isFinite(bounds.x) && Number.isFinite(bounds.y)) {
       const punkt = bounds.punkt || { x: bounds.x + 40, y: bounds.y + 10 };
       cel = monitory.dopasuj({ x: bounds.x, y: bounds.y, width: bounds.width || 1280, height: bounds.height || 820 }, monitory.ekranPunktu(punkt));
     } else if (zrodlo) {
       const nb = monitory.normalne(zrodlo.win) || monitory.domyslne();
       cel = monitory.dopasuj({ x: nb.x + 30, y: nb.y + 30, width: nb.width, height: nb.height }, monitory.ekranOkna(nb));
-      maksymalizuj = zrodlo.win.isMaximized();
+      maksymalizuj = zrodlo.czyZmaksymalizowane();
     } else {
       const saved = data.settings.get('windowBounds', null);
       cel = saved && monitory.widoczne(saved) ? monitory.dopasuj(saved) : monitory.domyslne();
@@ -786,6 +855,7 @@ class AppWindow {
        stanac dokladnie tam, gdzie ja puszczono, wiec jej to nie dotyczy.
        Robimy to przed pokazaniem okna, wiec nic nie miga. */
     if (maksymalizuj) this.win.maximize();
+    this._zmaksymalizowane = maksymalizuj;
 
     this.shellView = new WebContentsView({
       webPreferences: {
@@ -820,8 +890,8 @@ class AppWindow {
 
     this.win.on('resize', () => { this.layout(); this._zapamietajPozniej(); });
     this.win.on('moved', () => this._zapamietajPozniej());
-    this.win.on('maximize', () => { this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
-    this.win.on('unmaximize', () => { this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
+    this.win.on('maximize', () => { this._zmaksymalizowane = true; this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
+    this.win.on('unmaximize', () => { this._zmaksymalizowane = false; this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
     this.win.on('enter-full-screen', () => { this.layout(); this.scheduleSync(); });
     this.win.on('leave-full-screen', () => {
       // Okno wyszlo z pelnego ekranu (np. przez Windows), a strona dalej
@@ -838,6 +908,7 @@ class AppWindow {
        przemalowania - tanie, bez przeladowania strony i bez utraty stanu. */
     this.win.on('focus', () => {
       if (!this.isPrivate) ostatnioAktywneZwykle = this;
+      ostatnioAktywneOkno = this;
       this.scheduleSync(); this.invalidateActiveTab();
     });
     this.win.on('restore', () => this.invalidateActiveTab());
@@ -871,6 +942,7 @@ class AppWindow {
     this.win.on('closed', () => {
       this.dispose();
       if (ostatnioAktywneZwykle === this) ostatnioAktywneZwykle = null;
+      if (ostatnioAktywneOkno === this) ostatnioAktywneOkno = null;
       // Zamkniete krzyzykiem (nie ostatnie) zwykle okno wypada z sesji, jak w Chrome.
       if (!this.isPrivate) zaplanujZapisSesji();
     });
@@ -898,7 +970,9 @@ class AppWindow {
       // dokladnie jak w Chrome/Edge. Dla pojedynczego adresu (zwykly start)
       // ta karta i tak od razu sie budzi w tej samej linijce, wiec dla niej
       // nic sie nie zmienia.
-      for (const url of list) this.newTab({ url, background: true, lazy: true });
+      // aktywna > 0: pierwsza karta nie moze sie obudzic "po drodze" - wczytywalaby
+      // sie w tle bez potrzeby, a film albo muzyka z niej graly bez slowa.
+      for (const url of list) this.newTab({ url, background: true, lazy: true, bezWyboru: aktywna > 0 });
       // Od teraz karty tego okna ida do zapisu sesji. Wczesniej okno ma zero
       // kart i nadpisaloby zapisana sesje pusta lista.
       this._kartyGotowe = true;
@@ -1007,10 +1081,17 @@ class AppWindow {
     this.layout();
   }
 
+  /* Zminimalizowane okno Windows raportuje jako niezmaksymalizowane, nawet gdy
+     po przywroceniu wroci na caly ekran. Przy zamknieciu z paska zadan gubilo
+     to maksymalizacje - w tym stanie wierzymy zdarzeniom maximize/unmaximize. */
+  czyZmaksymalizowane() {
+    return this.win.isMinimized() ? !!this._zmaksymalizowane : this.win.isMaximized();
+  }
+
   rememberBounds(odRazu = true) {
     try {
       if (this.isPrivate || this.win.isDestroyed()) return;
-      const zmaksymalizowane = this.win.isMaximized() && !this.win.isFullScreen();
+      const zmaksymalizowane = this.czyZmaksymalizowane() && !this.win.isFullScreen();
       /* Flaga "bylo zmaksymalizowane" zapisuje sie zawsze. Pozycje bierzemy
          "normalna" (getNormalBounds) takze u zmaksymalizowanego okna - to
          ona mowi, na KTORYM monitorze okno stoi. Wczesniej przy
@@ -1062,7 +1143,7 @@ class AppWindow {
     this._spareTab = new Tab(this, { url: NEW_TAB });
   }
 
-  newTab({ url = NEW_TAB, background = false, index = null, lazy = false } = {}) {
+  newTab({ url = NEW_TAB, background = false, index = null, lazy = false, bezWyboru = false } = {}) {
     const resolved = url ? (urls.resolve(url) || NEW_TAB) : NEW_TAB;
     // Link mailto:, tel: albo protokol innej aplikacji otwierany "w nowej
     // karcie" (target="_blank", srodkowy klik, menu) - tego i tak nie da sie
@@ -1094,7 +1175,7 @@ class AppWindow {
     // Pusta nowa karta na wierzchu: klawiatura ma isc do paska adresu, nie do
     // strony (patrz nizej i _pasekMaFokus w Tab).
     const doPaska = !background && resolved === NEW_TAB;
-    if (!background || this.activeTabId === null) this.selectTab(tab.id, { fokusStrony: !doPaska });
+    if (!bezWyboru && (!background || this.activeTabId === null)) this.selectTab(tab.id, { fokusStrony: !doPaska });
     else this.layout();
     // Pusta nowa karta w tle nie ma czego pokazywac, wiec od razu przenosimy
     // kursor do paska adresu na gorze - tak samo jak Chrome i Firefox, zeby
@@ -1247,6 +1328,19 @@ class AppWindow {
     if (urls.zewnetrznyProtokol(target)) { this.handleExternalProtocol(target); return; }
     if (!tab) return this.newTab({ url: target });
     tab.errorUrl = null;
+    /* Uspiona karta w tle nie ma widoku, wiec otworz() rzucalo wyjatek i polecenie
+       przepadalo. Zapamietujemy adres: wczyta sie (po sprawdzeniu w otworz) przy
+       obudzeniu, bez stawiania procesu dla karty, na ktora nikt nie patrzy. */
+    if (tab.sleeping) {
+      tab.warnUrl = null;
+      tab.url = target;
+      tab.title = '';
+      tab.favicon = null;
+      tab.faviconPrywatna = null;
+      tab.siteAccent = null;
+      this.scheduleSync();
+      return;
+    }
     tab.otworz(target);
   }
 
@@ -1289,7 +1383,7 @@ class AppWindow {
     if (!t.wc || t.wc.isDestroyed()) return;
     t.errorUrl ? t.wc.loadURL(t.errorUrl).catch(() => {}) : (hard ? t.wc.reloadIgnoringCache() : t.wc.reload());
   }
-  stop() { const t = this.activeTab(); if (t) t.wc.stop(); }
+  stop() { const t = this.activeTab(); if (t && t.wc && !t.wc.isDestroyed()) t.wc.stop(); }
   goHome() { this.navigate(data.settings.get('homepage', NEW_TAB) || NEW_TAB); }
 
   /* ------------------------------------------------------------- zoom etc */
@@ -1319,7 +1413,8 @@ class AppWindow {
     const t = this.activeTab();
     if (!t) return;
     t.muted = !t.muted;
-    t.wc.setAudioMuted(t.muted);
+    // Uspiona karta nie ma procesu - wake() odtworzy wyciszenie z t.muted.
+    if (t.wc && !t.wc.isDestroyed()) t.wc.setAudioMuted(t.muted);
     this.scheduleSync();
   }
 
@@ -1786,6 +1881,14 @@ class AppWindow {
     }, 16);
   }
 
+  /* Licznik blokad w tarczy: bloker potrafi zglaszac setki zmian na sekunde przy
+     ciezkiej stronie, a kazdy pelny sync to cala lista kart i zakladek przez IPC.
+     Do oka wystarczy kilka razy na sekunde. */
+  scheduleSyncLicznika() {
+    if (this._licznikTimer) return;
+    this._licznikTimer = setTimeout(() => { this._licznikTimer = null; this.scheduleSync(); }, 250);
+  }
+
   state() {
     const active = this.activeTab();
     const bounds = this.win && !this.win.isDestroyed() ? this.win.getContentBounds() : { width: 1280, height: 800 };
@@ -1814,7 +1917,7 @@ class AppWindow {
       loading: active ? active.loading : false,
       canGoBack: active && !active.wc.isDestroyed() ? moznaWstecz(active.wc) : false,
       canGoForward: active && !active.wc.isDestroyed() ? moznaDalej(active.wc) : false,
-      bookmarked: active ? data.isBookmarked(active.displayUrl, 'menu') : false,
+      bookmarked: active ? wMenuZakladek(active.displayUrl) : false,
       zoom: active ? active.zoom : 1,
       findOpen: this.findOpen,
       showBookmarksBar: data.settings.get('showBookmarksBar', true),
@@ -1853,6 +1956,7 @@ class AppWindow {
 
   dispose() {
     clearTimeout(this._zapisGranic);
+    clearTimeout(this._licznikTimer);
     if (this.toastView) { try { this.toastView.webContents.close(); } catch (_) {} this.toastView = null; }
     for (const tab of this.tabs) tab.destroy();
     this.tabs = [];
@@ -2109,6 +2213,21 @@ try { app.on('before-quit', () => { zamykanieProgramu = true; clearTimeout(zapis
 
 // Ostatnio aktywne zwykle okno - idzie jako pierwsze w zapisanej sesji.
 let ostatnioAktywneZwykle = null;
+// Ostatnio aktywne okno dowolnego rodzaju - zrodlo pozycji nowego okna.
+let ostatnioAktywneOkno = null;
+
+/* Wzgledem ktorego okna ustawic nowe: z fokusem, a bez fokusu (menu ikony na
+   pasku zadan) ostatnio aktywne. Inaczej nowe okno bralo zapisana pozycje i
+   stawalo dokladnie na istniejacym. Bez ostatnio aktywnego tylko okna juz
+   zbudowane (_kartyGotowe): okna z sesji powstajace razem przy starcie maja
+   dalej wracac na zapisana pozycje, a nie przesuwac sie przy kazdym starcie. */
+function zrodloNowegoOkna() {
+  const zywe = [...windows].filter((w) => w.win && !w.win.isDestroyed());
+  const zFokusem = zywe.find((w) => w.win.isFocused());
+  if (zFokusem) return zFokusem;
+  if (zywe.includes(ostatnioAktywneOkno)) return ostatnioAktywneOkno;
+  return zywe.filter((w) => w._kartyGotowe).pop() || null;
+}
 
 /* Zapis sesji na biezaco (po awarii, zabiciu procesu czy zaniku pradu
    zostawala lista z ostatniego czystego zamkniecia). Najwyzej raz na 5 s
@@ -2122,13 +2241,43 @@ function zaplanujZapisSesji() {
   }, ZAPIS_SESJI_MS);
 }
 
+/* Adres karty do zapisu sesji. Podglad pliku z sieci (nazuna://pdf?src=https://...)
+   zapisuje adres zrodlowy, po wczytaniu podglad wlaczy sie sam; bez tego karta
+   z PDF-em znikala po restarcie. Inne strony nazuna: (tez pliki z dysku: src to
+   jednorazowy token nazuna-local:) nie wracaja. */
+function adresDoSesji(tab) {
+  const u = tab.displayUrl;
+  if (!u) return null;
+  if (!/^nazuna:/i.test(u)) return u;
+  if (!/^nazuna:\/\/(?:pdf|textview)\b/i.test(u)) return null;
+  try {
+    const src = new URL(u).searchParams.get('src');
+    return src && /^https?:\/\//i.test(src) ? src : null;
+  } catch (_) { return null; }
+}
+
+/* Adresy kart okna i numer aktywnej na tej liscie (karty nazuna: nie wchodza na
+   liste, wiec numer liczymy po odsianiu). Aktywna strona wewnetrzna: sasiednia karta. */
+function kartyDoSesji(w) {
+  const adresy = [];
+  let aktywna = 0;
+  for (const t of w.tabs) {
+    const adres = adresDoSesji(t);
+    if (t.id === w.activeTabId) aktywna = adres ? adresy.length : Math.max(0, adresy.length - 1);
+    if (adres) adresy.push(adres);
+  }
+  return { adresy, aktywna };
+}
+
 /* Karty do przywrocenia przy nastepnym starcie, osobno dla kazdego zwyklego
    okna (prywatne nigdy). Wczesniej szlo tylko jedno okno i przy "Zakoncz"
    z kilkoma oknami karty pozostalych przepadaly. pierwsze = okno, ktore ma
    wrocic jako glowne (na wierzchu). displayUrl, a nie url: karta pokazujaca
    strone bledu (np. chwilowy brak sieci) ma w url adres nazuna://error
    i inaczej wypadalaby z listy. Okna jeszcze bez kart (w trakcie budowania)
-   pomijamy, a gdy nie ma zadnego zwyklego okna, nic nie nadpisujemy. */
+   pomijamy, a gdy nie ma zadnego zwyklego okna, nic nie nadpisujemy.
+   restoreSessionAktywne: numer aktywnej karty kazdego okna, osobny klucz, zeby
+   format list zostal zrozumialy dla starszych wersji po cofnieciu. */
 function zapamietajSesje(pierwsze = null, { synchronicznie = false } = {}) {
   try {
     const zwykle = [...windows].filter((w) => !w.isPrivate && w._kartyGotowe);
@@ -2136,13 +2285,15 @@ function zapamietajSesje(pierwsze = null, { synchronicznie = false } = {}) {
     let glowne = pierwsze && !pierwsze.isPrivate ? pierwsze : null;
     if (!glowne) glowne = zwykle.find((w) => w.win && !w.win.isDestroyed() && w.win.isFocused()) || ostatnioAktywneZwykle;
     if (glowne && zwykle.includes(glowne)) zwykle.sort((a, b) => (a === glowne ? -1 : b === glowne ? 1 : 0));
-    const okna = zwykle
-      .map((w) => w.tabs.map((t) => t.displayUrl).filter((u) => u && !/^nazuna:/i.test(u)))
-      .filter((l) => l.length);
+    const zapisy = zwykle.map(kartyDoSesji).filter((z) => z.adresy.length);
+    const okna = zapisy.map((z) => z.adresy);
+    const aktywne = zapisy.map((z) => z.aktywna);
     const zmiana = JSON.stringify(okna) !== JSON.stringify(data.settings.get('restoreSessionOkna', null))
+      || JSON.stringify(aktywne) !== JSON.stringify(data.settings.get('restoreSessionAktywne', null))
       || JSON.stringify(okna[0] || []) !== JSON.stringify(data.settings.get('restoreSession', null));
     if (zmiana) {
       data.settings.set('restoreSessionOkna', okna);
+      data.settings.set('restoreSessionAktywne', aktywne);
       // Plaska lista pierwszego okna - dla starszych wersji po ewentualnym cofnieciu.
       data.settings.set('restoreSession', okna[0] || []);
       if (!synchronicznie) data.settings.flush();
@@ -2379,12 +2530,14 @@ const KANALY_POWIADOMIEN = new Set(['update:status', 'download-blocked', 'popup-
 
 const DO_WLASNYCH_KART = new Set([
   'settings:changed', 'skroty:zmiana', 'update:status', 'bookmarks:changed',
-  'download-started', 'download-updated', 'download-done'
+  'download-started', 'download-updated', 'download-done',
+  'history:changed', 'downloads:changed'
 ]);
 
 /* filtr (opcjonalny) wybiera okna, do ktorych wiadomosc ma trafic - np.
    pobranie z okna prywatnego nie ma sie pokazywac w zwyklych oknach. */
 function broadcastAll(channel, payload, filtr = null) {
+  if (channel === 'bookmarks:changed') adresyMenuZakladek = null;
   for (const w of windows) {
     if (filtr && !filtr(w)) continue;
     w.send(channel, payload);

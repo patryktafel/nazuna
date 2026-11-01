@@ -90,12 +90,84 @@ try {
   if (arg) fpSeed = arg.slice('--nazuna-fp-seed='.length);
 } catch (_) {}
 
+/* ------------------------------------------------------- obce ciasteczka (N30)
+   Sama blokada w session.js wycina tylko naglowki Cookie/Set-Cookie. Skrypt w
+   obcej ramce czytal i zapisywal swoje ciasteczka przez document.cookie i
+   cookieStore, wiec sledzenie miedzy stronami dalej dzialalo. Tu robimy to, co
+   Chrome z ta sama blokada: obca ramka widzi puste ciasteczka.
+
+   Dziala tylko z flaga --nazuna-blokuj-obce-ciasteczka (ustawienie
+   blockThirdPartyCookies). Bez flagi nic sie nie zmienia. Znane ograniczenia:
+   Service Worker tu nie siega (preload go nie obejmuje), a flaga obowiazuje od
+   nowej karty, tak jak pozostale flagi z pageFlags.
+
+   Preload dziala w piaskownicy, wiec nie ma tu tldts z listy sufiksow. Pomylka
+   ponizszego przyblizenia prawie zawsze oznacza brak blokady (np. a.github.io
+   i b.github.io), a nie zablokowanie ramki tej samej domeny. Odwrotnie bywa
+   tylko, gdy ktos ma strone wprost na nazwie typu net.de (www.net.de i
+   cdn.net.de). */
+const DRUGI_POZIOM = new Set(['ac', 'biz', 'co', 'com', 'edu', 'go', 'gob', 'gouv', 'gov', 'info', 'ne', 'net', 'nom', 'or', 'org']);
+function domenaGlowna(host) {
+  const czlony = host.split('.');
+  const ile = czlony[czlony.length - 1].length === 2 && DRUGI_POZIOM.has(czlony[czlony.length - 2]) ? 3 : 2;
+  return czlony.slice(-ile).join('.');
+}
+// Adresy IP i nazwy bez kropki (router, localhost) pomija tez blokada naglowkow,
+// bo tldts nie widzi w nich domeny. Skrypt ma sie zachowac tak samo.
+function maDomene(host) {
+  return host.indexOf('.') > 0 && host.indexOf('[') !== 0 && !/^\d+(\.\d+){3}$/.test(host);
+}
+function wDomenie(host, domena) {
+  return !!domena && (host === domena || host.endsWith('.' + domena));
+}
+
+// Nazwa zdarzenia odblokowujacego: losowa, bo znaja ja tylko ten preload i
+// skrypt ponizej, a obca ramka nie moze odblokowac sie sama.
+let znacznikCiasteczek = '';
+if (!internal) {
+  try {
+    if (window !== window.top && process.argv.indexOf('--nazuna-blokuj-obce-ciasteczka') !== -1) {
+      // Ostatni przodek to strona w pasku adresu. Blokada naglowkow porownuje
+      // tez tylko z nia, a origin "null" konczy sie tu wyjatkiem z new URL.
+      const przodkowie = location.ancestorOrigins;
+      const szczyt = new URL(przodkowie[przodkowie.length - 1]);
+      // window.origin, bo about:blank i srcdoc dziedzicza origin (i ciasteczka)
+      // po tworcy, a location.origin mialyby tam "null".
+      const ramka = new URL(window.origin);
+      const www = (u) => u.protocol === 'https:' || u.protocol === 'http:';
+      if (www(szczyt) && www(ramka) && maDomene(szczyt.hostname) && maDomene(ramka.hostname)
+        && domenaGlowna(szczyt.hostname) !== domenaGlowna(ramka.hostname)) {
+        // Para "strona>osadzona" z domenami policzonymi przez tldts w session.js.
+        const naszaPara = (para) => {
+          const [strona, osadzona] = String(para).split('>');
+          return wDomenie(szczyt.hostname, strona) && wDomenie(ramka.hostname, osadzona);
+        };
+        const arg = process.argv.find((a) => a.indexOf('--nazuna-wyjatki-ciasteczek=') === 0);
+        const wyjatki = arg ? decodeURIComponent(arg.slice('--nazuna-wyjatki-ciasteczek='.length)).split(',') : [];
+        if (!wyjatki.some(naszaPara)) {
+          znacznikCiasteczek = 'n' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+          // Zgoda storage-access dana juz po starcie tej ramki. Sama odpowiedz
+          // document.requestStorageAccess nie wystarcza jako dowod zgody, bo
+          // czekamy na decyzje z procesu glownego, ktorej strona nie podrobi.
+          ipcRenderer.on('nazuna:obce-ciasteczka-zgoda', (_event, para) => {
+            if (naszaPara(para)) document.dispatchEvent(new Event(znacznikCiasteczek));
+          });
+        }
+      }
+    }
+  } catch (_) {
+    // Nie da sie ustalic domen: zostawiamy ramke w spokoju, zeby nie psuc strony.
+    znacznikCiasteczek = '';
+  }
+}
+
 if (!internal) {
   const FULL = String(process.versions.chrome || '120.0.0.0');
   const MAJOR = FULL.split('.')[0] || '120';
   const script = `(() => {
   const BEZ_KLUCZY = ${JSON.stringify(bezKluczy)};
   const FP_SEED = ${JSON.stringify(fpSeed)};
+  const ZNACZNIK_CIASTECZEK = ${JSON.stringify(znacznikCiasteczek)};
   const CHROME = 'Google Chrome';
   const MAJOR = '${MAJOR}';
   const FULL = '${FULL}';
@@ -438,6 +510,54 @@ if (!internal) {
       };
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', zastosujTlo, { once: true });
       else zastosujTlo();
+    }
+  } catch (_) {}
+
+  /* --- 6. obca ramka nie widzi ciasteczek ---------------------------------
+     Patrz "obce ciasteczka" wyzej. Zachowanie jak w Chrome z blokada: odczyt
+     pusty, zapis po cichu ignorowany. Oryginaly zostaja na czas po zgodzie
+     uzytkownika na dostep do danych (storage-access). */
+  if (ZNACZNIK_CIASTECZEK) try {
+    let odblokowane = false;
+    document.addEventListener(ZNACZNIK_CIASTECZEK, () => { odblokowane = true; }, { once: true });
+
+    const podmien = (proto, nazwa, opis) => {
+      const stary = Object.getOwnPropertyDescriptor(proto, nazwa);
+      if (!stary) return;
+      const nowy = Object.getOwnPropertyDescriptor(opis(stary), nazwa);
+      nowy.enumerable = stary.enumerable;
+      Object.defineProperty(proto, nazwa, nowy);
+    };
+
+    podmien(Document.prototype, 'cookie', (stary) => ({
+      get cookie() { return odblokowane ? stary.get.call(this) : ''; },
+      set cookie(v) { if (odblokowane) stary.set.call(this, v); }
+    }));
+    podmien(Navigator.prototype, 'cookieEnabled', (stary) => ({
+      get cookieEnabled() { return odblokowane ? stary.get.call(this) : false; }
+    }));
+    // Strona pyta o to, zanim poprosi o zgode. Odpowiedz "masz dostep" przy
+    // pustych ciasteczkach znaczylaby, ze o zgode nie poprosi nigdy.
+    podmien(Document.prototype, 'hasStorageAccess', (stary) => ({
+      hasStorageAccess(...args) { return odblokowane ? stary.value.apply(this, args) : Promise.resolve(false); }
+    }));
+
+    if (window.CookieStore && window.cookieStore) {
+      const cs = CookieStore.prototype;
+      const naWynik = (nazwa, pusty) => {
+        podmien(cs, nazwa, (stary) => ({
+          [nazwa](...args) { return odblokowane ? stary.value.apply(this, args) : Promise.resolve(pusty); }
+        }));
+      };
+      naWynik('get', null);
+      naWynik('getAll', []);
+      naWynik('set', undefined);
+      naWynik('delete', undefined);
+      // Zdarzenie change niesie wartosci ciasteczek. Ten nasluch jest pierwszy,
+      // wiec odcina tez onchange i addEventListener strony.
+      window.cookieStore.addEventListener('change', (e) => {
+        if (!odblokowane) e.stopImmediatePropagation();
+      });
     }
   } catch (_) {}
 })();`;

@@ -88,13 +88,16 @@ Var Nazuna_ChcStartMenu
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\Nazuna\Capabilities\FileAssociations" ".pdf" "NazunaPDF"
   WriteRegStr HKCU "Software\RegisteredApplications" "Nazuna" "Software\Clients\StartMenuInternet\Nazuna\Capabilities"
 
+  ; "--" przed "%1" konczy przelaczniki: nawet gdyby inny program podal "adres"
+  ; z cudzyslowem i dopisanymi flagami, Chromium nie potraktuje ich jak flag.
+  ; Sam "--" nie przeszkadza: argToStartUrl w index.js go pomija.
   WriteRegStr HKCU "Software\Classes\NazunaHTML" "" "Strona HTML (Nazuna)"
   WriteRegStr HKCU "Software\Classes\NazunaHTML\DefaultIcon" "" "$INSTDIR\Nazuna.exe,0"
-  WriteRegStr HKCU "Software\Classes\NazunaHTML\shell\open\command" "" '"$INSTDIR\Nazuna.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\NazunaHTML\shell\open\command" "" '"$INSTDIR\Nazuna.exe" -- "%1"'
 
   WriteRegStr HKCU "Software\Classes\NazunaPDF" "" "Dokument PDF (Nazuna)"
   WriteRegStr HKCU "Software\Classes\NazunaPDF\DefaultIcon" "" "$INSTDIR\Nazuna.exe,0"
-  WriteRegStr HKCU "Software\Classes\NazunaPDF\shell\open\command" "" '"$INSTDIR\Nazuna.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\NazunaPDF\shell\open\command" "" '"$INSTDIR\Nazuna.exe" -- "%1"'
 !macroend
 
 !macro customUnInstall
