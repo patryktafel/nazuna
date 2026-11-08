@@ -843,6 +843,15 @@ function renderToolbar() {
   document.documentElement.dataset.accent = (state.settings && state.settings.accent) || 'violet';
   document.documentElement.dataset.motyw = state.motyw || 'ciemny';
   document.documentElement.dataset.mgla = (state.settings && state.settings.mglaKolory) || 'lawenda';
+  {
+    const b = $('#motywStron');
+    const ikona = state.ciemneStrony ? 'moon' : 'sun';
+    if (b.dataset.icon !== ikona) { b.dataset.icon = ikona; setIcon(b, ikona); }
+    const tryb = (state.settings && state.settings.motywStron) || 'system';
+    const teraz = state.ciemneStrony ? 'ciemne' : 'jasne';
+    b.title = `Strony: ${teraz}${tryb === 'system' ? ' (jak w Windows)' : ''} · kliknij, aby ${state.ciemneStrony ? 'jasne' : 'ciemne'}`;
+    b.setAttribute('aria-label', b.title);
+  }
   document.body.classList.toggle('content-fullscreen', !!state.contentFullScreen);
   applySiteAccent();
 }
@@ -2016,6 +2025,13 @@ $('#back').addEventListener('click', () => api.send('nav.back'));
 $('#forward').addEventListener('click', () => api.send('nav.forward'));
 $('#reload').addEventListener('click', () => (state && state.loading ? api.send('tab.stop') : api.send('tab.reload', {})));
 $('#home').addEventListener('click', () => api.send('nav.home'));
+/* Slonce/ksiezyc: przelacza strony WWW miedzy jasnym a ciemnym trybem
+   (ustawienie motywStron; domyslnie jak w Windowsie). Klik zawsze daje
+   przeciwienstwo tego, co widac teraz. */
+$('#motywStron').addEventListener('click', () => {
+  const ciemne = !!(state && state.ciemneStrony);
+  api.invoke('settings.set', { patch: { motywStron: ciemne ? 'light' : 'dark' } }).catch(() => {});
+});
 el.newtab.addEventListener('click', () => api.send('tab.new', {}));
 $('#bookmarksBtn').addEventListener('click', () => (popover && popover.name === 'bookmarks' ? closePopover() : bookmarksPanel()));
 $('#menu').addEventListener('click', () => (popover && popover.name === 'menu' ? closePopover() : mainMenu()));

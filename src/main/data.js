@@ -51,6 +51,9 @@ const DEFAULT_SETTINGS = {
   // starsza Nazuna czytajaca ten sam settings.json dalej rozumiala 'theme'.
   wyglad: 'mgla',           // mgla (Lawendowa mgla) | klasyczny
   mglaKolory: 'lawenda',    // lawenda | roz | morski - plamy koloru w tle mgly
+  // Jasny/ciemny tryb stron WWW (prefers-color-scheme), niezalezny od wygladu
+  // Nazuny. Przycisk slonca/ksiezyca na pasku przelacza jasne <-> ciemne.
+  motywStron: 'system',     // system | light | dark
   accent: 'violet',
   restoreSession: null,
   // Ukrywanie lokalnego adresu IP w WebRTC (WEBRTC_IP_HANDLING_POLICY) - patrz

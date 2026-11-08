@@ -1956,6 +1956,8 @@ class AppWindow {
       extensions: (!this.isPrivate && data.settings.get('extensionsEnabled', true)) ? extensions.list().filter((e) => e.enabled) : [],
       settings: data.settings.data,
       motyw: motywTeraz(),
+      // Czy strony dostaja teraz ciemny tryb - ikona slonca/ksiezyca na pasku.
+      ciemneStrony: (() => { try { return nativeTheme.shouldUseDarkColors; } catch (_) { return false; } })(),
       przeciaganie: !!this.przeciaganieKarty,
       zeton: ZETON,
       viewport: { width: bounds.width, height: bounds.height },
@@ -2529,7 +2531,7 @@ function tabSleepStatus() {
    przy themeSource 'system' dalej odpowiada wedlug Windowsa - zgodnie. */
 function ustawMotywStron() {
   try {
-    const zrodlo = zrodloMotywuStron(data.settings.get('theme', 'dark'), data.settings.get('wyglad', 'mgla'));
+    const zrodlo = zrodloMotywuStron(data.settings.get('motywStron', 'system'));
     // Tylko przy zmianie - przypisanie emituje 'updated', a nasluch nizej wola repaintTheme.
     if (nativeTheme.themeSource !== zrodlo) nativeTheme.themeSource = zrodlo;
   } catch (_) {}
@@ -2552,7 +2554,9 @@ function repaintTheme() {
 // Gdy uzytkownik wybral "jak w systemie", zmiana w Windowsie ma dzialac od razu.
 try {
   nativeTheme.on('updated', () => {
-    if (data.settings.get('theme', 'dark') !== 'system') return;
+    // Zmiana w Windows: wazna dla motywu Klasyczny 'jak w systemie' i dla stron
+    // 'jak w Windows' (ikona slonca/ksiezyca na pasku).
+    if (data.settings.get('theme', 'dark') !== 'system' && data.settings.get('motywStron', 'system') !== 'system') return;
     repaintTheme();
     for (const w of windows) w.scheduleSync();
     broadcastAll('settings:changed');

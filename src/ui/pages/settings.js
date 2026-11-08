@@ -131,6 +131,15 @@ function render() {
           <button class="accent-dot" data-accent="${name}" title="${name}" style="width:24px;height:24px;border-radius:50%;background:${color};border:2px solid ${v.accent === name ? 'var(--text)' : 'transparent'};cursor:pointer"></button>`).join('')}
         </div>
       </div>
+      <div class="row">
+        <div class="body"><div class="title">Wygląd stron</div>
+          <div class="sub">Strony, które mają ciemny tryb, przełączą się same. Szybko zmienisz to też przyciskiem słońca i księżyca na pasku</div></div>
+        <div class="ctl"><select class="field" data-key="motywStron" style="width:170px">
+          <option value="system" ${v.motywStron !== 'light' && v.motywStron !== 'dark' ? 'selected' : ''}>Jak w Windows</option>
+          <option value="light" ${v.motywStron === 'light' ? 'selected' : ''}>Jasne</option>
+          <option value="dark" ${v.motywStron === 'dark' ? 'selected' : ''}>Ciemne</option>
+        </select></div>
+      </div>
       ${toggleRow('showBookmarksBar', 'Pasek zakładek', 'Widoczny pod paskiem adresu')}
     </div>
 

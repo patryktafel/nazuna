@@ -84,13 +84,10 @@ function rozstrzygnijMotyw(ustawienie, wyglad = 'mgla') {
 
 /* Co mowimy stronom w prefers-color-scheme (nativeTheme.themeSource). Strony
    z wlasnym ciemnym trybem (Google, YouTube, Reddit...) przelaczaja sie wtedy
-   same - inaczej pod ciemnym paskiem mgly wyskakiwaly biale, bo Windows
-   uzytkownika jest jasny. Dla Klasycznego: to, co wybral w motywie. */
-function zrodloMotywuStron(ustawienie, wyglad = 'mgla') {
-  if (wyglad !== 'klasyczny') return 'dark';
-  if (ustawienie === 'light') return 'light';
-  if (ustawienie === 'dark') return 'dark';
-  return 'system';
+   same. Domyslnie jak w Windowsie, przy kazdym wygladzie Nazuny; uzytkownik
+   przelacza jasne/ciemne przyciskiem slonca/ksiezyca na pasku. */
+function zrodloMotywuStron(motywStron) {
+  return motywStron === 'light' || motywStron === 'dark' ? motywStron : 'system';
 }
 
 // Tla malowane po stronie okna, zanim strona zdazy sie wyrysowac. Bez tego
