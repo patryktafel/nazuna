@@ -366,6 +366,9 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
      (ok. 3.4-4:1) - tu jest jasniejszy (min. 4.5:1 w najjasniejszym miejscu,
      takze przy zestawie roz, gdzie plama jest najjasniejsza). */
   --text-faint: #b0aad3;
+  /* flow-root: gorny margines tresci (np. .err na stronie bledu) nie wypycha body
+     w dol - inaczej u gory zostawal pas golego tla, a strona byla dluzsza niz ekran. */
+  display: flow-root;
   /* body przewija tresc, a tlo stoi w miejscu (plamy nie uciekaja przy przewijaniu). */
   background:
     radial-gradient(760px 540px at 6% -8%, color-mix(in srgb, var(--aurora-1) 42%, transparent) 0%, transparent 70%),
@@ -497,4 +500,26 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
   :where(:root[data-motyw="mgla"]) .err,
   :where(:root[data-motyw="mgla"]) .empty .icon,
   :root[data-motyw="mgla"] .toast { animation: none; }
+}
+
+/* ------------------------------------------- Lawendowa mgla: okno prywatne
+   Strony nazuna:// w oknie prywatnym (data-prywatne z pagekit.js/newtab.js)
+   dostaja te same chlodne, ciemniejsze barwy co pasek prywatny (koniec
+   shell.css): indygo i stalowy blekit zamiast wybranego zestawu kolorow. */
+:root[data-motyw="mgla"][data-prywatne="1"] {
+  --bg: #120f24;
+  --aurora-1: rgba(56, 52, 150, .70);
+  --aurora-2: rgba(38, 92, 150, .50);
+  --aurora-3: rgba(70, 50, 130, .55);
+  --accent: #9fb0ff;
+  --accent-strong: #c3ceff;
+  --accent-dim: rgba(159, 176, 255, 0.18);
+  --accent-ring: rgba(159, 176, 255, 0.32);
+}
+.nt-prywatne { display: none; }
+:root[data-motyw="mgla"] .nt-prywatne:not([hidden]) {
+  display: inline-flex; margin-top: 6px; padding: 7px 14px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 700; color: #dfe4ff;
+  background: linear-gradient(135deg, rgba(120, 104, 230, 0.30) 0%, rgba(60, 120, 200, 0.24) 100%);
+  box-shadow: inset 0 0 0 1px rgba(200, 190, 255, 0.20);
 }

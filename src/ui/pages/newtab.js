@@ -8,6 +8,9 @@
     if (s.values && s.values.accent) root.dataset.accent = s.values.accent;
     root.dataset.motyw = s.motyw || 'ciemny';
     root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
+    if (s.prywatne) root.dataset.prywatne = '1'; else delete root.dataset.prywatne;
+    const info = document.getElementById('prywatneInfo');
+    if (info) info.hidden = !s.prywatne;
   };
   const odswiez = () => window.nazuna.invoke('settings.get').then(zastosuj).catch(() => {});
   odswiez();

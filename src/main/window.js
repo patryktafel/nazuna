@@ -74,9 +74,17 @@ function motywTeraz() {
 /* Kolor malowany pod strona, zanim zdazy sie wyrysowac. Zwykle strony sa biale,
    wiec bialy; nasze wlasne strony ida za motywem, zeby przy otwieraniu karty
    nie mrugalo przeciwnym kolorem. */
-function pageBackground(url) {
+function pageBackground(url, prywatne = false) {
   if (!/^(nazuna|devtools):/i.test(String(url || ''))) return '#ffffff';
-  return TLA[motywTeraz()].wewnetrzne;
+  return tloOkna(prywatne);
+}
+
+/* Okno prywatne w mgle ma ciemniejsze, chlodne tlo (jak jego pasek, koniec
+   shell.css i pages.css) - tu kolor malowany, zanim strona sie narysuje. */
+function tloOkna(prywatne = false) {
+  const motyw = motywTeraz();
+  if (prywatne && motyw === 'mgla') return '#120f24';
+  return TLA[motyw].okno;
 }
 
 /* Znacznik losowany przy starcie przegladarki. Przeciaganie karty miedzy
@@ -371,7 +379,7 @@ class Tab {
         v8CacheOptions: 'code'
       }
     });
-    this.view.setBackgroundColor(pageBackground(this.url));
+    this.view.setBackgroundColor(pageBackground(this.url, this.owner && this.owner.isPrivate));
     this.wc = this.view.webContents;
     this.wire();
   }
@@ -539,7 +547,7 @@ class Tab {
       // brzydki wewnetrzny adres zamiast prawdziwego.
       if (!(this.errorUrl && event.url.startsWith('nazuna://error/'))) this.errorUrl = null;
       if (!(this.warnUrl && event.url.startsWith('nazuna://warning/'))) this.warnUrl = null;
-      try { this.view.setBackgroundColor(pageBackground(event.url)); } catch (_) {}
+      try { this.view.setBackgroundColor(pageBackground(event.url, this.owner.isPrivate)); } catch (_) {}
       adblock.resetCount(wc.id);
       adblock.setDocumentHost(wc.id, event.url);
     });
@@ -832,7 +840,7 @@ class AppWindow {
       minWidth: 620,
       minHeight: 420,
       frame: false,
-      backgroundColor: TLA[motywTeraz()].okno,
+      backgroundColor: tloOkna(isPrivate),
       show: false,
       title: isPrivate ? `${APP_NAME} - okno prywatne` : APP_NAME,
       icon: path.join(ASSETS_DIR, 'icon.png')
@@ -2555,11 +2563,10 @@ function przeladujPoZmianieMotywuStron() {
    ponownego uruchomienia i przy przelaczaniu kart widac blysk. */
 function repaintTheme() {
   ustawMotywStron();
-  const tlo = TLA[motywTeraz()].okno;
   for (const w of windows) {
-    try { w.win.setBackgroundColor(tlo); } catch (_) {}
+    try { w.win.setBackgroundColor(tloOkna(w.isPrivate)); } catch (_) {}
     for (const t of w.tabs) {
-      try { t.view.setBackgroundColor(pageBackground(t.url)); } catch (_) {}
+      try { t.view.setBackgroundColor(pageBackground(t.url, w.isPrivate)); } catch (_) {}
     }
   }
 }

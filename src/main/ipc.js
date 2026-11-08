@@ -432,7 +432,7 @@ const handlers = {
     W.przeniesKarte(Number(p.id), win, Number.isFinite(Number(p.index)) ? Number(p.index) : null);
   },
 
-  'settings.get': () => ({ values: data.settings.data, motyw: rozstrzygnijMotyw(data.settings.get('theme', 'dark'), data.settings.get('wyglad', 'mgla')), engines: SEARCH_ENGINES, downloadDir: downloads.defaultDir() }),
+  'settings.get': (win) => ({ prywatne: !!(win && win.isPrivate), values: data.settings.data, motyw: rozstrzygnijMotyw(data.settings.get('theme', 'dark'), data.settings.get('wyglad', 'mgla')), engines: SEARCH_ENGINES, downloadDir: downloads.defaultDir() }),
   'settings.set': (win, p) => {
     const patch = (p.patch && typeof p.patch === 'object') ? p.patch : {};
     data.settings.assign(patch);
