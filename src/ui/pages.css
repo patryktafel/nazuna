@@ -353,3 +353,148 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
   .pw-tytul { font-size: 34px; }
   .pw-stopka { padding: 16px; }
 }
+
+/* ------------------------------- Lawendowa mgla: wspolne elementy stron (etap 5)
+   Ustawienia, historia, zakladki, pobrane, rozszerzenia, o programie, blad i
+   ostrzezenie. Tlo mgly z przygaszonymi plamami koloru (--aurora), karty jak
+   matowe szklo, wiersze z oddechem, naglowek czcionka Fraunces. Nowa karta i
+   ekran powitalny maja wlasne tla (sekcje wyzej), wiec sa tu pominiete.
+   :where(...) nie podnosi wagi selektora - strony moga to dalej nadpisac
+   wlasnymi regulami. Klasyczny bez zmian. */
+:where(:root[data-motyw="mgla"]) body:not(.newtab):not(.powitanie) {
+  /* Na szkle nad plama koloru standardowy --text-faint mial za maly kontrast
+     (ok. 3.4-4:1) - tu jest jasniejszy (min. 4.5:1 w najjasniejszym miejscu,
+     takze przy zestawie roz, gdzie plama jest najjasniejsza). */
+  --text-faint: #b0aad3;
+  /* body przewija tresc, a tlo stoi w miejscu (plamy nie uciekaja przy przewijaniu). */
+  background:
+    radial-gradient(760px 540px at 6% -8%, color-mix(in srgb, var(--aurora-1) 42%, transparent) 0%, transparent 70%),
+    radial-gradient(640px 520px at 102% 6%, color-mix(in srgb, var(--aurora-3) 34%, transparent) 0%, transparent 70%),
+    radial-gradient(860px 620px at 72% 114%, color-mix(in srgb, var(--aurora-2) 40%, transparent) 0%, transparent 70%),
+    var(--bg);
+}
+
+@keyframes mglaStrona { from { opacity: 0; transform: translateY(8px); } }
+/* "backwards": po animacji nie zostaje transform (nie psuje position:fixed w srodku). */
+:where(:root[data-motyw="mgla"]) .page,
+:where(:root[data-motyw="mgla"]) .err { animation: mglaStrona .32s var(--ease) backwards; }
+
+:where(:root[data-motyw="mgla"]) .page { padding: 40px 32px 96px; }
+:where(:root[data-motyw="mgla"]) .page-head {
+  margin: -40px -32px 18px; padding: 28px 32px 26px; gap: 14px;
+  /* Szklany naglowek: przewijane karty rozmywaja sie pod nim, dol wygasa maska. */
+  background: linear-gradient(180deg, rgba(27, 24, 48, 0.55) 0%, rgba(27, 24, 48, 0.32) 100%);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15); backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 20px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 20px), transparent);
+}
+:where(:root[data-motyw="mgla"]) .page-head h1 {
+  font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: 0; gap: 14px;
+}
+:where(:root[data-motyw="mgla"]) .page-head h1 .icon {
+  width: 40px; height: 40px; padding: 10px; border-radius: 50%;
+  color: var(--accent-strong); background: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+:where(:root[data-motyw="mgla"]) .page-head .search { width: 280px; max-width: 100%; height: 36px; padding: 0 16px; border-radius: 999px; }
+
+:where(:root[data-motyw="mgla"]) .card {
+  border-radius: 20px; margin-bottom: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.04)), rgba(22, 19, 40, 0.45);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 44px -30px rgba(8, 5, 25, 0.95);
+}
+:where(:root[data-motyw="mgla"]) .card > h2 {
+  padding: 18px 22px 10px; font-size: 15px; font-weight: 700; letter-spacing: .1px; border-bottom: 0;
+}
+:where(:root[data-motyw="mgla"]) .card .hint { padding: 14px 22px; font-size: 12.5px; line-height: 1.65; }
+
+:where(:root[data-motyw="mgla"]) .row { gap: 16px; padding: 15px 22px; border-bottom-color: rgba(255, 255, 255, 0.06); }
+:where(:root[data-motyw="mgla"]) .row .title { font-size: 13.5px; font-weight: 600; }
+:where(:root[data-motyw="mgla"]) .row .sub { font-size: 12px; margin-top: 4px; }
+:where(:root[data-motyw="mgla"]) .row.clickable:hover { background: rgba(255, 255, 255, 0.045); }
+:where(:root[data-motyw="mgla"]) .row.clickable:active { background: rgba(255, 255, 255, 0.07); }
+
+:where(:root[data-motyw="mgla"]) .list-item {
+  gap: 14px; padding: 12px 22px; border-bottom-color: rgba(255, 255, 255, 0.06);
+  transition: background .14s var(--ease);
+}
+:where(:root[data-motyw="mgla"]) .list-item:hover { background: rgba(255, 255, 255, 0.05); }
+:where(:root[data-motyw="mgla"]) .list-item:active { background: rgba(255, 255, 255, 0.08); }
+/* Przeciaganie zakladek: podswietlenie folderu docelowego wygrywa z najechaniem. */
+:where(:root[data-motyw="mgla"]) .list-item.drop-do { background: var(--accent-dim); }
+:where(:root[data-motyw="mgla"]) .list-item .name { font-size: 13.5px; font-weight: 600; }
+:where(:root[data-motyw="mgla"]) .list-item .url,
+:where(:root[data-motyw="mgla"]) .list-item .when { font-size: 12px; }
+:where(:root[data-motyw="mgla"]) .list-item img.fav { border-radius: 6px; }
+/* Ikona folderu w zakladkach: ta sama szerokosc co litera strony obok. */
+:where(:root[data-motyw="mgla"]) .list-item > .icon { width: 22px; height: 22px; padding: 3px; color: var(--accent-strong); }
+:where(:root[data-motyw="mgla"]) .list-item .fav-litera {
+  width: 22px; height: 22px; border-radius: 8px; font-size: 11px; font-weight: 800;
+  color: var(--accent-strong); background: var(--accent-dim);
+}
+:where(:root[data-motyw="mgla"]) .iconbtn { width: 32px; height: 32px; border-radius: 50%; }
+:where(:root[data-motyw="mgla"]) .iconbtn:hover { background: rgba(255, 255, 255, 0.10); }
+:where(:root[data-motyw="mgla"]) .iconbtn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+
+/* Daty w historii ("Dzisiaj", "Wczoraj", "poniedzialek, ...") czcionka naglowkow. */
+:where(:root[data-motyw="mgla"]) .section-date {
+  padding: 22px 22px 8px; font-family: var(--font-display); font-size: 15px; font-weight: 500;
+  text-transform: none; letter-spacing: 0; color: var(--text-dim);
+}
+:where(:root[data-motyw="mgla"]) .section-date::first-letter { text-transform: uppercase; }
+
+/* Pusty stan: ikona w szklanym kolku, ktore powoli sie unosi. */
+@keyframes mglaUnosi { 50% { transform: translateY(-4px); } }
+:where(:root[data-motyw="mgla"]) .empty { padding: 72px 20px; font-size: 14px; line-height: 1.6; color: var(--text-dim); }
+:where(:root[data-motyw="mgla"]) .empty .icon {
+  width: 64px; height: 64px; padding: 17px; margin-bottom: 16px; border-radius: 50%; opacity: 1;
+  color: var(--accent-strong); background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10), 0 16px 40px -18px var(--accent-ring);
+  animation: mglaUnosi 6s ease-in-out infinite;
+}
+
+:where(:root[data-motyw="mgla"]) select.field {
+  padding-right: 34px; background-position: right 12px center;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c8c3e6' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+}
+
+:where(:root[data-motyw="mgla"]) .tag { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: var(--text-dim); }
+:where(:root[data-motyw="mgla"]) .tag.ok { background: rgba(143, 227, 201, 0.14); color: var(--ok); }
+:where(:root[data-motyw="mgla"]) .tag.warn { background: rgba(255, 207, 122, 0.14); color: var(--warn); }
+:where(:root[data-motyw="mgla"]) .tag.low { background: rgba(255, 122, 138, 0.14); color: #ffa3ad; } /* jasniejszy niz --danger: min. 4.5:1 */
+
+/* Komunikat toast() z pagekit.js ma styl w atrybucie style, stad !important. */
+@keyframes mglaToast { from { opacity: 0; transform: translate(-50%, 10px) scale(.96); } }
+:root[data-motyw="mgla"] .toast {
+  background: rgba(44, 38, 80, 0.94) !important; border-color: rgba(255, 255, 255, 0.14) !important;
+  border-radius: 999px !important; padding: 12px 22px !important; font-size: 13px !important;
+  box-shadow: 0 18px 44px -14px rgba(8, 5, 25, 0.85) !important;
+  font-weight: 600; color: var(--text);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  animation: mglaToast .26s var(--ease) backwards;
+}
+
+/* Blad i ostrzezenie (nazuna://error, nazuna://warning). */
+:where(:root[data-motyw="mgla"]) .err .icon {
+  width: 76px; height: 76px; padding: 20px; margin-bottom: 22px; border-radius: 50%;
+  color: var(--text-dim); background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+:where(:root[data-motyw="mgla"]) .err.danger .icon {
+  color: var(--danger); background: rgba(255, 122, 138, 0.12); box-shadow: inset 0 0 0 1px rgba(255, 122, 138, 0.26);
+}
+:where(:root[data-motyw="mgla"]) .err h1 { font-family: var(--font-display); font-size: 28px; font-weight: 500; margin: 0 0 12px; }
+:where(:root[data-motyw="mgla"]) .err p { font-size: 14px; line-height: 1.7; }
+:where(:root[data-motyw="mgla"]) .err code {
+  padding: 3px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+:where(:root[data-motyw="mgla"]) .err .actions { gap: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  :where(:root[data-motyw="mgla"]) .page,
+  :where(:root[data-motyw="mgla"]) .err,
+  :where(:root[data-motyw="mgla"]) .empty .icon,
+  :root[data-motyw="mgla"] .toast { animation: none; }
+}

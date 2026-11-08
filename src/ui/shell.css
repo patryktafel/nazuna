@@ -649,3 +649,31 @@ body:not(.expanded) #layer { pointer-events: none; }
 :root[data-motyw="mgla"] .menu-item { border-radius: 10px; }
 :root[data-motyw="mgla"] .menu-item:hover, :root[data-motyw="mgla"] .menu-item.hover { background: rgba(255, 255, 255, 0.08); }
 :root[data-motyw="mgla"] .findbar .wrap { border-radius: 999px; }
+
+/* ------------------------------------ Lawendowa mgla: okno prywatne (etap 5)
+   Okno prywatne poznaje sie po widocznej plakietce #privateBadge (shell.js
+   pokazuje ja tylko przy state.isPrivate). Pasek ma wtedy ciemniejsze,
+   chlodne plamy (indygo i stalowy blekit) niezaleznie od wybranego zestawu
+   kolorow, a plakietka jest wyrazna pigulka. Wymiary paska bez zmian. */
+:root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) #chrome {
+  background:
+    linear-gradient(180deg, rgba(18, 15, 36, 0.40) 0%, rgba(18, 15, 36, 0.70) 100%),
+    radial-gradient(34% 190% at 6% 0%, rgba(56, 52, 150, 0.55) 0%, transparent 72%),
+    radial-gradient(30% 170% at 94% 0%, rgba(38, 92, 150, 0.45) 0%, transparent 72%),
+    radial-gradient(40% 150% at 52% 130%, rgba(70, 50, 130, 0.40) 0%, transparent 70%),
+    #120f24;
+  border-bottom-color: rgba(140, 160, 255, 0.10);
+}
+:root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) .toolbar {
+  background: rgba(14, 12, 30, 0.58);
+  box-shadow: inset 0 0 0 1px rgba(160, 170, 255, 0.10), 0 8px 24px -16px rgba(4, 3, 14, 0.95);
+}
+:root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) .tabs.przewijane .tab-add { background: #16132c; box-shadow: -10px 0 10px -4px #16132c; }
+/* Plakietka "Prywatne" - widoczna tylko w oknie prywatnym. */
+:root[data-motyw="mgla"] .private-badge {
+  height: 26px; margin: 0 8px 8px; padding: 0 12px 0 9px; gap: 7px;
+  font-size: 12px; font-weight: 700; letter-spacing: .02em; color: #f2f0ff;
+  background: linear-gradient(135deg, rgba(120, 104, 230, 0.38) 0%, rgba(60, 120, 200, 0.30) 100%);
+  box-shadow: inset 0 0 0 1px rgba(200, 190, 255, 0.22), 0 0 16px -4px rgba(120, 104, 230, 0.55);
+}
+:root[data-motyw="mgla"] .private-badge .icon { width: 15px; height: 15px; color: #c9d2ff; }

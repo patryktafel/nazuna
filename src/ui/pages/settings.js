@@ -20,6 +20,12 @@ function probkiAkcentow() {
   return NAZWY_AKCENTOW.map((name) => [name, ACCENTY[motyw][name]]);
 }
 
+/* Naglowek sekcji. Ikona jest czysto dekoracyjna i widac ja tylko w Lawendowej
+   mgle (style w settings.html) - w wygladzie Klasyczny jest ukryta. */
+function naglowek(ikona, tytul) {
+  return `<h2>${iconSvg(ikona, 'ust-ikona')}${esc(tytul)}</h2>`;
+}
+
 function toggleRow(key, title, sub) {
   return `<div class="row">
     <div class="body"><div class="title">${esc(title)}</div><div class="sub">${esc(sub)}</div></div>
@@ -71,14 +77,14 @@ function render() {
     : null;
   page.innerHTML = head('Ustawienia', 'settings') + `
     <div class="card" id="defaultBrowserCard">
-      <h2>Domyślna przeglądarka</h2>
+      ${naglowek('globe', 'Domyślna przeglądarka')}
       <div class="row">
         <div class="body"><div class="title">Otwieranie linków z innych programów</div><div class="sub" id="defaultBrowserInfo">sprawdzam...</div></div>
         <div class="ctl"><button class="btn" id="setDefaultBrowser">Ustaw jako domyślną</button></div>
       </div>
     </div>
     <div class="card">
-      <h2>Wyszukiwanie i start</h2>
+      ${naglowek('search', 'Wyszukiwanie i start')}
       <div class="row">
         <div class="body"><div class="title">Wyszukiwarka</div><div class="sub">Używana w pasku adresu i na nowej karcie</div></div>
         <div class="ctl"><select class="field" data-key="searchEngine" style="width:180px">
@@ -101,7 +107,7 @@ function render() {
     </div>
 
     <div class="card">
-      <h2>Wygląd</h2>
+      ${naglowek('flower', 'Wygląd')}
       <div class="row">
         <div class="body"><div class="title">Wygląd przeglądarki</div>
           <div class="sub">Lawendowa mgła to nowy wygląd Nazuny. Klasyczny to wygląd sprzed zmiany</div></div>
@@ -113,7 +119,7 @@ function render() {
       ${v.wyglad !== 'klasyczny' ? `<div class="row">
         <div class="body"><div class="title">Kolory tła</div><div class="sub">Miękkie plamy koloru za paskiem i na nowej karcie</div></div>
         <div class="ctl">${KOLORY_MGLY.map(([id, nazwa, kolor]) => `
-          <button class="accent-dot" data-mgla-kolory="${id}" title="${nazwa}" aria-label="${nazwa}" style="width:24px;height:24px;border-radius:50%;background:${kolor};border:2px solid ${(v.mglaKolory || 'lawenda') === id ? 'var(--text)' : 'transparent'};cursor:pointer"></button>`).join('')}
+          <button class="accent-dot ust-mgla-kolor${(v.mglaKolory || 'lawenda') === id ? ' wybrana' : ''}" data-mgla-kolory="${id}" title="${nazwa}" aria-label="${nazwa}" aria-pressed="${(v.mglaKolory || 'lawenda') === id}" style="--kolor:${kolor}"></button>`).join('')}
         </div>
       </div>` : ''}
       <div class="row" ${v.wyglad !== 'klasyczny' ? 'hidden' : ''}>
@@ -128,7 +134,7 @@ function render() {
       <div class="row">
         <div class="body"><div class="title">Kolor akcentu</div><div class="sub">Wpływa na podświetlenia i aktywne elementy</div></div>
         <div class="ctl">${probkiAkcentow().map(([name, color]) => `
-          <button class="accent-dot" data-accent="${name}" title="${name}" style="width:24px;height:24px;border-radius:50%;background:${color};border:2px solid ${v.accent === name ? 'var(--text)' : 'transparent'};cursor:pointer"></button>`).join('')}
+          <button class="accent-dot${v.accent === name ? ' wybrana' : ''}" data-accent="${name}" title="${name}" aria-pressed="${v.accent === name}" style="--kolor:${color}"></button>`).join('')}
         </div>
       </div>
       <div class="row">
@@ -149,7 +155,7 @@ function render() {
     </div>
 
     <div class="card">
-      <h2>Bezpieczeństwo</h2>
+      ${naglowek('alert', 'Bezpieczeństwo')}
       ${toggleRow('securityWarningsEnabled', 'Ostrzeżenia o niebezpiecznych stronach', 'Blokuje strony z listy znanych złośliwych domen i ostrzega przed połączeniem bez szyfrowania (http). Wyłączenie usuwa też etykietę "Niezabezpieczona" w pasku adresu')}
       <div class="row">
         <div class="body"><div class="title">Lista złośliwych domen</div><div class="sub" id="securityInfo">sprawdzam...</div></div>
@@ -159,7 +165,7 @@ function render() {
     </div>
 
     <div class="card">
-      <h2>Blokowanie treści</h2>
+      ${naglowek('shield', 'Blokowanie treści')}
       ${toggleRow('adblockEnabled', 'Bloker reklam i skryptów śledzących', 'Wbudowany, działa bez rozszerzeń. Pojedyncze strony można wyłączyć tarczą w pasku adresu')}
       <div class="row">
         <div class="body"><div class="title">Siła blokowania</div>
@@ -179,7 +185,7 @@ function render() {
     </div>
 
     <div class="card">
-      <h2>Domykanie przecieków</h2>
+      ${naglowek('lock', 'Domykanie przecieków')}
       ${toggleRow('webrtcLeakProtection', 'Ukryj lokalny adres IP w WebRTC', 'Strony potrafią wyciągnąć adres IP z Twojej sieci domowej czy firmowej samą próbą połączenia peer-to-peer, nawet bez pytania o kamerę czy mikrofon. Prawdziwe połączenia (np. rozmowa wideo) dalej działają')}
       <div class="row">
         <div class="body"><div class="title">DNS przez HTTPS</div><div class="sub">Szyfruje zapytania "jaki adres ma ta domena", żeby dostawca internetu nie widział listy stron, które odwiedzasz. "Wyłączony" zostawia to systemowi tak jak dziś</div></div>
@@ -194,7 +200,7 @@ function render() {
     </div>
 
     <div class="card">
-      <h2>Pobieranie</h2>
+      ${naglowek('download', 'Pobieranie')}
       <div class="row">
         <div class="body"><div class="title">Folder pobierania</div><div class="sub">${esc(cfg.downloadDir)}</div></div>
         <div class="ctl"><button class="btn" id="chooseDir">Zmień</button></div>
@@ -203,7 +209,7 @@ function render() {
     </div>
 
     <div class="card">
-      <h2>Zaawansowane</h2>
+      ${naglowek('code', 'Zaawansowane')}
       ${toggleRow('hardwareAcceleration', 'Przyspieszenie sprzętowe', 'Renderowanie grafiki przez kartę graficzną. Zmiana zadziała po ponownym uruchomieniu')}
       ${toggleRow('tabSleepEnabled', 'Usypianie nieużywanych kart', 'Karta w tle, z której jakiś czas nie korzystasz, zwalnia zajmowaną przez siebie pamięć - wraca do życia (z krótkim przeładowaniem) w chwili, gdy znów w nią klikniesz. Czas bezczynności potrzebny do uśpienia sam się skraca, gdy w systemie robi się mało wolnej pamięci, i wydłuża, gdy jest jej pod dostatkiem - tak samo jak Oszczędzanie pamięci w Chrome. Pojedynczą kartę można też uśpić ręcznie albo trwale z tego wyłączyć prawym przyciskiem na karcie')}
       <div class="row">
@@ -359,15 +365,15 @@ page.addEventListener('input', (e) => {
 
 function clearDialog() {
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:40';
-  wrap.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;box-shadow:var(--shadow-panel);width:380px;padding:20px">
-    <h3 style="margin:0 0 14px;font-size:15px">Wyczyść dane przeglądania</h3>
+  wrap.className = 'ust-okno-tlo';
+  wrap.innerHTML = `<div class="ust-okno">
+    <h3 class="ust-okno-tytul">Wyczyść dane przeglądania</h3>
     ${[['history', 'Historia przeglądania'], ['cookies', 'Ciasteczka i dane logowania'], ['cache', 'Pamięć podręczna'], ['storage', 'Dane stron i magazyn lokalny'], ['downloads', 'Lista pobranych plików']]
-      .map(([k, label]) => `<label style="display:flex;align-items:center;gap:10px;padding:7px 0;color:var(--text-dim);font-size:12.5px">
+      .map(([k, label]) => `<label class="ust-okno-opcja">
         <span class="switch"><input type="checkbox" data-clear="${k}" ${k === 'cache' || k === 'history' ? 'checked' : ''}><span class="track"></span><span class="thumb"></span></span>${label}</label>`).join('')}
-    <div style="display:flex;gap:8px;margin-top:18px">
-      <button class="btn" style="flex:1" data-cancel>Anuluj</button>
-      <button class="btn danger" style="flex:1" data-confirm>Wyczyść</button>
+    <div class="ust-okno-akcje">
+      <button class="btn" data-cancel>Anuluj</button>
+      <button class="btn danger" data-confirm>Wyczyść</button>
     </div></div>`;
   document.body.appendChild(wrap);
   wrap.addEventListener('click', async (e) => {

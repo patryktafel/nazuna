@@ -6,6 +6,75 @@
 <title>Ostrzeżenie</title>
 <link rel="stylesheet" href="nazuna://ui/theme.css">
 <link rel="stylesheet" href="nazuna://ui/pages.css">
+<style>
+/* ------------------------------------------------ Lawendowa mgla (etap 5)
+   Ostrzezenie: szklana karta w rodzinie mgly, ale wyraznie ostrzegawcza.
+   Strona znana z zagrozen = czerwony (--danger), strona bez szyfrowania (http)
+   = bursztynowy (--warn). Rozpoznanie po przyciskach, ktore rysuje warning.js:
+   tylko przy http jest #proceed bez #details. Tylko w mgle, przyciski i ich
+   dzialanie bez zmian. */
+:root[data-motyw="mgla"] body {
+  background:
+    radial-gradient(860px 480px at 50% -8%, rgba(255, 122, 138, 0.20) 0%, transparent 70%),
+    radial-gradient(760px 540px at 4% -8%, color-mix(in srgb, var(--aurora-1) 30%, transparent) 0%, transparent 70%),
+    radial-gradient(860px 620px at 74% 114%, color-mix(in srgb, var(--aurora-2) 30%, transparent) 0%, transparent 70%),
+    var(--bg);
+}
+:root[data-motyw="mgla"] body:has(#proceed):not(:has(#details)) {
+  background:
+    radial-gradient(860px 480px at 50% -8%, rgba(255, 207, 122, 0.15) 0%, transparent 70%),
+    radial-gradient(760px 540px at 4% -8%, color-mix(in srgb, var(--aurora-1) 30%, transparent) 0%, transparent 70%),
+    radial-gradient(860px 620px at 74% 114%, color-mix(in srgb, var(--aurora-2) 30%, transparent) 0%, transparent 70%),
+    var(--bg);
+}
+
+:root[data-motyw="mgla"] .err.danger {
+  --ostrz: var(--danger); --ostrz-rgb: 255, 122, 138;
+  position: relative; isolation: isolate;
+  width: min(580px, calc(100% - 32px)); max-width: none;
+  margin: 12vh auto 48px; padding: 44px 40px 34px; border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(var(--ostrz-rgb), 0.10) 0%, rgba(var(--ostrz-rgb), 0.03) 55%),
+    rgba(22, 19, 40, 0.55);
+  border: 1px solid rgba(var(--ostrz-rgb), 0.26);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 28px 60px -30px rgba(8, 5, 25, 0.95);
+}
+:root[data-motyw="mgla"] .err.danger:has(#proceed):not(:has(#details)) { --ostrz: var(--warn); --ostrz-rgb: 255, 207, 122; }
+
+:root[data-motyw="mgla"] .err.danger > .icon {
+  display: block; margin: 0 auto 24px;
+  color: var(--ostrz); background: rgba(var(--ostrz-rgb), 0.14);
+  box-shadow: inset 0 0 0 1px rgba(var(--ostrz-rgb), 0.34);
+}
+/* Swiecaca aureola za ikona (srodek kolka 76 px: padding 44 + 38). */
+:root[data-motyw="mgla"] .err.danger::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  left: 50%; top: 82px; width: 170px; height: 170px; margin: -85px 0 0 -85px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--ostrz-rgb), 0.30) 0%, transparent 68%);
+  animation: ostrzPuls 3.2s ease-in-out infinite alternate;
+}
+@keyframes ostrzPuls { from { transform: scale(.88); opacity: .6; } to { transform: scale(1.08); opacity: 1; } }
+
+:root[data-motyw="mgla"] .err.danger code { box-shadow: inset 0 0 0 1px rgba(var(--ostrz-rgb), 0.22); }
+:root[data-motyw="mgla"] .err.danger .actions { margin-top: 26px; }
+:root[data-motyw="mgla"] .err.danger #safe { height: 40px; padding: 0 26px; font-size: 13.5px; }
+/* Ramka z "Mimo wszystko przejdz" (po kliknieciu "Szczegoly"): oddzielona kreska. */
+:root[data-motyw="mgla"] .err.danger #detailsBox {
+  margin-top: 18px !important; padding-top: 18px; border-top: 1px solid rgba(var(--ostrz-rgb), 0.18);
+}
+
+/* Waski widok (np. obok panelu bocznego): mniejsze boczne marginesy karty,
+   zeby dlugie przyciski (white-space: nowrap) nie wychodzily poza karte.
+   padding-top zostaje 44 px - od niego zalezy polozenie aureoli. */
+@media (max-width: 560px) {
+  :root[data-motyw="mgla"] .err.danger { padding-left: 20px; padding-right: 20px; }
+  :root[data-motyw="mgla"] .err.danger .actions { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-motyw="mgla"] .err.danger::before { animation: none; }
+}
+</style>
 </head>
 <body>
   <div class="err danger" id="err"></div>

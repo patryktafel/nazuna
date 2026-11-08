@@ -18,6 +18,38 @@ el.copy.querySelector('.icon').innerHTML = iconSvg('copy');
 el.download.querySelector('.icon').innerHTML = iconSvg('download');
 el.format.querySelector('.icon').innerHTML = iconSvg('code');
 
+/* Wyglad: ta strona nie laduje pagekit.js, wiec motyw ustawiamy sami. Atrybuty
+   z ustawien dostaje tylko Lawendowa mgla (style pod :root[data-motyw="mgla"]
+   w textview.html). Klasyczny zostaje dokladnie taki jak byl: bez data-motyw i ze stalym
+   data-accent="violet" z pliku html. Odswiezamy po zmianie ustawien, zeby
+   przelaczenie wygladu bylo widac od razu. */
+function zastosujWyglad(s) {
+  if (!s) return;
+  const root = document.documentElement;
+  if (s.motyw === 'mgla') {
+    root.dataset.motyw = 'mgla';
+    root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
+    root.dataset.accent = (s.values && s.values.accent) || 'violet';
+  } else {
+    delete root.dataset.motyw;
+    delete root.dataset.mgla;
+    root.dataset.accent = 'violet';
+  }
+}
+function odswiezWyglad() {
+  if (!api || !api.invoke) return;
+  api.invoke('settings.get').then(zastosujWyglad).catch(() => {});
+}
+odswiezWyglad();
+if (api && api.on) api.on('settings:changed', odswiezWyglad);
+
+/* Ikona pliku przed nazwa - czysto dekoracyjna, widoczna tylko w mgle. */
+const tytulIkona = document.createElement('span');
+tytulIkona.className = 'tytul-ikona';
+tytulIkona.setAttribute('aria-hidden', 'true');
+tytulIkona.innerHTML = iconSvg('file');
+el.title.before(tytulIkona);
+
 function nazwaPliku(url) {
   try {
     const u = new URL(url);

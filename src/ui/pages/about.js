@@ -44,11 +44,18 @@ api.on('update:status', rysujAktualizacje);
 
 api.invoke('app.info').then((info) => {
   page.innerHTML = `
-    <div style="text-align:center;padding:44px 0 30px">
-      <img src="nazuna://assets/mark.png" style="width:74px;height:74px" alt="">
-      <div style="font-size:27px;font-weight:300;letter-spacing:6px;margin-top:14px">nazuna</div>
-      <div style="color:var(--text-faint);margin-top:8px;font-size:12.5px">Przeglądarka na silniku Chromium, stawiająca na prywatność i szybkość. Wersja ${esc(info.version)}</div>
-      <div style="color:var(--text-faint);margin-top:6px;font-size:12.5px">Stworzona przez Tafel &middot; <a href="https://github.com/patryktafel/nazuna-updates" id="linkRepo" style="color:inherit">repozytorium wydań na GitHubie</a></div>
+    <div class="ab-glowa">
+      <img class="ab-znak" src="nazuna://assets/mark.png" alt=""><svg class="ab-kwiat" viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="ab-poswiata" cx="50" cy="50" r="46"></circle>
+        <ellipse class="ab-platek p1" cx="50" cy="27" rx="14" ry="21"></ellipse>
+        <ellipse class="ab-platek p2" cx="73" cy="50" rx="21" ry="14"></ellipse>
+        <ellipse class="ab-platek p3" cx="50" cy="73" rx="14" ry="21"></ellipse>
+        <ellipse class="ab-platek p4" cx="27" cy="50" rx="21" ry="14"></ellipse>
+        <circle class="ab-srodek" cx="50" cy="50" r="9"></circle>
+      </svg>
+      <div class="ab-nazwa">nazuna</div>
+      <div class="ab-opis">Przeglądarka na silniku Chromium, stawiająca na prywatność i szybkość. Wersja <span class="ab-wersja">${esc(info.version)}</span></div>
+      <div class="ab-autor">Stworzona przez Tafel &middot; <a href="https://github.com/patryktafel/nazuna-updates" id="linkRepo">repozytorium wydań na GitHubie</a></div>
     </div>
     <div class="card">
       <h2>Wersje</h2>

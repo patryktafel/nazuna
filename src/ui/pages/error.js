@@ -24,7 +24,7 @@ document.getElementById('err').innerHTML = `
   <p><code>${esc(url)}</code></p>
   ${description ? `<p style="color:var(--text-faint);font-size:12px">${esc(description)} (${esc(code)})</p>` : ''}
   <div class="actions">
-    <button class="btn primary" id="retry">Spróbuj ponownie</button>
+    <button class="btn primary" id="retry">${iconSvg('reload', 'err-btn-ikona')}Spróbuj ponownie</button>
     <button class="btn" id="home">Nowa karta</button>
   </div>`;
 

@@ -6,6 +6,101 @@
 <title>Ustawienia</title>
 <link rel="stylesheet" href="nazuna://ui/theme.css">
 <link rel="stylesheet" href="nazuna://ui/pages.css">
+<style>
+/* Wyglad Klasyczny: dokladnie to, co wczesniej stalo w atrybutach style w settings.js
+   (probki kolorow i okno "Wyczysc dane przegladania"). Ikona w naglowku sekcji jest
+   tu ukryta - pokazuje sie tylko w Lawendowej mgle. */
+.card > h2 > .ust-ikona { display: none; }
+.accent-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--kolor); border: 2px solid transparent; cursor: pointer; }
+.accent-dot.wybrana { border-color: var(--text); }
+.ust-okno-tlo { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; z-index: 40; }
+.ust-okno { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow-panel); width: 380px; padding: 20px; }
+.ust-okno-tytul { margin: 0 0 14px; font-size: 15px; }
+.ust-okno-opcja { display: flex; align-items: center; gap: 10px; padding: 7px 0; color: var(--text-dim); font-size: 12.5px; }
+.ust-okno-akcje { display: flex; gap: 8px; margin-top: 18px; }
+.ust-okno-akcje .btn { flex: 1; }
+
+/* ------------------------------------ Lawendowa mgla: Ustawienia (etap 5)
+   Wspolne szklo kart, wiersze i kontrolki sa w pages.css i theme.css. Tu tylko
+   to, co jest wlasne dla tej strony. Bez animacji kart: render() przebudowuje
+   strone po kazdej zmianie ustawienia, wiec animacja migalaby przy kazdym kliknieciu. */
+:root[data-motyw="mgla"] .card > h2 {
+  display: flex; align-items: center; gap: 12px; padding: 20px 22px 8px;
+  font-family: var(--font-display); font-size: 19px; font-weight: 500; letter-spacing: 0; line-height: 1.25;
+}
+:root[data-motyw="mgla"] .card > h2 > .ust-ikona {
+  display: block; width: 32px; height: 32px; padding: 8px; border-radius: 50%;
+  color: var(--accent-strong); background: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+
+/* Dlugie opisy czytaja sie lepiej w wezszej kolumnie. */
+:root[data-motyw="mgla"] .row { min-height: 64px; }
+:root[data-motyw="mgla"] .row .sub { max-width: 66ch; line-height: 1.6; }
+:root[data-motyw="mgla"] .row .ctl { gap: 10px; }
+
+/* Listy rozwijane i pole strony startowej jak pigulki. */
+:root[data-motyw="mgla"] .row .ctl .field { border-radius: 999px; padding-left: 16px; }
+:root[data-motyw="mgla"] .row .ctl select.field { padding-right: 36px; background-position: right 14px center; }
+
+/* Probki kolorow: pole klikniecia 32 px, kolorowe kolko w srodku, wybrana
+   probka ma jasny pierscien (nie tylko kolor - widac ja tez bez rozrozniania barw). */
+:root[data-motyw="mgla"] .row .ctl:has(> .accent-dot) { gap: 4px; }
+:root[data-motyw="mgla"] .accent-dot {
+  position: relative; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; transition: box-shadow .15s var(--ease);
+}
+:root[data-motyw="mgla"] .accent-dot::before {
+  content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--kolor);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 4px 12px -5px var(--kolor);
+  transition: transform .15s var(--ease);
+}
+:root[data-motyw="mgla"] .accent-dot:hover::before { transform: scale(1.1); }
+:root[data-motyw="mgla"] .accent-dot.wybrana { box-shadow: inset 0 0 0 2px var(--text); }
+:root[data-motyw="mgla"] .accent-dot:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+:root[data-motyw="mgla"] .accent-dot.wybrana:focus-visible { box-shadow: inset 0 0 0 2px var(--text), 0 0 0 3px var(--accent-ring); }
+/* Kolory tla mgly: probka pokazuje mieszanke plam z danego zestawu (theme.css, data-mgla). */
+:root[data-motyw="mgla"] .ust-mgla-kolor[data-mgla-kolory="lawenda"]::before { background: linear-gradient(135deg, #5b47c9 12%, #d977b6 58%, #6fb8ff 100%); }
+:root[data-motyw="mgla"] .ust-mgla-kolor[data-mgla-kolory="roz"]::before { background: linear-gradient(135deg, #d977b6 12%, #8c64e6 58%, #ffaa8c 100%); }
+:root[data-motyw="mgla"] .ust-mgla-kolor[data-mgla-kolory="morski"]::before { background: linear-gradient(135deg, #30a0aa 12%, #5a8cff 58%, #8ce6c8 100%); }
+
+/* W waskim oknie kontrolka schodzi pod opis zamiast go sciskac. */
+@media (max-width: 640px) {
+  :root[data-motyw="mgla"] .row { flex-wrap: wrap; }
+  :root[data-motyw="mgla"] .row .body { flex: 1 1 240px; }
+  :root[data-motyw="mgla"] .row .ctl { margin-left: auto; max-width: 100%; }
+  :root[data-motyw="mgla"] .row .ctl .field { max-width: 100%; }
+}
+
+/* Okno "Wyczysc dane przegladania": szklo nad przyciemnionym, rozmytym tlem. */
+@keyframes ustTlo { from { opacity: 0; } }
+@keyframes ustOkno { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+:root[data-motyw="mgla"] .ust-okno-tlo {
+  background: rgba(10, 8, 22, 0.55); padding: 16px;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  animation: ustTlo .2s var(--ease) backwards;
+}
+:root[data-motyw="mgla"] .ust-okno {
+  width: 400px; max-width: 100%; padding: 24px 24px 20px; border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035)), rgba(32, 27, 58, 0.96);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--shadow-panel);
+  animation: ustOkno .24s var(--ease) backwards;
+}
+:root[data-motyw="mgla"] .ust-okno-tytul { margin: 0 0 12px; font-family: var(--font-display); font-size: 22px; font-weight: 500; }
+:root[data-motyw="mgla"] .ust-okno-opcja {
+  gap: 12px; min-height: 40px; padding: 8px 12px; margin: 0 -12px; border-radius: 12px;
+  color: var(--text); font-size: 13.5px; cursor: pointer; transition: background .14s var(--ease);
+}
+:root[data-motyw="mgla"] .ust-okno-opcja:hover { background: rgba(255, 255, 255, 0.05); }
+:root[data-motyw="mgla"] .ust-okno-akcje { gap: 10px; margin-top: 20px; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-motyw="mgla"] .ust-okno-tlo,
+  :root[data-motyw="mgla"] .ust-okno { animation: none; }
+  :root[data-motyw="mgla"] .accent-dot::before { transition: none; }
+}
+</style>
 </head>
 <body>
   <div class="page" id="page"></div>

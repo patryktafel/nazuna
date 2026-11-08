@@ -18,6 +18,67 @@
      inaczej ucinalby sie na jej krawedziach w szary prostokat. */
   .update-toast { position: relative; top: auto; right: auto; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32), 0 1px 4px rgba(0, 0, 0, 0.25); }
   :root[data-motyw="jasny"] .update-toast { box-shadow: 0 8px 18px rgba(24, 28, 45, 0.14), 0 1px 4px rgba(24, 28, 45, 0.10); }
+
+  /* ------------------------------------- Lawendowa mgla: powiadomienia (etap 5)
+     Zaokraglona karta z plamami koloru z wybranego zestawu (--aurora).
+     Warstwa lezy nad dowolna strona (takze biala), a backdrop-filter nie
+     rozmyje innego widoku - dlatego tlo jest kryjace, a "szklo" robia plamy,
+     jasna obwodka i swiatlo na gornej krawedzi. Cien jak wyzej: musi
+     zmiescic sie w marginesie #slot. Kontrast sprawdzony na najjasniejszym
+     miejscu plam we wszystkich trzech zestawach (tekst pomocniczy min. 6:1). */
+  :root[data-motyw="mgla"] .update-toast {
+    width: 304px; padding: 14px 14px 14px 16px; border-radius: 20px;
+    background:
+      radial-gradient(130% 150% at 0% 0%, color-mix(in srgb, var(--aurora-1) 34%, transparent) 0%, transparent 62%),
+      radial-gradient(110% 140% at 100% 100%, color-mix(in srgb, var(--aurora-3) 26%, transparent) 0%, transparent 66%),
+      #231e3f;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 8px 18px rgba(8, 5, 25, 0.42), 0 1px 4px rgba(8, 5, 25, 0.30);
+    animation: toastMgla .26s var(--ease);
+  }
+  :root[data-motyw="mgla"] .update-toast.leaving {
+    opacity: 0; transform: translateY(-4px) scale(.98);
+    transition: opacity .28s var(--ease), transform .28s var(--ease);
+  }
+  :root[data-motyw="mgla"] .update-toast.error { border-color: rgba(255, 122, 138, 0.28); }
+  :root[data-motyw="mgla"] .update-toast .row { gap: 12px; }
+  /* Ikona na poczatku wiersza w kolku (tylko ta - ikona "x" siedzi w przycisku). */
+  :root[data-motyw="mgla"] .update-toast .row > .icon {
+    width: 32px; height: 32px; padding: 8px; margin-top: 0; border-radius: 50%;
+    background: var(--accent-dim); color: var(--accent-strong);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+  :root[data-motyw="mgla"] .update-toast.error .row > .icon { background: rgba(255, 122, 138, 0.14); color: var(--danger); }
+  :root[data-motyw="mgla"] .update-toast .title { font-size: 13.5px; font-weight: 700; padding-top: 6px; }
+  :root[data-motyw="mgla"] .update-toast .dismiss {
+    width: 32px; height: 32px; margin-right: -4px; border-radius: 50%; color: var(--text-dim);
+    transition: background .14s var(--ease), color .14s var(--ease);
+  }
+  :root[data-motyw="mgla"] .update-toast .dismiss:hover { background: rgba(255, 255, 255, 0.10); color: var(--text); }
+  :root[data-motyw="mgla"] .update-toast .dismiss .icon { width: 14px; height: 14px; color: inherit; }
+  :root[data-motyw="mgla"] .update-toast .sub { font-size: 12.5px; color: var(--text-dim); margin: 2px 0 12px 44px; line-height: 1.5; }
+  :root[data-motyw="mgla"] .update-toast .sub:last-child { margin-bottom: 2px; }
+  :root[data-motyw="mgla"] .update-toast .actions { margin-left: 44px; }
+  :root[data-motyw="mgla"] .update-toast .actions button {
+    height: 32px; padding: 0 16px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+    transition: background .14s var(--ease), box-shadow .14s var(--ease), transform .1s var(--ease), opacity .14s var(--ease);
+  }
+  :root[data-motyw="mgla"] .update-toast .actions .go {
+    background: var(--accent); color: var(--on-accent);
+    box-shadow: 0 8px 18px -10px var(--accent-ring);
+  }
+  :root[data-motyw="mgla"] .update-toast .actions .go:hover { background: var(--accent-strong); }
+  :root[data-motyw="mgla"] .update-toast .actions button:active { transform: scale(.97); }
+  :root[data-motyw="mgla"] .update-toast .actions .later { color: var(--text-dim); }
+  :root[data-motyw="mgla"] .update-toast .actions .later:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+  :root[data-motyw="mgla"] .update-toast button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+  /* Wejscie: karta lagodnie opada spod paska (miesci sie w gornym marginesie #slot). */
+  @keyframes toastMgla { from { opacity: 0; transform: translateY(-8px) scale(.96); } 60% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    :root[data-motyw="mgla"] .update-toast { animation: none; }
+    :root[data-motyw="mgla"] .update-toast.leaving { transform: none; }
+    :root[data-motyw="mgla"] .update-toast .actions button:active { transform: none; }
+  }
 </style>
 </head>
 <body>

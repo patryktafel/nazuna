@@ -6,6 +6,44 @@
 <title>Nie udało się otworzyć strony</title>
 <link rel="stylesheet" href="nazuna://ui/theme.css">
 <link rel="stylesheet" href="nazuna://ui/pages.css">
+<style>
+/* Ikona w przycisku "Sprobuj ponownie" jest tylko w mgle - w wygladzie
+   Klasycznym przycisk wyglada dokladnie tak jak wczesniej. */
+.err .err-btn-ikona { display: none; }
+
+/* ------------------------------------------------ Lawendowa mgla (etap 5)
+   Spokojna strona bledu: ikona w lawendowym kolku na tle delikatnego,
+   powoli kolyszacego sie kwiatu Nazuny. Tylko w mgle. */
+:root[data-motyw="mgla"] .err { position: relative; isolation: isolate; }
+:root[data-motyw="mgla"] .err > .icon {
+  display: block; margin: 0 auto 26px;
+  color: var(--accent-strong); background: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 18px 40px -16px var(--accent-ring);
+}
+/* Kwiat (te same cztery platki co logo) za ikona, srodek na srodku kolka (76 px). */
+:root[data-motyw="mgla"] .err::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  left: 50%; top: 38px; width: 196px; height: 196px; margin: -98px 0 0 -98px;
+  background: var(--accent); opacity: .17;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><ellipse cx='50' cy='25' rx='15' ry='23'/><ellipse cx='50' cy='75' rx='15' ry='23'/><ellipse cx='25' cy='50' rx='23' ry='15' fill-opacity='.6'/><ellipse cx='75' cy='50' rx='23' ry='15' fill-opacity='.6'/></svg>") center / contain no-repeat;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><ellipse cx='50' cy='25' rx='15' ry='23'/><ellipse cx='50' cy='75' rx='15' ry='23'/><ellipse cx='25' cy='50' rx='23' ry='15' fill-opacity='.6'/><ellipse cx='75' cy='50' rx='23' ry='15' fill-opacity='.6'/></svg>") center / contain no-repeat;
+  animation: errKwiat 14s ease-in-out infinite alternate;
+}
+@keyframes errKwiat { from { transform: rotate(-7deg) scale(.97); } to { transform: rotate(7deg) scale(1.03); } }
+
+/* Przyciski: wieksze pigulki, "Sprobuj ponownie" z ikona odswiezania. */
+:root[data-motyw="mgla"] .err .actions { margin-top: 28px; }
+:root[data-motyw="mgla"] .err .actions .btn { height: 40px; padding: 0 22px; font-size: 13.5px; }
+:root[data-motyw="mgla"] .err .actions #retry { padding-left: 18px; gap: 8px; }
+:root[data-motyw="mgla"] .err .err-btn-ikona {
+  display: block; width: 16px; height: 16px; padding: 0; margin: 0;
+  border-radius: 0; background: none; box-shadow: none; color: inherit; stroke-width: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-motyw="mgla"] .err::before { animation: none; }
+}
+</style>
 </head>
 <body>
   <div class="err" id="err"></div>

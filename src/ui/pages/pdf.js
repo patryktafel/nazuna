@@ -30,6 +30,38 @@ el.zoomIn.innerHTML = iconSvg('zoomIn');
 el.zoomOut.innerHTML = iconSvg('zoomOut');
 el.download.innerHTML = iconSvg('download');
 
+/* Wyglad: ta strona nie laduje pagekit.js, wiec motyw ustawiamy sami. Atrybuty
+   z ustawien dostaje tylko Lawendowa mgla (style pod :root[data-motyw="mgla"]
+   w pdf.html). Klasyczny zostaje dokladnie taki jak byl: bez data-motyw i ze stalym
+   data-accent="violet" z pliku html. Odswiezamy po zmianie ustawien, zeby
+   przelaczenie wygladu bylo widac od razu. */
+function zastosujWyglad(s) {
+  if (!s) return;
+  const root = document.documentElement;
+  if (s.motyw === 'mgla') {
+    root.dataset.motyw = 'mgla';
+    root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
+    root.dataset.accent = (s.values && s.values.accent) || 'violet';
+  } else {
+    delete root.dataset.motyw;
+    delete root.dataset.mgla;
+    root.dataset.accent = 'violet';
+  }
+}
+function odswiezWyglad() {
+  if (!api || !api.invoke) return;
+  api.invoke('settings.get').then(zastosujWyglad).catch(() => {});
+}
+odswiezWyglad();
+if (api && api.on) api.on('settings:changed', odswiezWyglad);
+
+/* Ikona pliku przed nazwa - czysto dekoracyjna, widoczna tylko w mgle. */
+const tytulIkona = document.createElement('span');
+tytulIkona.className = 'tytul-ikona';
+tytulIkona.setAttribute('aria-hidden', 'true');
+tytulIkona.innerHTML = iconSvg('file');
+el.title.before(tytulIkona);
+
 /* Nazwa pliku do tytulu karty i zakladki - z ostatniego czlonu adresu, a nie
    z samego adresu, zeby na pasku kart bylo "raport.pdf", nie caly url. Dla
    lokalnych plikow (src="nazuna-local:<token>", patrz index.js/ipc.js) sam
@@ -80,7 +112,10 @@ async function idzDoCelu(cel) {
       ? Math.max(0, entry.page.getViewport({ scale }).convertToViewportPoint(0, gora)[1])
       : 0;
     const roznica = entry.container.getBoundingClientRect().top - el.scroll.getBoundingClientRect().top;
-    el.scroll.scrollBy({ top: roznica + odGoryStrony });
+    // W mgle pasek unosi sie nad dokumentem: zatrzymaj cel pod nim (scroll-padding-top
+    // z pdf.html). W Klasycznym to 'auto', czyli 0 - zachowanie bez zmian.
+    const podPaskiem = parseFloat(getComputedStyle(el.scroll).scrollPaddingTop) || 0;
+    el.scroll.scrollBy({ top: roznica + odGoryStrony - podPaskiem });
   } catch (err) {
     console.warn('[pdf] link wewnetrzny', err && err.message);
   }

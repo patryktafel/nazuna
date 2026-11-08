@@ -25,7 +25,9 @@ function renderLista() {
            <div class="when">${new Date(row.ts).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}</div>
            <div class="acts"><button class="iconbtn danger" data-remove="${esc(row.url)}" title="Usuń">${iconSvg('trash')}</button></div>
          </div>`).join('')}</div>`
-      : `<div class="empty">${iconSvg('clock')}<div>${query ? 'Nic nie pasuje do tego wyszukiwania.' : 'Historia jest pusta.'}</div></div>`);
+      : `<div class="empty">${iconSvg('clock')}<div>${query ? 'Nic nie pasuje do tego wyszukiwania.' : 'Historia jest pusta.'}</div>`
+        // podpowiedz widac tylko w wygladzie Lawendowa mgla (styl w history.html)
+        + `<div class="empty-hint">${query ? 'Spróbuj innego słowa albo fragmentu adresu.' : 'Tu pojawią się strony, które odwiedzisz. Okno prywatne niczego tu nie zapisuje.'}</div></div>`);
 }
 
 function zbudujStrone() {

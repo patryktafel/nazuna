@@ -20,7 +20,9 @@ function render() {
     (folders.length ? `<div class="card"><h2>Foldery</h2>${folders.map(rowHtml).join('')}</div>` : '') +
     (links.length
       ? sekcja('Pasek zakładek', naPasku) + sekcja('Menu zakładek', wMenu)
-      : `<div class="empty">${iconSvg('bookmark')}<div>${query ? 'Nic nie pasuje.' : 'Nie masz jeszcze zakładek. Kliknij gwiazdkę w pasku adresu.'}</div></div>`);
+      : `<div class="empty">${iconSvg('bookmark')}<div>${query ? 'Nic nie pasuje.' : 'Nie masz jeszcze zakładek. Kliknij gwiazdkę w pasku adresu.'}</div>`
+        // podpowiedz widac tylko w wygladzie Lawendowa mgla (styl w bookmarks.html)
+        + `${query ? '<div class="empty-hint">Spróbuj innego słowa albo fragmentu adresu.</div>' : ''}</div>`);
 
   document.getElementById('search').addEventListener('input', (e) => { query = e.target.value; render(); });
   document.getElementById('addFolder').addEventListener('click', async () => {

@@ -38,6 +38,73 @@
   #text .bool, #text .null { color: #ff9ecb; }
   #status { position: absolute; top: 46%; left: 0; right: 0; text-align: center; color: var(--text-faint); font-size: 13px; padding: 0 24px; }
   #status .btn { margin-top: 12px; }
+  .tytul-ikona { display: none; }
+
+  /* ------------------------------------------- Lawendowa mgla (etap 5)
+     Tylko pod :root[data-motyw="mgla"] (atrybut ustawia textview.js) - wyglad
+     Klasyczny bez zmian. Tekst zostaje w tej samej czcionce i kolorach
+     skladni, lezy tylko na szklanej karcie. */
+  /* Tlo z przygaszonymi plamami koloru, jak na innych stronach nazuna:// w mgle
+     (te same gradienty co w pages.css). Szary tekst pomocniczy odrobine jasniejszy
+     (min. 4.5:1 takze w najjasniejszym miejscu nad plama). */
+  :root[data-motyw="mgla"] { background: var(--bg); }
+  :root[data-motyw="mgla"] body {
+    --text-faint: #b0aad3;
+    font-family: var(--font);
+    background:
+      radial-gradient(760px 540px at 6% -8%, color-mix(in srgb, var(--aurora-1) 42%, transparent) 0%, transparent 70%),
+      radial-gradient(640px 520px at 102% 6%, color-mix(in srgb, var(--aurora-3) 34%, transparent) 0%, transparent 70%),
+      radial-gradient(860px 620px at 72% 114%, color-mix(in srgb, var(--aurora-2) 40%, transparent) 0%, transparent 70%),
+      var(--bg);
+  }
+  /* Pasek narzedzi: szklana belka unoszaca sie nad dokumentem (10 px od gory,
+     12 px od bokow - prawa krawedz zostawia miejsce na pasek przewijania).
+     Tlo jest dosc gesto zabarwione (.84), bo pod spodem przewijaja sie biale
+     strony - tekst paska ma tam dalej ponad 5:1. */
+  :root[data-motyw="mgla"] #toolbar {
+    position: absolute; top: 10px; left: 12px; right: 12px; z-index: 3;
+    height: 46px; padding: 0 6px 0 8px; gap: 4px;
+    background: rgba(32, 27, 58, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 16px;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2); backdrop-filter: blur(20px) saturate(1.2);
+    box-shadow: 0 16px 40px -18px rgba(8, 5, 25, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  :root[data-motyw="mgla"] .tytul-ikona {
+    display: flex; align-items: center; justify-content: center; flex: none;
+    width: 32px; height: 32px; border-radius: 50%; margin-right: 6px;
+    color: var(--accent-strong); background: var(--accent-dim);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  :root[data-motyw="mgla"] .tytul-ikona .icon { width: 16px; height: 16px; }
+  :root[data-motyw="mgla"] #title { font-size: 13px; font-weight: 600; color: var(--text); margin-right: 12px; }
+  :root[data-motyw="mgla"] .sep { margin: 12px 6px; background: rgba(255, 255, 255, 0.12); }
+  :root[data-motyw="mgla"] .tbtn { height: 34px; padding: 0 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
+  :root[data-motyw="mgla"] .tbtn:hover { background: rgba(255, 255, 255, 0.10); color: var(--text); }
+  :root[data-motyw="mgla"] .tbtn:focus-visible { outline: none; color: var(--text); box-shadow: 0 0 0 3px var(--accent-ring); }
+  :root[data-motyw="mgla"] .tbtn.active { background: var(--accent-dim); color: var(--accent-strong); box-shadow: inset 0 0 0 1px var(--accent-ring); }
+  :root[data-motyw="mgla"] .tbtn.active:focus-visible { box-shadow: inset 0 0 0 1px var(--accent-ring), 0 0 0 3px var(--accent-ring); }
+  /* Tekst przewija sie pod szklanym paskiem; karta wypelnia reszte okna. */
+  :root[data-motyw="mgla"] #scroll { top: 0; padding: 66px 12px 14px; scroll-padding-top: 66px; }
+  :root[data-motyw="mgla"] #code {
+    padding: 20px 0; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.035)), rgba(22, 19, 40, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 18px 44px -20px rgba(8, 5, 25, 0.6);
+  }
+  :root[data-motyw="mgla"] #lines { padding: 0 16px 0 22px; border-right-color: rgba(255, 255, 255, 0.08); }
+  :root[data-motyw="mgla"] #text { padding: 0 22px; }
+  /* Spokojny ruch: pasek wsuwa sie z gory, karta lagodnie sie pojawia. */
+  @keyframes mglaPasek { from { opacity: 0; transform: translateY(-6px); } }
+  @keyframes mglaKartka { from { opacity: 0; transform: translateY(10px); } }
+  @media (prefers-reduced-motion: no-preference) {
+    :root[data-motyw="mgla"] #toolbar { animation: mglaPasek .3s var(--ease) backwards; }
+    :root[data-motyw="mgla"] #code { animation: mglaKartka .36s var(--ease) backwards; }
+  }
+  /* Waskie okno: ikona pliku znika, pigulki sa wezsze - przyciski zostaja w pasku. */
+  @media (max-width: 560px) {
+    :root[data-motyw="mgla"] .tytul-ikona { display: none; }
+    :root[data-motyw="mgla"] .tbtn { padding: 0 10px; }
+  }
 </style>
 </head>
 <body>

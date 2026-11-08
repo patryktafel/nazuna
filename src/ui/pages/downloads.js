@@ -14,12 +14,13 @@ function render() {
     (items.length ? `<div class="card">${items.map((d) => {
       const pct = d.total ? Math.min(100, Math.round((d.received / d.total) * 100)) : 0;
       const running = d.state === 'progressing' || d.state === 'paused';
-      return `<div class="list-item" data-row="${d.id}">
-        <div class="dl-icon" style="width:34px;height:34px;border-radius:9px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--text-dim)">${iconSvg(d.state === 'completed' ? 'file' : 'download')}</div>
+      // data-stan i klasy dl-icon/dl-bar tylko do wygladu (styl w downloads.html).
+      return `<div class="list-item" data-row="${d.id}" data-stan="${esc(d.state)}">
+        <div class="dl-icon">${iconSvg(d.state === 'completed' ? 'file' : 'download')}</div>
         <div class="main">
           <div class="name">${esc(d.filename)}</div>
           <div class="url">${esc(hostOf(d.url))} - ${esc(stateLabel(d))}</div>
-          ${running ? `<div class="dl-bar" style="height:3px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:7px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:var(--accent)"></i></div>` : ''}
+          ${running ? `<div class="dl-bar"><i style="width:${pct}%"></i></div>` : ''}
         </div>
         <div class="when">${d.finishedAt ? timeAgo(d.finishedAt) : ''}</div>
         <div class="acts">

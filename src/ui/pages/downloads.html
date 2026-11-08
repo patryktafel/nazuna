@@ -6,6 +6,80 @@
 <title>Pobrane</title>
 <link rel="stylesheet" href="nazuna://ui/theme.css">
 <link rel="stylesheet" href="nazuna://ui/pages.css">
+<style>
+/* Ikona pliku i pasek postepu. Dawniej styl w atrybucie style w downloads.js -
+   te same wartosci, wiec wyglad Klasyczny jest bez zmian. Szerokosc paska
+   (style="width:..%") dalej ustawia downloads.js. */
+.dl-icon { width: 34px; height: 34px; border-radius: 9px; background: var(--surface-3); display: flex; align-items: center; justify-content: center; color: var(--text-dim); }
+.dl-bar { height: 3px; border-radius: 2px; background: rgba(255,255,255,.08); margin-top: 7px; overflow: hidden; }
+.dl-bar > i { display: block; height: 100%; background: var(--accent); }
+
+/* ------------------------------------ Lawendowa mgla: pobrane (etap 5)
+   Tylko pod :root[data-motyw="mgla"]. Wiersz ma data-stan (progressing,
+   paused, completed, cancelled, interrupted, failed). */
+:root[data-motyw="mgla"] .list-item[data-stan] {
+  gap: 16px; padding: 14px 22px;
+  /* jasniejszy tekst pomocniczy: min. 4.5:1 takze po najechaniu nad plama koloru */
+  --text-faint: #c0bae0;
+}
+:root[data-motyw="mgla"] .dl-icon {
+  width: 42px; height: 42px; border-radius: 14px; flex: none;
+  color: var(--accent-strong); background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+:root[data-motyw="mgla"] .dl-icon .icon { width: 20px; height: 20px; }
+:root[data-motyw="mgla"] [data-stan="completed"] .dl-icon {
+  color: var(--ok); background: rgba(143, 227, 201, 0.10); box-shadow: inset 0 0 0 1px rgba(143, 227, 201, 0.22);
+}
+:root[data-motyw="mgla"] [data-stan="failed"] .dl-icon,
+:root[data-motyw="mgla"] [data-stan="interrupted"] .dl-icon {
+  color: #ffa3ad; background: rgba(255, 122, 138, 0.10); box-shadow: inset 0 0 0 1px rgba(255, 122, 138, 0.22);
+}
+:root[data-motyw="mgla"] [data-stan="cancelled"] .dl-icon { color: var(--text-dim); background: rgba(255, 255, 255, 0.04); }
+
+/* Pasek postepu: zaokraglony, w kolorze akcentu, z delikatnym blyskiem w trakcie pobierania. */
+:root[data-motyw="mgla"] .dl-bar {
+  height: 6px; margin-top: 10px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+:root[data-motyw="mgla"] .dl-bar > i {
+  position: relative; overflow: hidden; border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 0 10px -1px var(--accent-ring);
+  transition: width .45s var(--ease);
+}
+@keyframes dlBlysk { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+:root[data-motyw="mgla"] [data-stan="progressing"] .dl-bar > i::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  animation: dlBlysk 1.8s ease-in-out infinite;
+}
+:root[data-motyw="mgla"] [data-stan="paused"] .dl-bar > i {
+  background: color-mix(in srgb, var(--accent-strong) 45%, transparent); box-shadow: none;
+}
+
+/* Przyciski akcji: okragle szklane kolka. Przy trwajacym pobieraniu widac je
+   od razu (bez najechania), tak samo po przejsciu klawiatura (Tab). */
+:root[data-motyw="mgla"] .list-item[data-stan] .acts { gap: 6px; }
+:root[data-motyw="mgla"] [data-stan="progressing"] .acts,
+:root[data-motyw="mgla"] [data-stan="paused"] .acts,
+:root[data-motyw="mgla"] .list-item[data-stan]:focus-within .acts { opacity: 1; }
+:root[data-motyw="mgla"] .acts .iconbtn {
+  background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+:root[data-motyw="mgla"] .acts .iconbtn:hover { background: rgba(255, 255, 255, 0.12); color: var(--text); }
+:root[data-motyw="mgla"] .acts .iconbtn.danger:hover {
+  background: rgba(255, 122, 138, 0.16); box-shadow: inset 0 0 0 1px rgba(255, 122, 138, 0.30); color: #ffb3bb;
+}
+:root[data-motyw="mgla"] .acts .iconbtn:focus-visible,
+:root[data-motyw="mgla"] .acts .iconbtn.danger:focus-visible { box-shadow: 0 0 0 3px var(--accent-ring); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-motyw="mgla"] .dl-bar > i { transition: none; }
+  :root[data-motyw="mgla"] [data-stan="progressing"] .dl-bar > i::after { animation: none; display: none; }
+}
+</style>
 </head>
 <body>
   <div class="page" id="page"></div>

@@ -6,6 +6,119 @@
 <title>Rozszerzenia</title>
 <link rel="stylesheet" href="nazuna://ui/theme.css">
 <link rel="stylesheet" href="nazuna://ui/pages.css">
+<style>
+/* Ramki ikon rozszerzen. Dawniej styl w atrybucie style w extensions.js - te
+   same wartosci, wiec wyglad Klasyczny jest bez zmian. */
+.ext-ikona { width: 32px; height: 32px; border-radius: 8px; }
+div.ext-ikona { background: var(--surface-3); display: flex; align-items: center; justify-content: center; color: var(--text-dim); }
+div.ext-ikona.ext-litera { color: var(--accent-strong); font-weight: 600; }
+/* Ikona pustej listy jest tylko w wygladzie mgly. */
+.ext-pusto > .icon { display: none; }
+
+/* ------------------------------- Lawendowa mgla: rozszerzenia (etap 5)
+   Tylko pod :root[data-motyw="mgla"]. Kazde rozszerzenie to osobna szklana
+   karta, uprawnienia sa pigulkami, pole instalacji jest duza pigulka. */
+:root[data-motyw="mgla"] .ext-ikona {
+  width: 40px; height: 40px; flex: none; border-radius: 13px;
+  transition: filter .2s var(--ease), opacity .2s var(--ease);
+}
+:root[data-motyw="mgla"] img.ext-ikona {
+  padding: 5px; object-fit: contain;
+  background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+:root[data-motyw="mgla"] div.ext-ikona {
+  color: var(--accent-strong); background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+:root[data-motyw="mgla"] div.ext-ikona .icon { width: 20px; height: 20px; }
+/* 19 px pogrubione = duzy tekst (min. 3:1); ma ok. 4.4:1 */
+:root[data-motyw="mgla"] div.ext-ikona.ext-litera { font-size: 19px; font-weight: 800; background: var(--accent-dim); }
+
+/* Instalacja: poswiata w kolorze akcentu w rogu karty, pole i przyciski 44 px. */
+:root[data-motyw="mgla"] .ext-instaluj {
+  --text-faint: #c0bae0; /* min. 4.5:1 takze na poswiacie */
+  background:
+    radial-gradient(560px 240px at 0% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.04)),
+    rgba(22, 19, 40, 0.45);
+}
+:root[data-motyw="mgla"] .ext-instaluj .row { flex-wrap: wrap; align-items: flex-start; gap: 12px; padding: 10px 22px 6px; }
+:root[data-motyw="mgla"] .ext-instaluj .row .body { flex: 1 1 320px; }
+:root[data-motyw="mgla"] .ext-instaluj .field { height: 44px; padding: 0 20px; border-radius: 999px; font-size: 13.5px; }
+:root[data-motyw="mgla"] .ext-instaluj .row .sub { padding: 8px 20px 0; overflow-wrap: anywhere; }
+:root[data-motyw="mgla"] .ext-instaluj .ctl { gap: 10px; }
+:root[data-motyw="mgla"] .ext-instaluj .ctl .btn { height: 44px; padding: 0 22px; }
+
+/* Karta jednego rozszerzenia (zainstalowane i polecane). */
+:root[data-motyw="mgla"] .ext-wpis {
+  --text-faint: #c0bae0; /* min. 4.5:1 na szkle karty po najechaniu */
+  align-items: flex-start; gap: 16px; padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 16px;
+  background: rgba(255, 255, 255, 0.025);
+  transition: background .15s var(--ease), border-color .15s var(--ease), transform .15s var(--ease);
+}
+:root[data-motyw="mgla"] .ext-wpis:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); }
+:root[data-motyw="mgla"] .ext-wpis .title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; font-weight: 700; }
+:root[data-motyw="mgla"] .ext-wpis .sub { line-height: 1.55; }
+:root[data-motyw="mgla"] .ext-wpis .ctl { gap: 8px; min-height: 40px; }
+:root[data-motyw="mgla"] .ext-wpis .tag.low { color: #ffb3bb; } /* min. 4.5:1 na karcie rozszerzenia */
+/* Wylaczone rozszerzenie: przygaszona, szara ikona (tekst bez zmian, dla kontrastu). */
+:root[data-motyw="mgla"] .ext-wpis:has(input[data-toggle]:not(:checked)) .ext-ikona { filter: grayscale(1); opacity: .5; }
+
+:root[data-motyw="mgla"] .ext-zainstalowane { padding-bottom: 4px; }
+:root[data-motyw="mgla"] .ext-zainstalowane .ext-wpis { margin: 0 12px 10px; flex-wrap: wrap; }
+/* W waskim oknie przyciski schodza pod opis zamiast sciskac tekst. */
+:root[data-motyw="mgla"] .ext-zainstalowane .ext-wpis .body { flex: 1 1 260px; }
+:root[data-motyw="mgla"] .ext-zainstalowane .ext-wpis .ctl { margin-left: auto; flex-wrap: wrap; max-width: 100%; }
+
+/* Uprawnienia jako pigulki (sredniki ukryte, tekst ten sam). */
+:root[data-motyw="mgla"] .ext-uprawnienia { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+:root[data-motyw="mgla"] .ext-upr-etykieta { font-weight: 700; margin-right: 2px; }
+:root[data-motyw="mgla"] .ext-sep { display: none; }
+:root[data-motyw="mgla"] .ext-upr {
+  padding: 3px 10px; border-radius: 999px; line-height: 1.5; color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+/* Komunikaty (brak w sklepie, aktualizacja): ramka w kolorze etykiety. */
+:root[data-motyw="mgla"] .ext-info {
+  margin-top: 10px; padding: 8px 12px; border-radius: 12px; line-height: 1.6; color: var(--text-dim);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+:root[data-motyw="mgla"] .ext-info .tag { margin-right: 4px; white-space: nowrap; }
+:root[data-motyw="mgla"] .ext-info-low { box-shadow: inset 0 0 0 1px rgba(255, 122, 138, 0.30); }
+:root[data-motyw="mgla"] .ext-info-warn { box-shadow: inset 0 0 0 1px rgba(255, 207, 122, 0.28); }
+:root[data-motyw="mgla"] .ext-info-ok { box-shadow: inset 0 0 0 1px rgba(143, 227, 201, 0.28); }
+
+/* Pusta lista: ikona w szklanym kolku, ktore powoli sie unosi (mglaUnosi z pages.css). */
+:root[data-motyw="mgla"] .ext-pusto {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: 26px 22px 34px; text-align: center; font-size: 13.5px; color: var(--text-dim);
+}
+:root[data-motyw="mgla"] .ext-pusto > .icon {
+  display: block; width: 58px; height: 58px; padding: 16px; border-radius: 50%;
+  color: var(--accent-strong); background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10), 0 16px 40px -18px var(--accent-ring);
+  animation: mglaUnosi 6s ease-in-out infinite;
+}
+
+/* Polecane: siatka kafelkow, przycisk na dole kafelka. */
+:root[data-motyw="mgla"] .ext-polecane {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 12px; padding: 0 14px 14px;
+}
+:root[data-motyw="mgla"] .ext-polecane > h2,
+:root[data-motyw="mgla"] .ext-polecane > .hint { grid-column: 1 / -1; margin: 0 -14px; }
+:root[data-motyw="mgla"] .ext-polecane > .hint { padding-top: 0; padding-bottom: 4px; }
+:root[data-motyw="mgla"] .ext-polecane > .hint:empty { display: none; }
+:root[data-motyw="mgla"] .ext-polecane .ext-wpis { margin: 0; flex-wrap: wrap; align-content: space-between; gap: 12px 14px; }
+:root[data-motyw="mgla"] .ext-polecane .ext-wpis .body { flex: 1 1 0; }
+:root[data-motyw="mgla"] .ext-polecane .ext-wpis .ctl { flex: 1 0 100%; justify-content: flex-end; min-height: 0; }
+:root[data-motyw="mgla"] .ext-polecane .ext-wpis:hover { transform: translateY(-2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-motyw="mgla"] .ext-pusto > .icon { animation: none; }
+  :root[data-motyw="mgla"] .ext-polecane .ext-wpis:hover { transform: none; }
+}
+</style>
 </head>
 <body>
   <div class="page" id="page"></div>
