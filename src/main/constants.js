@@ -82,6 +82,17 @@ function rozstrzygnijMotyw(ustawienie, wyglad = 'mgla') {
   try { return nativeTheme.shouldUseDarkColors ? 'ciemny' : 'jasny'; } catch (_) { return 'ciemny'; }
 }
 
+/* Co mowimy stronom w prefers-color-scheme (nativeTheme.themeSource). Strony
+   z wlasnym ciemnym trybem (Google, YouTube, Reddit...) przelaczaja sie wtedy
+   same - inaczej pod ciemnym paskiem mgly wyskakiwaly biale, bo Windows
+   uzytkownika jest jasny. Dla Klasycznego: to, co wybral w motywie. */
+function zrodloMotywuStron(ustawienie, wyglad = 'mgla') {
+  if (wyglad !== 'klasyczny') return 'dark';
+  if (ustawienie === 'light') return 'light';
+  if (ustawienie === 'dark') return 'dark';
+  return 'system';
+}
+
 // Tla malowane po stronie okna, zanim strona zdazy sie wyrysowac. Bez tego
 // przy kazdym otwarciu karty mrugaloby przeciwnym kolorem.
 const TLA = {
@@ -94,4 +105,4 @@ function resourcesDir() {
   return app.isPackaged ? process.resourcesPath : path.join(ROOT, 'resources');
 }
 
-module.exports = { ROOT, UI_DIR, PRELOAD_DIR, ASSETS_DIR, APP_NAME, LAYOUT, chromeUserAgent, acceptLanguages, rozstrzygnijMotyw, TLA, SEARCH_ENGINES, DOH_PROVIDERS, resourcesDir };
+module.exports = { ROOT, UI_DIR, PRELOAD_DIR, ASSETS_DIR, APP_NAME, LAYOUT, chromeUserAgent, acceptLanguages, rozstrzygnijMotyw, zrodloMotywuStron, TLA, SEARCH_ENGINES, DOH_PROVIDERS, resourcesDir };

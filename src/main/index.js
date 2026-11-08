@@ -307,6 +307,7 @@ if (!gotLock) {
     /* Pozostale okna z zapisanej sesji tworzymy przed glownym, zeby to z
        linkiem (albo ostatnio aktywne) pokazalo sie na koncu, na wierzchu. */
     if (!tylkoPrywatne) for (const okno of dodatkoweOkna) W.createWindow(okno);
+    W.ustawMotywStron(); // strony dostaja ciemny/jasny tryb zgodny z wygladem Nazuny
     W.createWindow(tylkoPrywatne ? { isPrivate: true } : { urls: initial, aktywna });
     // Linki nie trafiaja do okna prywatnego - dostaja jedno zwykle okno.
     if (tylkoPrywatne && linkiZKolejki.length) W.createWindow({ urls: linkiZKolejki });

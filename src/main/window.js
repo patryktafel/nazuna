@@ -2,7 +2,7 @@
 const path = require('path');
 const crypto = require('crypto');
 const { app, BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme, net, dialog } = require('electron');
-const { LAYOUT, PRELOAD_DIR, ASSETS_DIR, APP_NAME, rozstrzygnijMotyw, TLA } = require('./constants');
+const { LAYOUT, PRELOAD_DIR, ASSETS_DIR, APP_NAME, rozstrzygnijMotyw, zrodloMotywuStron, TLA } = require('./constants');
 const data = require('./data');
 const urls = require('./urls');
 const sessions = require('./session');
@@ -2524,10 +2524,22 @@ function tabSleepStatus() {
   return { sleeping, total, progMs: progUsypiania(), wolnaPamiecUlamek: wolnaPamiecUlamek() };
 }
 
+/* Jasny/ciemny tryb dla stron (patrz zrodloMotywuStron w constants.js).
+   rozstrzygnijMotyw przy 'system' pyta nativeTheme.shouldUseDarkColors, a to
+   przy themeSource 'system' dalej odpowiada wedlug Windowsa - zgodnie. */
+function ustawMotywStron() {
+  try {
+    const zrodlo = zrodloMotywuStron(data.settings.get('theme', 'dark'), data.settings.get('wyglad', 'mgla'));
+    // Tylko przy zmianie - przypisanie emituje 'updated', a nasluch nizej wola repaintTheme.
+    if (nativeTheme.themeSource !== zrodlo) nativeTheme.themeSource = zrodlo;
+  } catch (_) {}
+}
+
 /* Po zmianie motywu trzeba przemalowac to, co maluje sie poza stronami:
    tlo okna i tla naszych wlasnych kart. Inaczej stary kolor siedzi tam az do
    ponownego uruchomienia i przy przelaczaniu kart widac blysk. */
 function repaintTheme() {
+  ustawMotywStron();
   const tlo = TLA[motywTeraz()].okno;
   for (const w of windows) {
     try { w.win.setBackgroundColor(tlo); } catch (_) {}
@@ -2577,4 +2589,4 @@ function broadcastAll(channel, payload, filtr = null) {
   }
 }
 
-module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory };
+module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory };
