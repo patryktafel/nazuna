@@ -16,12 +16,27 @@ const data = require('./data');
      etap 3 - ostrzezenie o polaczeniu bez szyfrowania (http) - ponizej */
 
 /* ---------------------------------------------------- lista zlosliwych hostow
-   Zrodlo: URLhaus (abuse.ch), darmowa i publiczna lista hostow uzywanych do
-   rozsylania zlosliwego oprogramowania, bez klucza API. Format to zwykly
-   plik "hosts" (0.0.0.0 <host>) - dokladnie taki sam pomysl jak w blokerze
-   reklam (adblock.js), tylko inne zrodlo i inny cel: tam ukrywanie reklam,
-   tu ostrzezenie przed wejsciem. */
-const ZRODLO_HOSTOW = 'https://urlhaus.abuse.ch/downloads/hostfile/';
+   Zrodla: projekt malware-filter (darmowe, publiczne listy w formacie "hosts",
+   0.0.0.0 <host>, odswiezane co kilka godzin):
+   - urlhaus-filter: hosty rozsylajace zlosliwe oprogramowanie (dane URLhaus,
+     abuse.ch). Wczesniej brane wprost z urlhaus.abuse.ch/downloads/hostfile/,
+     ale abuse.ch wylaczyl ten adres (410 Gone, listopad 2026).
+   - phishing-filter: strony wyludzajace hasla i dane (OpenPhish, PhishTank).
+   Kazda lista ma kilka lustrzanych adresow - gdy pierwszy nie odpowiada,
+   bierzemy nastepny. Ten sam pomysl co w blokerze reklam (adblock.js), tylko
+   inny cel: tam ukrywanie reklam, tu ostrzezenie przed wejsciem. */
+const ZRODLA_HOSTOW = [
+  [
+    'https://malware-filter.gitlab.io/malware-filter/urlhaus-filter-hosts.txt',
+    'https://curbengh.github.io/malware-filter/urlhaus-filter-hosts.txt',
+    'https://malware-filter.pages.dev/urlhaus-filter-hosts.txt'
+  ],
+  [
+    'https://malware-filter.gitlab.io/malware-filter/phishing-filter-hosts.txt',
+    'https://curbengh.github.io/malware-filter/phishing-filter-hosts.txt',
+    'https://malware-filter.pages.dev/phishing-filter-hosts.txt'
+  ]
+];
 const ODSWIEZAJ_CO = 6 * 60 * 60 * 1000; // tyle samo co listy filtrow blokera
 
 let zleHosty = new Set();
@@ -62,13 +77,31 @@ function zapiszCache() {
   }
 }
 
+/* Jedna lista: kolejne lustra, az ktores odda niepusta liste. null = zadne. */
+async function pobierzListe(adresy) {
+  for (const adres of adresy) {
+    try {
+      const odp = await fetch(adres, { signal: AbortSignal.timeout(30000) });
+      if (!odp.ok) { console.warn('[security]', adres, 'odpowiedzial', odp.status); continue; }
+      const lista = parsujHostfile(await odp.text());
+      if (lista.size) return lista;
+    } catch (err) {
+      console.warn('[security] nie udalo sie pobrac', adres, err.message);
+    }
+  }
+  return null;
+}
+
 async function pobierz() {
   try {
-    const odp = await fetch(ZRODLO_HOSTOW);
-    if (!odp.ok) return false;
-    const tekst = await odp.text();
-    const nowa = parsujHostfile(tekst);
-    if (!nowa.size) return false; // pusta odpowiedz - lepiej zostac przy starej liscie niz wyzerowac ochrone
+    const nowa = new Set();
+    for (const adresy of ZRODLA_HOSTOW) {
+      const lista = await pobierzListe(adresy);
+      // Gdy ktorejs listy nie da sie pobrac, zostajemy przy starej calosci -
+      // lepiej lekko nieswieza lista niz nagle pol ochrony.
+      if (!lista) return false;
+      for (const h of lista) nowa.add(h);
+    }
     zleHosty = nowa;
     gotowe = true;
     updatedAt = Date.now();
@@ -89,7 +122,7 @@ async function refresh(force) {
   updating = true;
   try {
     const ok = await pobierz();
-    return ok ? { ok: true } : { ok: false, reason: 'nie udało się pobrać (brak sieci?)' };
+    return ok ? { ok: true } : { ok: false, reason: 'nie udało się pobrać listy (serwer nie odpowiada albo brak internetu)' };
   } finally {
     updating = false;
   }

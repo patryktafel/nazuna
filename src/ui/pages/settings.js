@@ -157,7 +157,7 @@ function render() {
 
     <div class="card">
       ${naglowek('alert', 'Bezpieczeństwo')}
-      ${toggleRow('securityWarningsEnabled', 'Ostrzeżenia o niebezpiecznych stronach', 'Blokuje strony z listy znanych złośliwych domen i ostrzega przed połączeniem bez szyfrowania (http). Wyłączenie usuwa też etykietę "Niezabezpieczona" w pasku adresu')}
+      ${toggleRow('securityWarningsEnabled', 'Ostrzeżenia o niebezpiecznych stronach', 'Blokuje znane strony z wirusami i oszustwa wyłudzające hasła oraz ostrzega przed połączeniem bez szyfrowania (http). Wyłączenie usuwa też etykietę "Niezabezpieczona" w pasku adresu')}
       <div class="row">
         <div class="body"><div class="title">Lista złośliwych domen</div><div class="sub" id="securityInfo">sprawdzam...</div></div>
         <div class="ctl"><button class="btn" id="updateSecurity">Zaktualizuj teraz</button></div>
@@ -301,7 +301,7 @@ async function refreshSecurityInfo() {
   const st = await api.invoke('app.securityStatus').catch(() => null);
   if (!st) { node.textContent = 'brak informacji'; return; }
   if (!st.ready) { node.textContent = 'lista nie jest jeszcze wczytana - potrzebne połączenie z internetem'; return; }
-  node.textContent = `${st.count} znanych złośliwych domen. Ostatnia aktualizacja: ${new Date(st.updatedAt).toLocaleString('pl-PL')}. Lista odświeża się sama co kilka godzin.`;
+  node.textContent = `${st.count.toLocaleString('pl-PL')} znanych niebezpiecznych domen (wirusy i wyłudzanie haseł). Ostatnia aktualizacja: ${new Date(st.updatedAt).toLocaleString('pl-PL')}. Lista odświeża się sama co kilka godzin.`;
 }
 
 async function refreshTabSleepInfo() {
