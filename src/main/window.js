@@ -2537,6 +2537,19 @@ function ustawMotywStron() {
   } catch (_) {}
 }
 
+/* Po kliknieciu slonca/ksiezyca: aktywna karta kazdego okna przeladowuje sie
+   sama, zeby strona od razu przyszla w nowym trybie (serwer dostaje nowy
+   naglowek Sec-CH-Prefers-Color-Scheme, patrz session.js). Karty w tle
+   zostawiamy - przeladowanie moglo by zgubic wpisany w nich tekst. */
+function przeladujPoZmianieMotywuStron() {
+  for (const w of windows) {
+    const t = w.activeTab();
+    if (!t || !t.wc || t.wc.isDestroyed()) continue;
+    if (!/^https?:/i.test(t.wc.getURL())) continue;
+    try { t.wc.reload(); } catch (_) {}
+  }
+}
+
 /* Po zmianie motywu trzeba przemalowac to, co maluje sie poza stronami:
    tlo okna i tla naszych wlasnych kart. Inaczej stary kolor siedzi tam az do
    ponownego uruchomienia i przy przelaczaniu kart widac blysk. */
@@ -2593,4 +2606,4 @@ function broadcastAll(channel, payload, filtr = null) {
   }
 }
 
-module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory };
+module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, przeladujPoZmianieMotywuStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory };

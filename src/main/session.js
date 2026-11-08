@@ -1,6 +1,6 @@
 'use strict';
 const path = require('path');
-const { app, session, webContents } = require('electron');
+const { app, session, webContents, nativeTheme } = require('electron');
 const { chromeUserAgent, acceptLanguages, PRELOAD_DIR } = require('./constants');
 const protocolHelper = require('./protocol');
 const adblock = require('./adblock');
@@ -335,6 +335,13 @@ function prepare(ses, efemeryczna) {
          obowiazkiem prawnym. W Europie nie zdejmuje banera, ale nic nie kosztuje
          i mowi wprost: nie zgadzam sie na handel moimi danymi. */
       headers['Sec-GPC'] = '1';
+      /* Jasny/ciemny tryb dla serwera. Chrome wysyla ten naglowek, gdy strona
+         o niego poprosi; Electron nie wysyla go wcale, wiec Google i inni przy
+         pierwszym wczytaniu zgadywali i trzeba bylo kilka razy odswiezac. To
+         ta sama informacja, ktora strona i tak ma przez prefers-color-scheme. */
+      if (details.resourceType === 'mainFrame' || details.resourceType === 'subFrame') {
+        try { headers['Sec-CH-Prefers-Color-Scheme'] = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'; } catch (_) {}
+      }
       if (refererPodgladow.size && !headers['Referer'] && !headers['referer']) {
         const referer = refererDoPowtorki(details, ses);
         if (referer) headers['Referer'] = referer;
