@@ -431,7 +431,7 @@ const handlers = {
     W.przeniesKarte(Number(p.id), win, Number.isFinite(Number(p.index)) ? Number(p.index) : null);
   },
 
-  'settings.get': () => ({ values: data.settings.data, motyw: rozstrzygnijMotyw(data.settings.get('theme', 'dark')), engines: SEARCH_ENGINES, downloadDir: downloads.defaultDir() }),
+  'settings.get': () => ({ values: data.settings.data, motyw: rozstrzygnijMotyw(data.settings.get('theme', 'dark'), data.settings.get('wyglad', 'mgla')), engines: SEARCH_ENGINES, downloadDir: downloads.defaultDir() }),
   'settings.set': (win, p) => {
     const patch = (p.patch && typeof p.patch === 'object') ? p.patch : {};
     data.settings.assign(patch);
@@ -571,7 +571,7 @@ function zastosujZmianyUstawien(klucze) {
   if (zmienione.has('adblockEnabled')) adblock.setGlobal(data.settings.get('adblockEnabled', true), sessionList);
   if (zmienione.has('adblockMode')) adblock.setMode(data.settings.get('adblockMode', 'safe'), sessionList);
   if (zmienione.has('extensionsEnabled')) reloadExtensions();
-  if (zmienione.has('theme')) W.repaintTheme();
+  if (zmienione.has('theme') || zmienione.has('wyglad')) W.repaintTheme();
   if (zmienione.has('doNotTrack') || zmienione.has('slojkiCiasteczek') || zmienione.has('webrtcLeakProtection')) sessions.refreshFlags();
   if (zmienione.has('webrtcLeakProtection')) sessions.applyWebRtcToAll();
   if (zmienione.has('secureDns')) privacy.applySecureDns();

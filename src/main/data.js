@@ -46,7 +46,11 @@ const DEFAULT_SETTINGS = {
   siteAccentEnabled: true,
   extensionsEnabled: true,
   defaultZoom: 1,
-  theme: 'dark',            // dark | light | system
+  theme: 'dark',            // dark | light | system (tylko dla wygladu Klasyczny)
+  // Nowy wyglad (claude_nazuna.md sekcja 13). Osobny klucz, zeby zainstalowana
+  // starsza Nazuna czytajaca ten sam settings.json dalej rozumiala 'theme'.
+  wyglad: 'mgla',           // mgla (Lawendowa mgla) | klasyczny
+  mglaKolory: 'lawenda',    // lawenda | roz | morski - plamy koloru w tle mgly
   accent: 'violet',
   restoreSession: null,
   // Ukrywanie lokalnego adresu IP w WebRTC (WEBRTC_IP_HANDLING_POLICY) - patrz

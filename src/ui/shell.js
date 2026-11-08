@@ -842,6 +842,7 @@ function renderToolbar() {
   }
   document.documentElement.dataset.accent = (state.settings && state.settings.accent) || 'violet';
   document.documentElement.dataset.motyw = state.motyw || 'ciemny';
+  document.documentElement.dataset.mgla = (state.settings && state.settings.mglaKolory) || 'lawenda';
   document.body.classList.toggle('content-fullscreen', !!state.contentFullScreen);
   applySiteAccent();
 }

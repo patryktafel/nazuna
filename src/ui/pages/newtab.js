@@ -7,6 +7,7 @@
     const root = document.documentElement;
     if (s.values && s.values.accent) root.dataset.accent = s.values.accent;
     root.dataset.motyw = s.motyw || 'ciemny';
+    root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
   };
   const odswiez = () => window.nazuna.invoke('settings.get').then(zastosuj).catch(() => {});
   odswiez();

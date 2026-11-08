@@ -10,6 +10,18 @@
    --sink  kolor wglebien, czyli pol tekstowych osadzonych w pasku. W ciemnym
            czarny, w jasnym bialy, bo w jasnym motywie pole ma byc jasniejsze
            od paska, a nie ciemniejsze. */
+/* Czcionki Lawendowej mgly - wbudowane w Nazune (licencja OFL, pliki w
+   fonts/), nigdy pobierane z sieci przy starcie. Tylko znaki lacinskie i
+   polskie; reszte pisma bierze czcionka systemowa z listy --font. */
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 300 800; font-display: swap;
+  src: url("fonts/Nunito-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 300 800; font-display: swap;
+  src: url("fonts/Nunito-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Fraunces"; font-style: normal; font-weight: 400 600; font-display: swap;
+  src: url("fonts/Fraunces-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Fraunces"; font-style: normal; font-weight: 400 600; font-display: swap;
+  src: url("fonts/Fraunces-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 :root {
   --bg:            #0d0e12;
   --bg-raised:     #121419;
@@ -106,6 +118,71 @@
 :root[data-motyw="jasny"][data-accent="sky"]   { --accent: #1a7fe0; --accent-strong: #1568bb; --accent-dim: rgba(26,127,224,.13); --accent-ring: rgba(26,127,224,.26); }
 :root[data-motyw="jasny"][data-accent="rose"]  { --accent: #de3f77; --accent-strong: #bd2f61; --accent-dim: rgba(222,63,119,.13); --accent-ring: rgba(222,63,119,.26); }
 :root[data-motyw="jasny"][data-accent="amber"] { --accent: #b3720a; --accent-strong: #965f06; --accent-dim: rgba(179,114,10,.13); --accent-ring: rgba(179,114,10,.26); }
+
+/* ------------------------------------------------- Lawendowa mgla (nowy wyglad)
+   Domyslny wyglad od wersji z nowym wygladem (claude_nazuna.md sekcja 13).
+   Ciemna paleta lekko w strone fioletu, miekkie plamy koloru w tle (--aurora),
+   wieksze zaokraglenia, czcionka Nunito. Wybor jasny/ciemny dotyczy tylko
+   wygladu Klasyczny, wiec tu jest jedna paleta. */
+:root[data-motyw="mgla"] {
+  --bg:            #1b1830;
+  --bg-raised:     #221d3b;
+  --chrome-top:    #231e3f;
+  --chrome-bottom: #1b1830;
+  --surface:       #241f3e;
+  --surface-2:     #2c2650;
+  --surface-3:     #372f62;
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --text:          #f2f0ff;
+  --text-dim:      #c8c3e6;
+  --text-faint:    #948db8;
+  --danger:        #ff7a8a;
+  --ok:            #8fe3c9;
+  --warn:          #ffcf7a;
+  --on-accent:     #1b1830;
+  --sel-text:      #ffffff;
+
+  --tint: 255, 255, 255;
+  --sink: 10, 8, 22;
+  --chrome-line:   rgba(8, 5, 25, 0.45);
+  --chrome-glow:   rgba(8, 5, 25, 0.85);
+  --shadow-float:  0 20px 50px rgba(10, 6, 30, .45);
+  --shadow-panel:  0 22px 56px rgba(8, 5, 25, 0.6), 0 2px 10px rgba(8, 5, 25, 0.4);
+  --aurora-1:      rgba(91, 71, 201, .75);
+  --aurora-2:      rgba(111, 184, 255, .40);
+  --aurora-3:      rgba(217, 119, 182, .60);
+  --aurora-opacity: .6;
+  --aurora-opacity-3: .4;
+  --glass:      rgba(32, 27, 58, 0.92);
+  --glass-soft: rgba(32, 27, 58, 0.72);
+
+  --radius-sm: 9px;
+  --radius:    12px;
+  --radius-lg: 18px;
+  --font: "Nunito", "Segoe UI Variable Text", "Segoe UI", -apple-system, system-ui, Arial, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+}
+/* Domyslny akcent mgly: jasna lawenda. Inne akcenty z ustawien dzialaja jak w
+   ciemnym wygladzie (reguly :root[data-accent] wyzej). */
+:root[data-motyw="mgla"]:not([data-accent]),
+:root[data-motyw="mgla"][data-accent="violet"] {
+  --accent:        #a996ff;
+  --accent-strong: #c9bcff;
+  --accent-dim:    rgba(169, 150, 255, 0.18);
+  --accent-ring:   rgba(169, 150, 255, 0.32);
+}
+/* Zestawy plam koloru w tle (Ustawienia > Wyglad > Kolory tla). */
+:root[data-motyw="mgla"][data-mgla="roz"] {
+  --aurora-1: rgba(217, 119, 182, .70);
+  --aurora-2: rgba(255, 170, 140, .35);
+  --aurora-3: rgba(140, 100, 230, .55);
+}
+:root[data-motyw="mgla"][data-mgla="morski"] {
+  --aurora-1: rgba(48, 160, 170, .65);
+  --aurora-2: rgba(90, 140, 255, .40);
+  --aurora-3: rgba(140, 230, 200, .45);
+}
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }

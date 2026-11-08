@@ -7,12 +7,16 @@ let cfg = null;
    innego. */
 const ACCENTY = {
   ciemny: { violet: '#8b7cff', mint: '#4fd8ac', sky: '#5aa7ff', rose: '#ff7aa2', amber: '#ffb257' },
-  jasny:  { violet: '#6a5aef', mint: '#12a077', sky: '#1a7fe0', rose: '#de3f77', amber: '#b3720a' }
+  jasny:  { violet: '#6a5aef', mint: '#12a077', sky: '#1a7fe0', rose: '#de3f77', amber: '#b3720a' },
+  mgla:   { violet: '#a996ff', mint: '#4fd8ac', sky: '#5aa7ff', rose: '#ff7aa2', amber: '#ffb257' }
 };
+/* Zestawy plam koloru w tle Lawendowej mgly (theme.css, data-mgla). */
+const KOLORY_MGLY = [['lawenda', 'Lawenda', '#7b63e0'], ['roz', 'Róż', '#d977b6'], ['morski', 'Morski', '#3fb7b0']];
 const NAZWY_AKCENTOW = ['violet', 'mint', 'sky', 'rose', 'amber'];
 
 function probkiAkcentow() {
-  const motyw = document.documentElement.dataset.motyw === 'jasny' ? 'jasny' : 'ciemny';
+  const m = document.documentElement.dataset.motyw;
+  const motyw = m === 'jasny' || m === 'mgla' ? m : 'ciemny';
   return NAZWY_AKCENTOW.map((name) => [name, ACCENTY[motyw][name]]);
 }
 
@@ -99,6 +103,20 @@ function render() {
     <div class="card">
       <h2>Wygląd</h2>
       <div class="row">
+        <div class="body"><div class="title">Wygląd przeglądarki</div>
+          <div class="sub">Lawendowa mgła to nowy wygląd Nazuny. Klasyczny to wygląd sprzed zmiany</div></div>
+        <div class="ctl"><select class="field" data-key="wyglad" style="width:170px">
+          <option value="mgla" ${v.wyglad !== 'klasyczny' ? 'selected' : ''}>Lawendowa mgła</option>
+          <option value="klasyczny" ${v.wyglad === 'klasyczny' ? 'selected' : ''}>Klasyczny</option>
+        </select></div>
+      </div>
+      ${v.wyglad !== 'klasyczny' ? `<div class="row">
+        <div class="body"><div class="title">Kolory tła</div><div class="sub">Miękkie plamy koloru za paskiem i na nowej karcie</div></div>
+        <div class="ctl">${KOLORY_MGLY.map(([id, nazwa, kolor]) => `
+          <button class="accent-dot" data-mgla-kolory="${id}" title="${nazwa}" aria-label="${nazwa}" style="width:24px;height:24px;border-radius:50%;background:${kolor};border:2px solid ${(v.mglaKolory || 'lawenda') === id ? 'var(--text)' : 'transparent'};cursor:pointer"></button>`).join('')}
+        </div>
+      </div>` : ''}
+      <div class="row" ${v.wyglad !== 'klasyczny' ? 'hidden' : ''}>
         <div class="body"><div class="title">Motyw</div>
           <div class="sub">Jasny ma osobno dobrane kolory, nie jest odwróconym ciemnym</div></div>
         <div class="ctl"><select class="field" data-key="theme" style="width:170px">
@@ -203,6 +221,7 @@ function render() {
   }
 
   page.querySelectorAll('[data-accent]').forEach((b) => b.addEventListener('click', () => save({ accent: b.dataset.accent })));
+  page.querySelectorAll('[data-mgla-kolory]').forEach((b) => b.addEventListener('click', () => save({ mglaKolory: b.dataset.mglaKolory })));
   document.getElementById('chooseDir').addEventListener('click', async () => {
     const dir = await api.invoke('downloads.chooseDir');
     if (dir) load();

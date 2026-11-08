@@ -72,6 +72,7 @@ function zastosujWyglad(s) {
   const root = document.documentElement;
   if (s.values && s.values.accent) root.dataset.accent = s.values.accent;
   root.dataset.motyw = s.motyw || 'ciemny';
+  root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
   // Strony, ktore rysuja cos zaleznego od motywu (np. probki kolorow), musza
   // przerysowac sie DOPIERO teraz. Rozgloszenie z procesu glownego przychodzi
   // wczesniej, zanim poznamy nowy motyw, wiec nadajemy wlasny sygnal.

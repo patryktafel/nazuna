@@ -133,6 +133,7 @@ function wyglad() {
     if (!s) return;
     if (s.values && s.values.accent) document.documentElement.dataset.accent = s.values.accent;
     document.documentElement.dataset.motyw = s.motyw || 'ciemny';
+    document.documentElement.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
   }).catch(() => {});
 }
 wyglad();

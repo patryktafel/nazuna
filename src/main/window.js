@@ -68,7 +68,7 @@ function wMenuZakladek(url) {
 }
 
 function motywTeraz() {
-  return rozstrzygnijMotyw(data.settings.get('theme', 'dark'));
+  return rozstrzygnijMotyw(data.settings.get('theme', 'dark'), data.settings.get('wyglad', 'mgla'));
 }
 
 /* Kolor malowany pod strona, zanim zdazy sie wyrysowac. Zwykle strony sa biale,
@@ -1955,7 +1955,7 @@ class AppWindow {
       siteAccent: active ? active.siteAccent : null,
       extensions: (!this.isPrivate && data.settings.get('extensionsEnabled', true)) ? extensions.list().filter((e) => e.enabled) : [],
       settings: data.settings.data,
-      motyw: rozstrzygnijMotyw(data.settings.get('theme', 'dark')),
+      motyw: motywTeraz(),
       przeciaganie: !!this.przeciaganieKarty,
       zeton: ZETON,
       viewport: { width: bounds.width, height: bounds.height },
