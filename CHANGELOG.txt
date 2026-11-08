@@ -1,6 +1,17 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.100 - 8 listopada 2026
+--------------------------
+
+Nowa ikona w stylu Lawendowej mgly
+
+- Nowa ikona Nazuny: ten sam kwiat, teraz na ciemnolawendowym tle z
+  poswiata, pasujaca do nowego wygladu. Widac ja na pasku zadan, w menu
+  Start, na skrocie na pulpicie i w oknie przegladarki.
+- Odswiezone obrazki instalatora.
+- Po aktualizacji Windows od razu odswieza ikone przypietej Nazuny.
+
 0.1.99 - 8 listopada 2026
 -------------------------
 

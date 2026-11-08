@@ -98,6 +98,15 @@ Var Nazuna_ChcStartMenu
   WriteRegStr HKCU "Software\Classes\NazunaPDF" "" "Dokument PDF (Nazuna)"
   WriteRegStr HKCU "Software\Classes\NazunaPDF\DefaultIcon" "" "$INSTDIR\Nazuna.exe,0"
   WriteRegStr HKCU "Software\Classes\NazunaPDF\shell\open\command" "" '"$INSTDIR\Nazuna.exe" -- "%1"'
+
+  ; Ikona zmienila sie w 0.1.100 (Lawendowa mgla). Windows trzyma ikony w
+  ; pamieci podrecznej, wiec przypiety skrot na pasku zadan pokazywalby stara
+  ; ikone az do restartu. ie4uinit -show odswieza te pamiec; SHChangeNotify
+  ; (SHCNE_ASSOCCHANGED) daje znac Eksploratorowi, ze skojarzenia/ikony sie
+  ; zmienily. Oba ciche, bez znaczenia, gdy sie nie powioda.
+  nsExec::Exec '"$SYSDIR\ie4uinit.exe" -show'
+  Pop $0
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 !macroend
 
 !macro customUnInstall
