@@ -74,7 +74,6 @@
 :root[data-accent="srebrny"]  { --accent: #c9cdd6; --accent-strong: #e2e5ec; --accent-dim: rgba(201,205,214,.16); --accent-ring: rgba(201,205,214,.3); }
 :root[data-accent="sky"]    { --accent: #5aa7ff; --accent-strong: #7cbaff; --accent-dim: rgba(90,167,255,.16); --accent-ring: rgba(90,167,255,.3); }
 :root[data-accent="koralowy"] { --accent: #ff7f6b; --accent-strong: #ff9a8a; --accent-dim: rgba(255,127,107,.16); --accent-ring: rgba(255,127,107,.3); }
-:root[data-accent="amber"]  { --accent: #ffb257; --accent-strong: #ffc47c; --accent-dim: rgba(255,178,87,.16); --accent-ring: rgba(255,178,87,.3); }
 
 /* ------------------------------------------------------------ motyw jasny */
 
@@ -121,7 +120,6 @@
 :root[data-motyw="jasny"][data-accent="srebrny"]  { --accent: #5d6472; --accent-strong: #474d59; --accent-dim: rgba(93,100,114,.13); --accent-ring: rgba(93,100,114,.26); }
 :root[data-motyw="jasny"][data-accent="sky"]   { --accent: #1a7fe0; --accent-strong: #1568bb; --accent-dim: rgba(26,127,224,.13); --accent-ring: rgba(26,127,224,.26); }
 :root[data-motyw="jasny"][data-accent="koralowy"] { --accent: #d1503c; --accent-strong: #b23f2d; --accent-dim: rgba(209,80,60,.13); --accent-ring: rgba(209,80,60,.26); }
-:root[data-motyw="jasny"][data-accent="amber"] { --accent: #b3720a; --accent-strong: #965f06; --accent-dim: rgba(179,114,10,.13); --accent-ring: rgba(179,114,10,.26); }
 
 /* ------------------------------------------------- Lawendowa mgla (nowy wyglad)
    Domyslny wyglad od wersji z nowym wygladem (claude_nazuna.md sekcja 13).

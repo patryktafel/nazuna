@@ -6,14 +6,14 @@ let cfg = null;
    probki tez musza byc ciemniejsze. Inaczej klikasz pastel, a wychodzi cos
    innego. */
 const ACCENTY = {
-  ciemny: { violet: '#8b7cff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', amber: '#ffb257', srebrny: '#c9cdd6' },
-  jasny:  { violet: '#6a5aef', zloty: '#9a7400', sky: '#1a7fe0', koralowy: '#d1503c', amber: '#b3720a', srebrny: '#5d6472' },
-  mgla:   { violet: '#a996ff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', amber: '#ffb257', srebrny: '#c9cdd6' }
+  ciemny: { violet: '#8b7cff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', srebrny: '#c9cdd6' },
+  jasny:  { violet: '#6a5aef', zloty: '#9a7400', sky: '#1a7fe0', koralowy: '#d1503c', srebrny: '#5d6472' },
+  mgla:   { violet: '#a996ff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', srebrny: '#c9cdd6' }
 };
 /* Zestawy plam koloru w tle Lawendowej mgly (theme.css, data-mgla). */
 const KOLORY_MGLY = [['lawenda', 'Lawenda', '#7b63e0'], ['roz', 'Róż', '#d977b6'], ['morski', 'Morski', '#3f74e0']];
-const NAZWY_AKCENTOW = ['violet', 'zloty', 'sky', 'koralowy', 'amber', 'srebrny'];
-const NAZWY_AKCENTOW_PL = { violet: 'Fioletowy', zloty: 'Złoty', sky: 'Niebieski', koralowy: 'Koralowy', amber: 'Bursztynowy', srebrny: 'Srebrny' };
+const NAZWY_AKCENTOW = ['violet', 'zloty', 'sky', 'koralowy', 'srebrny'];
+const NAZWY_AKCENTOW_PL = { violet: 'Fioletowy', zloty: 'Złoty', sky: 'Niebieski', koralowy: 'Koralowy', srebrny: 'Srebrny' };
 
 function probkiAkcentow() {
   const m = document.documentElement.dataset.motyw;
