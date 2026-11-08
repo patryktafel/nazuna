@@ -331,7 +331,7 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
 .pw-podglad.lawenda i, .pw-podglad.roz i, .pw-podglad.morski i { background: rgba(255,255,255,.12); }
 .pw-podglad.lawenda i:nth-child(3) { background: radial-gradient(50% 70% at 25% 35%, rgba(91,71,201,.9), transparent), radial-gradient(45% 60% at 80% 70%, rgba(217,119,182,.6), transparent); }
 .pw-podglad.roz i:nth-child(3) { background: radial-gradient(50% 70% at 25% 35%, rgba(217,119,182,.9), transparent), radial-gradient(45% 60% at 80% 70%, rgba(255,170,140,.6), transparent); }
-.pw-podglad.morski i:nth-child(3) { background: radial-gradient(50% 70% at 25% 35%, rgba(48,160,170,.9), transparent), radial-gradient(45% 60% at 80% 70%, rgba(90,140,255,.6), transparent); }
+.pw-podglad.morski i:nth-child(3) { background: radial-gradient(50% 70% at 25% 35%, rgba(44,100,220,.95), transparent), radial-gradient(45% 60% at 80% 70%, rgba(70,150,255,.6), transparent); }
 .pw-lista { list-style: none; margin: 0; padding: 0; width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 10px; }
 .pw-ochrona { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: rgba(var(--tint), .05); border: 1px solid var(--border); }
 .pw-ochrona b { display: block; font-size: 14.5px; color: var(--text); }

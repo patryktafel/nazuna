@@ -178,10 +178,12 @@
   --aurora-2: rgba(255, 170, 140, .35);
   --aurora-3: rgba(140, 100, 230, .55);
 }
+/* Morski = gleboki blekit oceanu. Turkus i zielen sa zarezerwowane dla okna
+   prywatnego (pages.css, shell.css) - zwykle okno nie moze go przypominac. */
 :root[data-motyw="mgla"][data-mgla="morski"] {
-  --aurora-1: rgba(48, 160, 170, .65);
-  --aurora-2: rgba(90, 140, 255, .40);
-  --aurora-3: rgba(140, 230, 200, .45);
+  --aurora-1: rgba(44, 100, 220, .70);
+  --aurora-2: rgba(90, 86, 230, .40);
+  --aurora-3: rgba(70, 150, 255, .45);
 }
 
 * { box-sizing: border-box; }

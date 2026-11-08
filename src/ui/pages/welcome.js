@@ -61,7 +61,7 @@ const KROKI = [
         <div class="pw-karty trzy">
           ${karta('mglaKolory:lawenda', 'Lawenda', 'Fiolet z nutą błękitu', 'lawenda', k === 'lawenda')}
           ${karta('mglaKolory:roz', 'Róż', 'Ciepły róż i brzoskwinia', 'roz', k === 'roz')}
-          ${karta('mglaKolory:morski', 'Morski', 'Chłodna zieleń i błękit', 'morski', k === 'morski')}
+          ${karta('mglaKolory:morski', 'Morski', 'Głęboki błękit oceanu', 'morski', k === 'morski')}
         </div>`;
     }
   },

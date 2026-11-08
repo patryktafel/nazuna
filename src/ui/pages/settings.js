@@ -11,7 +11,7 @@ const ACCENTY = {
   mgla:   { violet: '#a996ff', mint: '#4fd8ac', sky: '#5aa7ff', rose: '#ff7aa2', amber: '#ffb257' }
 };
 /* Zestawy plam koloru w tle Lawendowej mgly (theme.css, data-mgla). */
-const KOLORY_MGLY = [['lawenda', 'Lawenda', '#7b63e0'], ['roz', 'Róż', '#d977b6'], ['morski', 'Morski', '#3fb7b0']];
+const KOLORY_MGLY = [['lawenda', 'Lawenda', '#7b63e0'], ['roz', 'Róż', '#d977b6'], ['morski', 'Morski', '#3f74e0']];
 const NAZWY_AKCENTOW = ['violet', 'mint', 'sky', 'rose', 'amber'];
 
 function probkiAkcentow() {
