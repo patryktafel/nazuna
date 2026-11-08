@@ -787,6 +787,7 @@ class AppWindow {
     this.extensionPopup = null;
     this._syncQueued = false;
     this._permissionResolvers = new Map();
+    this._wyborKontaResolvers = new Map();
     // Karta trzymana "na zapas", patrz _prepareSpare() i newTab() nizej.
     this._spareTab = null;
     // Warstwa powiadomien w rogu (patrz pokazToast nizej) - tworzona dopiero,
@@ -1497,6 +1498,8 @@ class AppWindow {
   }
 
   closePopover() {
+    // Zamkniete okienko wyboru konta (Esc, klik obok) = anulowane logowanie.
+    for (const [k, r] of this._wyborKontaResolvers) { this._wyborKontaResolvers.delete(k); r(null); }
     const had = !!this.popover;
     this.popover = null;
     this.send('popover:hide');          // zawsze, zeby interfejs nie zostal z wiszacym okienkiem
@@ -1528,6 +1531,28 @@ class AppWindow {
     const items = buildContextMenu(this, tab, params);
     this._contextParams = { tab, params, wc: tab.wc };
     this.openPopover('context', { x: params.x, y: params.y + this.chromeHeight(), items });
+  }
+
+  /* Logowanie kluczem dostepu, gdy na kluczu/urzadzeniu jest kilka kont:
+     okienko z lista kont w stylu Nazuny (jak wybor konta w Chrome). */
+  wybierzKontoKlucza({ rp, konta }) {
+    return new Promise((resolve) => {
+      for (const [k, r] of this._wyborKontaResolvers) { this._wyborKontaResolvers.delete(k); r(null); }
+      const key = `klucz|${Date.now()}`;
+      this._wyborKontaResolvers.set(key, resolve);
+      this.openPopover('wybor-konta', {
+        key, rp,
+        konta: konta.map((k) => ({ id: k.credentialId, nazwa: k.displayName || '', login: k.name || '' }))
+      });
+    });
+  }
+
+  odpowiedzWyborKonta(key, id) {
+    const resolve = this._wyborKontaResolvers.get(key);
+    if (!resolve) return;
+    this._wyborKontaResolvers.delete(key);
+    resolve(id || null);
+    this.closePopover();
   }
 
   async requestPermission({ permission, origin, strona, osadzona }) {
@@ -1955,6 +1980,7 @@ class AppWindow {
   }
 
   dispose() {
+    for (const [k, r] of this._wyborKontaResolvers) { this._wyborKontaResolvers.delete(k); r(null); }
     clearTimeout(this._zapisGranic);
     clearTimeout(this._licznikTimer);
     if (this.toastView) { try { this.toastView.webContents.close(); } catch (_) {} this.toastView = null; }

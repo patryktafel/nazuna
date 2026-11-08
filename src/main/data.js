@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS = {
   askWhereToSave: false,
   downloadDir: '',
   doNotTrack: true,
-  passkeys: false,
+  passkeys: true,
   blockThirdPartyCookies: true,
   // Osobne "sloiki" ciasteczek dla kazdej strony (jak Total Cookie Protection
   // w Firefoksie) - patrz index.js i session.js. Nowy klucz, bo stare
@@ -77,6 +77,14 @@ function init() {
   history = new Store(path.join(dir, 'history.json'), { items: [] }, { opoznienieZapisu: 5000 });
   downloads = new Store(path.join(dir, 'downloads.json'), { items: [] });
   extensionsStore = new Store(path.join(dir, 'extensions.json'), { installed: [] }, { kopia: true });
+  /* 0.1.96: klucze dostepu domyslnie wlaczone. Wczesniej domyslnie byly
+     wylaczone i zapisane "false" zostalo u wszystkich - wlaczamy je raz, przy
+     pierwszym starcie po aktualizacji. Pozniejsze wylaczenie przez uzytkownika
+     zostaje uszanowane (znacznik migracjaPasskeys). */
+  if (settings.get('migracjaPasskeys', 0) < 1) {
+    settings.set('passkeys', true);
+    settings.set('migracjaPasskeys', 1);
+  }
   siteStore = new Store(path.join(dir, 'sites.json'), { adblockOff: [], zoom: {}, permissions: {}, skroty: [], skrotyUkryte: [], httpZaakceptowane: [], sleepExempt: [] });
 }
 

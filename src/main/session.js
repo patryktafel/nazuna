@@ -58,6 +58,9 @@ const ASK = new Set(['media', 'geolocation', 'notifications', 'clipboard-read', 
 
 let permissionPrompt = null;   // set by the window layer
 function setPermissionPrompt(fn) { permissionPrompt = fn; }
+/* Okno wyboru konta przy logowaniu kluczem dostepu (index.js -> window.js). */
+let wyborKontaKlucza = null;
+function setWyborKontaKlucza(fn) { wyborKontaKlucza = fn; }
 
 let dntEnabled = true;
 let obceCiasteczka = true;   // czy blokujemy ciasteczka podmiotow trzecich
@@ -277,6 +280,23 @@ function prepare(ses, efemeryczna) {
   if (prepared.has(ses)) return ses;
   prepared.add(ses);
 
+  /* Klucz (np. YubiKey) albo urzadzenie ma kilka kont dla tej strony. Bez
+     tego nasluchu Electron po cichu anuluje logowanie - kto mial wiecej niz
+     jedno konto, w ogole nie mogl uzyc passkeya. Callback zawsze dokladnie raz. */
+  ses.on('select-webauthn-account', (event, details, callback) => {
+    let zrobione = false;
+    const odpowiedz = (id) => { if (zrobione) return; zrobione = true; try { callback(id || undefined); } catch (_) {} };
+    try {
+      const konta = (details && details.accounts) || [];
+      if (!konta.length) return odpowiedz();
+      if (konta.length === 1) return odpowiedz(konta[0].credentialId);
+      if (!wyborKontaKlucza) return odpowiedz();
+      Promise.resolve(wyborKontaKlucza({ frame: details.frame, rp: details.relyingPartyId || '', konta }))
+        .then((id) => odpowiedz(konta.some((k) => k.credentialId === id) ? id : null))
+        .catch(() => odpowiedz());
+    } catch (_) { odpowiedz(); }
+  });
+
   // Drugi argument ustawia tez navigator.languages po stronie strony, wiec
   // jezyk zgadza sie w naglowku i w JavaScripcie.
   ses.setUserAgent(UA, acceptLanguages());
@@ -443,4 +463,4 @@ async function loadExtensions(ses) {
   return loaded;
 }
 
-module.exports = { forPartition, prepare, loadExtensions, bladOdPodgladu, setPermissionPrompt, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, zapamietajWSesji, flagiObcychCiasteczek, prepared };
+module.exports = { forPartition, prepare, loadExtensions, bladOdPodgladu, setPermissionPrompt, setWyborKontaKlucza, refreshFlags, applyWebRtcToAll, ustawDomeneKarty, zapomnijKarte, zapamietajWSesji, flagiObcychCiasteczek, prepared };

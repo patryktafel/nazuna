@@ -54,6 +54,11 @@ jobs:
       - name: Zbuduj i opublikuj instalator
         run: npm run dist:publish
         env:
+          # Paczka npm "electron" pobiera przy pierwszym require swoj silnik z adresu
+          # z "+" w nazwie, ktory GitHub od listopada 2026 zwraca jako 504. Ten silnik
+          # nie jest do niczego potrzebny (instalator bierze electron-wv), wiec
+          # wskazujemy folder zamiast pobierania.
+          ELECTRON_OVERRIDE_DIST_PATH: ${{ github.workspace }}\electron-wv
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           CSC_LINK: ${{ secrets.NAZUNA_CERT_PFX_BASE64 }}
           CSC_KEY_PASSWORD: ${{ secrets.NAZUNA_CERT_PASSWORD }}

@@ -1931,6 +1931,30 @@ function contextIcon(id) {
   return map[id] || null;
 }
 
+/* Logowanie kluczem dostepu, kilka kont na kluczu: lista do wyboru. */
+function wyborKontaPrompt(payload) {
+  const konta = payload.konta || [];
+  const node = panel(`<div class="prompt wybor-konta">
+      <h3>${iconSvg('lock')} Wybierz konto</h3>
+      <p>Zaloguj się kluczem dostępu do <b>${escapeHtml(payload.rp || 'tej strony')}</b>.</p>
+      <div class="konta" role="listbox" aria-label="Konta">
+        ${konta.map((k, i) => `<button class="konto" role="option" data-konto="${i}">
+          <span class="konto-ikona">${escapeHtml(((k.nazwa || k.login || '?').trim()[0] || '?').toUpperCase())}</span>
+          <span class="konto-tekst"><b>${escapeHtml(k.nazwa || k.login || 'Konto bez nazwy')}</b>${k.nazwa && k.login && k.login !== k.nazwa ? `<small>${escapeHtml(k.login)}</small>` : ''}</span>
+        </button>`).join('')}
+      </div>
+      <div class="row"><button class="btn" data-anuluj>Anuluj</button></div>
+    </div>`);
+  openPanel('wybor-konta', node, el.omnibox.getBoundingClientRect(), { align: 'left' });
+  const pierwszy = node.querySelector('.konto');
+  if (pierwszy) pierwszy.focus();
+  node.addEventListener('click', (e) => {
+    const k = e.target.closest('[data-konto]');
+    if (k) { api.send('klucz.wybor', { key: payload.key, id: konta[Number(k.dataset.konto)].id }); return; }
+    if (e.target.closest('[data-anuluj]')) api.send('klucz.wybor', { key: payload.key, id: null });
+  });
+}
+
 function permissionPrompt(payload) {
   const labels = {
     media: ['Dostęp do kamery i mikrofonu', 'camera'],
@@ -2100,6 +2124,7 @@ function syncLayer(next) {
 api.on('popover:show', ({ name, payload }) => {
   if (name === 'context') showContextMenu(payload);
   else if (name === 'permission') permissionPrompt(payload);
+  else if (name === 'wybor-konta') wyborKontaPrompt(payload);
   else if (name === 'downloads') { api.invoke('downloads.list').then((l) => { downloadsCache = l; downloadsPanel(); }); }
   else if (name === 'ext-popup') { closePopover(true); document.body.classList.add('expanded'); }
 });

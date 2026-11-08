@@ -235,6 +235,7 @@ const handlers = {
   'menu.action': (win, p) => menuAction(win, p.id, p.value),
   'context.action': (win, p) => W.runContextAction(win, p.id),
   'permission.answer': (win, p) => win.resolvePermission(p.key, p.answer, p.remember),
+  'klucz.wybor': (win, p) => win.odpowiedzWyborKonta(p.key, p.id),
 
   /* ----------------------------------------------------------- bookmarks */
   'bookmarks.toggle': (win) => win.toggleBookmark(),

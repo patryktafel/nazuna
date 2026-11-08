@@ -123,7 +123,7 @@ function render() {
         <div class="body"><div class="title">Lista złośliwych domen</div><div class="sub" id="securityInfo">sprawdzam...</div></div>
         <div class="ctl"><button class="btn" id="updateSecurity">Zaktualizuj teraz</button></div>
       </div>
-      ${toggleRow('passkeys', 'Klucze dostępu (passkeys)', 'Logowanie odciskiem palca, PIN-em albo kodem z telefonu, zamiast hasła. Gdy wyłączone, przeglądarka mówi stronom, że nie ma czym, i okno zabezpieczeń Windows przestaje wyskakiwać. Zmiana działa od nowej karty')}
+      ${toggleRow('passkeys', 'Klucze dostępu (passkeys)', 'Logowanie odciskiem palca, PIN-em albo kodem z telefonu, zamiast hasła. Przy kilku kontach na jednym kluczu Nazuna pokaże listę do wyboru. Gdy wyłączone, strony od razu pokazują pole na hasło. Zmiana działa od nowej karty')}
     </div>
 
     <div class="card">

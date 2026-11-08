@@ -212,6 +212,13 @@ if (!gotLock) {
       if (!win) return 'deny';
       return win.requestPermission({ permission, origin, strona, osadzona });
     });
+    sessions.setWyborKontaKlucza(({ frame, rp, konta }) => {
+      let wc = null;
+      try { wc = frame ? require('electron').webContents.fromFrame(frame) : null; } catch (_) {}
+      const win = (wc && W.allWindows().find((w) => w.tabs.some((t) => t.wc === wc))) || W.focusedWindow();
+      if (!win) return null;
+      return win.wybierzKontoKlucza({ rp, konta });
+    });
 
     ipc.register();
 

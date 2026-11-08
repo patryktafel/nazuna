@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.96 - 8 listopada 2026
+-------------------------
+
+Klucze dostepu (passkeys) wlaczone i wybor konta; osobne ciasteczka dla stron
+
+- Klucze dostepu sa teraz domyslnie wlaczone, takze u osob, ktore mialy je
+  wylaczone (wlaczamy je raz przy aktualizacji; pozniejsze wylaczenie zostaje).
+- Gdy na kluczu albo urzadzeniu jest kilka kont dla danej strony, Nazuna
+  pokazuje okno "Wybierz konto" z lista kont. Wczesniej logowanie bylo w takiej
+  sytuacji po cichu anulowane.
+- Osobne ciasteczka dla kazdej strony (jak w Firefoksie): osadzone elementy
+  (przyciski Facebooka, reklamy, odtwarzacze) nie moga sledzic Cie miedzy
+  stronami. Okienko "Element osadzony prosi o swoje ciasteczka" zniknelo.
+  Ta zmiana miala wyjsc w 0.1.95, ktorej budowanie nie powiodlo sie.
+
 0.1.95 - 8 listopada 2026
 -------------------------
 
