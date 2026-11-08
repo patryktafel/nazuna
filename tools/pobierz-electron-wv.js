@@ -39,9 +39,9 @@ const root = path.join(__dirname, '..');
 const cel = path.join(root, FOLDER);
 const zip = path.join(root, `${FOLDER}.zip`);
 
-function pobierz(url, plik, glebokosc = 0) {
+function pobierz(url, plik, glebokosc = 0, naglowki = {}) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'user-agent': 'nazuna-build' } }, (res) => {
+    https.get(url, { headers: Object.assign({ 'user-agent': 'nazuna-build' }, naglowki) }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && glebokosc < 6) {
         res.destroy();
         return resolve(pobierz(res.headers.location, plik, glebokosc + 1));
@@ -74,6 +74,26 @@ function sumaPliku(plik) {
   });
 }
 
+function adresPrzezApi() {
+  const tag = encodeURIComponent(`v${WERSJA}+wvcus`);
+  const nazwa = decodeURIComponent(PLIK);
+  return new Promise((resolve, reject) => {
+    const naglowki = { 'user-agent': 'nazuna-build', accept: 'application/vnd.github+json' };
+    if (process.env.GITHUB_TOKEN) naglowki.authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    https.get(`https://api.github.com/repos/castlabs/electron-releases/releases/tags/${tag}`, { headers: naglowki }, (res) => {
+      let tekst = '';
+      res.on('data', (c) => { tekst += c; });
+      res.on('end', () => {
+        try {
+          const zasob = (JSON.parse(tekst).assets || []).find((a) => a.name === nazwa);
+          if (!zasob) return reject(new Error('brak pliku w wydaniu castLabs'));
+          resolve(zasob.url);
+        } catch (e) { reject(new Error(`API odpowiedzialo ${res.statusCode}`)); }
+      });
+    }).on('error', reject);
+  });
+}
+
 (async () => {
   if (fs.existsSync(path.join(cel, ZNACZNIK))) {
     /* Plik "version" w paczce castLabs ma postac "43.8.3+wvcus". Inna wersja
@@ -89,7 +109,28 @@ function sumaPliku(plik) {
   }
   console.log('Pobieram silnik z obsługą DRM (około 140 MB, tylko za pierwszym razem)...');
   try {
-    await pobierz(URL, zip);
+    /* Chwilowe 502/503/504 z serwerow GitHuba: kilka prob z przerwami. */
+    const zPonowieniem = async (proba) => {
+      let ostatni;
+      for (let i = 0; i < 4; i++) {
+        try { return await proba(); } catch (e) {
+          ostatni = e;
+          console.log(`  proba ${i + 1} nieudana (${e.message})`);
+          await new Promise((r) => setTimeout(r, 15000));
+        }
+      }
+      throw ostatni;
+    };
+    try {
+      await zPonowieniem(() => pobierz(URL, zip));
+    } catch (err) {
+      /* Zwykly adres "releases/download" potrafi zwracac 504 przy awariach
+         GitHuba (tak bylo 8.11.2026, takze dla innych repozytoriow), a ten
+         sam plik przez API dalej sie pobiera. Suma SHA-256 nizej i tak
+         sprawdza, ze to dokladnie ta paczka. */
+      console.log(`Zwykly adres nie dziala (${err.message}), probuje przez API GitHuba...`);
+      await zPonowieniem(async () => pobierz(await adresPrzezApi(), zip, 0, { accept: 'application/octet-stream' }));
+    }
   } catch (err) {
     console.error(`\nNie udało się pobrać silnika: ${err.message}`);
     try { fs.unlinkSync(zip); } catch (_) {}
