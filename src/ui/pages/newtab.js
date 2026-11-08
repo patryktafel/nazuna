@@ -153,3 +153,45 @@ if (api.on) api.on('skroty:zmiana', render);
 /* Kursor domyslnie stoi w pasku adresu na gorze (patrz newTab() w window.js,
    wysyla 'focus:address'), tak jak w Chrome i Firefoksie - to okienko
    wyszukiwania na srodku jest tylko dla kogos, kto woli kliknac tutaj. */
+
+/* ------------------------------------------- Lawendowa mgla: zegar i licznik
+   Zegar, powitanie i licznik widac tylko w wygladzie mgly (CSS w pages.css),
+   ale licza sie zawsze - przelaczenie wygladu dziala wtedy od razu. */
+const POWITANIA = [
+  [5, 10, 'Dzień dobry. Miłego poranka.'],
+  [10, 17, 'Dzień dobry. Miłego dnia.'],
+  [17, 22, 'Dobry wieczór. Spokojnego przeglądania.'],
+  [22, 24, 'Późno już. Może jeszcze chwilka?'],
+  [0, 5, 'Późno już. Może jeszcze chwilka?']
+];
+function odswiezZegar() {
+  const teraz = new Date();
+  document.getElementById('czas').textContent =
+    `${String(teraz.getHours()).padStart(2, '0')}:${String(teraz.getMinutes()).padStart(2, '0')}`;
+  const h = teraz.getHours();
+  const p = POWITANIA.find(([od, do_]) => h >= od && h < do_);
+  document.getElementById('powitanie').textContent = p ? p[2] : '';
+  // Nastepne odswiezenie rowno z poczatkiem kolejnej minuty.
+  setTimeout(odswiezZegar, 60000 - (teraz.getSeconds() * 1000 + teraz.getMilliseconds()) + 50);
+}
+odswiezZegar();
+
+// 1 element, 2-4 elementy, 5+ elementow (ale 12-14 elementow).
+function elementy(n) {
+  if (n === 1) return 'element śledzący';
+  const j = n % 10, d = n % 100;
+  if (j >= 2 && j <= 4 && !(d >= 12 && d <= 14)) return 'elementy śledzące';
+  return 'elementów śledzących';
+}
+document.getElementById('licznikIkona').innerHTML = iconSvg('shield');
+async function odswiezLicznik() {
+  const w = await api.invoke('newtab.blokadyDzis').catch(() => null);
+  const el = document.getElementById('licznik');
+  if (!w || !w.wlaczony || !w.ile) { el.hidden = true; return; }
+  document.getElementById('licznikTekst').textContent =
+    `Dziś Nazuna zatrzymała ${w.ile.toLocaleString('pl-PL')} ${elementy(w.ile)}`;
+  el.hidden = false;
+}
+odswiezLicznik();
+setInterval(() => { if (!document.hidden) odswiezLicznik(); }, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) odswiezLicznik(); });

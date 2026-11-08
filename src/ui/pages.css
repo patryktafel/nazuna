@@ -213,3 +213,43 @@ body.newtab:not(.nt-ready) .nt-foot { opacity: 0; }
 }
 .err .actions { margin-top: 24px; display: flex; gap: 8px; justify-content: center; }
 .err.danger .icon { color: var(--danger); }
+
+/* ------------------------------------------- Lawendowa mgla: nowa karta (etap 3)
+   Duzy zegar z powitaniem zamiast logo, szklana wyszukiwarka, okragle kafelki
+   i licznik zatrzymanych elementow sledzacych. Klasyczny bez zmian. */
+.nt-zegar, .nt-licznik { display: none; }
+:root[data-motyw="mgla"] body.newtab .nt-logo { display: none; }
+:root[data-motyw="mgla"] body.newtab .nt-zegar {
+  display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+:root[data-motyw="mgla"] .nt-czas {
+  font-size: 96px; font-weight: 300; letter-spacing: -2px; line-height: 1; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+:root[data-motyw="mgla"] .nt-powitanie { font-size: 20px; color: var(--text-dim); }
+:root[data-motyw="mgla"] .nt-search {
+  height: 60px; border-radius: 999px; padding: 0 26px; gap: 14px;
+  background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 50px rgba(10, 6, 30, 0.35);
+}
+:root[data-motyw="mgla"] .nt-search input { font-size: 16px; }
+:root[data-motyw="mgla"] .nt-search .icon { color: var(--accent-strong); width: 20px; height: 20px; }
+:root[data-motyw="mgla"] .tiles { grid-template-columns: repeat(auto-fit, 84px); gap: 18px; margin-top: 12px; }
+:root[data-motyw="mgla"] .tile { background: transparent; padding: 6px 4px 4px; gap: 10px; color: var(--text-dim); }
+:root[data-motyw="mgla"] .tile:hover { background: transparent; border-color: transparent; transform: translateY(-3px); }
+:root[data-motyw="mgla"] .tile::before { display: none; }
+:root[data-motyw="mgla"] .tile .glyph {
+  width: 64px; height: 64px; border-radius: 22px; font-size: 22px; font-weight: 800;
+  background: rgba(255, 255, 255, 0.10); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transition: background .15s var(--ease), box-shadow .15s var(--ease);
+}
+:root[data-motyw="mgla"] .tile:hover .glyph { background: rgba(255, 255, 255, 0.16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 10px 26px -12px rgba(10, 6, 30, .8); }
+:root[data-motyw="mgla"] .tile .glyph img { width: 28px; height: 28px; }
+:root[data-motyw="mgla"] .tile span { font-size: 13px; }
+:root[data-motyw="mgla"] .tile-add .glyph { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.22); }
+:root[data-motyw="mgla"] body.newtab .nt-licznik:not([hidden]) {
+  display: flex; align-items: center; gap: 10px; margin-top: 18px;
+  padding: 10px 18px; border-radius: 999px; background: rgba(255, 255, 255, 0.08);
+  font-size: 13px; color: var(--text-dim);
+}
+:root[data-motyw="mgla"] .nt-licznik .icon { width: 15px; height: 15px; color: var(--ok); }

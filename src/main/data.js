@@ -312,6 +312,40 @@ function wyczyscPrywatneStrony() {
   prywatneStrony.sleepExempt.clear(); prywatneStrony.http.clear();
 }
 
+/* Licznik "Dzis Nazuna zatrzymala X elementow sledzacych" na nowej karcie.
+   Trzymany w pamieci i odkladany do settings.json najwyzej raz na minute
+   (bloker potrafi liczyc kilka razy na sekunde). Tylko liczba i data - zadnych
+   adresow. Zliczaja tylko zwykle okna (adblock.js pomija okna prywatne). */
+let licznikBlokad = null;
+let licznikZmieniony = false;
+let licznikTimer = null;
+function dzisiaj() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function biezacyLicznik() {
+  if (!licznikBlokad) {
+    const zapisany = settings.get('licznikBlokad', null);
+    licznikBlokad = zapisany && typeof zapisany.ile === 'number' ? { data: zapisany.data, ile: zapisany.ile } : { data: dzisiaj(), ile: 0 };
+  }
+  if (licznikBlokad.data !== dzisiaj()) { licznikBlokad = { data: dzisiaj(), ile: 0 }; licznikZmieniony = true; }
+  return licznikBlokad;
+}
+function dodajBlokade() {
+  biezacyLicznik().ile += 1;
+  licznikZmieniony = true;
+  if (!licznikTimer) {
+    licznikTimer = setTimeout(() => { licznikTimer = null; zapiszLicznikBlokad(); }, 60 * 1000);
+    if (licznikTimer.unref) licznikTimer.unref();
+  }
+}
+function blokadyDzis() { return biezacyLicznik().ile; }
+function zapiszLicznikBlokad() {
+  if (!licznikZmieniony || !licznikBlokad) return;
+  licznikZmieniony = false;
+  settings.set('licznikBlokad', { data: licznikBlokad.data, ile: licznikBlokad.ile });
+}
+
 function adblockAllowed(hostname) {
   return !siteStore.data.adblockOff.includes(hostname) && !prywatneStrony.adblockOff.has(hostname);
 }
@@ -428,6 +462,7 @@ module.exports = {
   adblockAllowed, setAdblockForSite, siteZoom, setSiteZoom, permissionFor, setPermission,
   isSleepExempt, setSleepExempt,
   httpZaakceptowany, zaakceptujHttp, wyczyscPrywatneStrony,
+  dodajBlokade, blokadyDzis, zapiszLicznikBlokad,
   skrotyStan, dodajSkrot, usunSkrot,
   DEFAULT_SETTINGS
 };

@@ -381,6 +381,7 @@ if (!gotLock) {
     } catch (_) {}
     zamykanie = true;
     event.preventDefault();
+    try { data.zapiszLicznikBlokad(); } catch (_) {}
     Promise.allSettled([
       data.settings.flush(),
       data.historyStore.flush(),

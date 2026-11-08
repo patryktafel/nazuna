@@ -10,6 +10,10 @@
 <body class="newtab">
   <div class="aurora"><i></i></div>
   <div class="nt-wrap">
+    <div class="nt-zegar" aria-live="off">
+      <div class="nt-czas" id="czas"></div>
+      <div class="nt-powitanie" id="powitanie"></div>
+    </div>
     <div class="nt-logo">
       <img src="nazuna://assets/mark.png" alt="">
       <b>nazuna</b>
@@ -19,6 +23,10 @@
       <input id="q" type="text" placeholder="Szukaj" spellcheck="false" autocomplete="off">
     </form>
     <div class="tiles" id="tiles"></div>
+    <div class="nt-licznik" id="licznik" hidden>
+      <span id="licznikIkona"></span>
+      <span id="licznikTekst"></span>
+    </div>
     <form class="nt-addform" id="addForm" hidden>
       <input class="field" id="addUrl" type="text" placeholder="Adres strony, np. wykop.pl" spellcheck="false" autocomplete="off">
       <input class="field" id="addLabel" type="text" placeholder="Nazwa (opcjonalnie)" spellcheck="false" autocomplete="off" maxlength="40">

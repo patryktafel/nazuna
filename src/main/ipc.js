@@ -257,6 +257,7 @@ const handlers = {
 
   /* ---------------------------------------------------- kafelki nowej karty */
   'newtab.skroty': () => data.skrotyStan(),
+  'newtab.blokadyDzis': () => ({ ile: data.blokadyDzis(), wlaczony: data.settings.get('adblockEnabled', true) !== false }),
   'newtab.skroty.dodaj': (win, p) => {
     const raw = String((p && p.url) || '').trim();
     if (!raw) return { error: 'Podaj adres strony.' };

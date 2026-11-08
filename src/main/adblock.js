@@ -128,6 +128,11 @@ function bump(id) {
   const n = (counters.get(id) || 0) + 1;
   counters.set(id, n);
   if (onCount) onCount(id, n);
+  // Licznik dnia na nowej karcie - okno prywatne (sesja w pamieci) nic nie dopisuje.
+  try {
+    const wc = webContents.fromId(id);
+    if (wc && wc.session && wc.session.isPersistent()) data.dodajBlokade();
+  } catch (_) {}
 }
 
 function documentHost(details) {
