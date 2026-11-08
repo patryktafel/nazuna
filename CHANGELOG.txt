@@ -1,6 +1,33 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.99 - 8 listopada 2026
+-------------------------
+
+Nowy wyglad: Lawendowa mgla i ekran powitalny
+
+- Nowy domyslny wyglad "Lawendowa mgla": miekkie plamy koloru, pasek jak
+  matowe szklo, karty w ksztalcie pigulek, zaokraglone ksztalty i nowe
+  czcionki wbudowane w przegladarke. Dawny wyglad jest dostepny jako
+  "Klasyczny" (Ustawienia > Wyglad).
+- Ekran powitalny: po aktualizacji kazdy zobaczy go raz - wybor wygladu,
+  kolorow i krotko o tym, jak Nazuna chroni prywatnosc. Mozna go pokazac
+  ponownie z menu albo wlaczyc przy kazdym starcie.
+- Nowa karta: duzy zegar, powitanie zalezne od pory dnia i licznik
+  "Dzis Nazuna zatrzymala X elementow sledzacych".
+- Przycisk slonca i ksiezyca na pasku przelacza strony miedzy jasnym a
+  ciemnym trybem (domyslnie jak w Windows); strony z ciemnym trybem, np.
+  Google, YouTube czy Reddit, przelaczaja sie od razu.
+- Okno prywatne ma wlasny wyglad: prawie czarne tlo z turkusem, zeby od razu
+  bylo widac, ze to okno prywatne.
+- Nowe kolory akcentu: zloty, koralowy i srebrny; kolory tla do wyboru:
+  lawenda, roz, morski.
+- Wszystkie strony przegladarki (ustawienia, historia, zakladki, pobrane,
+  rozszerzenia, podglad PDF, powiadomienia) w nowym stylu.
+- Poprawki: licznik zablokowanych elementow dziala tez w trybie Agresywnym,
+  a tryb Agresywny nie przelacza sie juz po cichu na Bezpieczny po
+  odswiezeniu list filtrow.
+
 0.1.98 - 8 listopada 2026
 -------------------------
 
