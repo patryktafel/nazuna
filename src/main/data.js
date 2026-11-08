@@ -93,6 +93,9 @@ function init() {
      wylaczone i zapisane "false" zostalo u wszystkich - wlaczamy je raz, przy
      pierwszym starcie po aktualizacji. Pozniejsze wylaczenie przez uzytkownika
      zostaje uszanowane (znacznik migracjaPasskeys). */
+  /* Akcenty mint i rose zastapione (nowy wyglad): u kogo byly wybrane, ten
+     dostaje najblizszy nowy. */
+  { const a = settings.get('accent', 'violet'); if (a === 'mint') settings.set('accent', 'zloty'); else if (a === 'rose') settings.set('accent', 'koralowy'); }
   if (settings.get('migracjaPasskeys', 0) < 1) {
     settings.set('passkeys', true);
     settings.set('migracjaPasskeys', 1);

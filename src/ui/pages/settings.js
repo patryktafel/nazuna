@@ -6,13 +6,14 @@ let cfg = null;
    probki tez musza byc ciemniejsze. Inaczej klikasz pastel, a wychodzi cos
    innego. */
 const ACCENTY = {
-  ciemny: { violet: '#8b7cff', mint: '#4fd8ac', sky: '#5aa7ff', rose: '#ff7aa2', amber: '#ffb257' },
-  jasny:  { violet: '#6a5aef', mint: '#12a077', sky: '#1a7fe0', rose: '#de3f77', amber: '#b3720a' },
-  mgla:   { violet: '#a996ff', mint: '#4fd8ac', sky: '#5aa7ff', rose: '#ff7aa2', amber: '#ffb257' }
+  ciemny: { violet: '#8b7cff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', amber: '#ffb257', srebrny: '#c9cdd6' },
+  jasny:  { violet: '#6a5aef', zloty: '#9a7400', sky: '#1a7fe0', koralowy: '#d1503c', amber: '#b3720a', srebrny: '#5d6472' },
+  mgla:   { violet: '#a996ff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', amber: '#ffb257', srebrny: '#c9cdd6' }
 };
 /* Zestawy plam koloru w tle Lawendowej mgly (theme.css, data-mgla). */
 const KOLORY_MGLY = [['lawenda', 'Lawenda', '#7b63e0'], ['roz', 'Róż', '#d977b6'], ['morski', 'Morski', '#3f74e0']];
-const NAZWY_AKCENTOW = ['violet', 'mint', 'sky', 'rose', 'amber'];
+const NAZWY_AKCENTOW = ['violet', 'zloty', 'sky', 'koralowy', 'amber', 'srebrny'];
+const NAZWY_AKCENTOW_PL = { violet: 'Fioletowy', zloty: 'Złoty', sky: 'Niebieski', koralowy: 'Koralowy', amber: 'Bursztynowy', srebrny: 'Srebrny' };
 
 function probkiAkcentow() {
   const m = document.documentElement.dataset.motyw;
@@ -134,7 +135,7 @@ function render() {
       <div class="row">
         <div class="body"><div class="title">Kolor akcentu</div><div class="sub">Wpływa na podświetlenia i aktywne elementy</div></div>
         <div class="ctl">${probkiAkcentow().map(([name, color]) => `
-          <button class="accent-dot${v.accent === name ? ' wybrana' : ''}" data-accent="${name}" title="${name}" aria-pressed="${v.accent === name}" style="--kolor:${color}"></button>`).join('')}
+          <button class="accent-dot${v.accent === name ? ' wybrana' : ''}" data-accent="${name}" title="${NAZWY_AKCENTOW_PL[name] || name}" aria-label="${NAZWY_AKCENTOW_PL[name] || name}" aria-pressed="${v.accent === name}" style="--kolor:${color}"></button>`).join('')}
         </div>
       </div>
       <div class="row">

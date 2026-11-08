@@ -68,9 +68,12 @@
   --font: "Segoe UI Variable Text", "Segoe UI", Inter, -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
 }
 
-:root[data-accent="mint"]   { --accent: #4fd8ac; --accent-strong: #6ee6bf; --accent-dim: rgba(79,216,172,.16); --accent-ring: rgba(79,216,172,.3); }
+/* Akcenty: mietowy i rozowy zastapione zlotym i koralowym, doszedl srebrny
+   (zyczenie uzytkownika). Turkus/zielen sa zarezerwowane dla okna prywatnego. */
+:root[data-accent="zloty"]    { --accent: #e3b341; --accent-strong: #f0c96a; --accent-dim: rgba(227,179,65,.16); --accent-ring: rgba(227,179,65,.3); }
+:root[data-accent="srebrny"]  { --accent: #c9cdd6; --accent-strong: #e2e5ec; --accent-dim: rgba(201,205,214,.16); --accent-ring: rgba(201,205,214,.3); }
 :root[data-accent="sky"]    { --accent: #5aa7ff; --accent-strong: #7cbaff; --accent-dim: rgba(90,167,255,.16); --accent-ring: rgba(90,167,255,.3); }
-:root[data-accent="rose"]   { --accent: #ff7aa2; --accent-strong: #ff97b6; --accent-dim: rgba(255,122,162,.16); --accent-ring: rgba(255,122,162,.3); }
+:root[data-accent="koralowy"] { --accent: #ff7f6b; --accent-strong: #ff9a8a; --accent-dim: rgba(255,127,107,.16); --accent-ring: rgba(255,127,107,.3); }
 :root[data-accent="amber"]  { --accent: #ffb257; --accent-strong: #ffc47c; --accent-dim: rgba(255,178,87,.16); --accent-ring: rgba(255,178,87,.3); }
 
 /* ------------------------------------------------------------ motyw jasny */
@@ -114,9 +117,10 @@
   --glass-soft: rgba(255, 255, 255, 0.80);
 }
 
-:root[data-motyw="jasny"][data-accent="mint"]  { --accent: #12a077; --accent-strong: #0d8562; --accent-dim: rgba(18,160,119,.13); --accent-ring: rgba(18,160,119,.26); }
+:root[data-motyw="jasny"][data-accent="zloty"]    { --accent: #9a7400; --accent-strong: #7d5e00; --accent-dim: rgba(154,116,0,.13); --accent-ring: rgba(154,116,0,.26); }
+:root[data-motyw="jasny"][data-accent="srebrny"]  { --accent: #5d6472; --accent-strong: #474d59; --accent-dim: rgba(93,100,114,.13); --accent-ring: rgba(93,100,114,.26); }
 :root[data-motyw="jasny"][data-accent="sky"]   { --accent: #1a7fe0; --accent-strong: #1568bb; --accent-dim: rgba(26,127,224,.13); --accent-ring: rgba(26,127,224,.26); }
-:root[data-motyw="jasny"][data-accent="rose"]  { --accent: #de3f77; --accent-strong: #bd2f61; --accent-dim: rgba(222,63,119,.13); --accent-ring: rgba(222,63,119,.26); }
+:root[data-motyw="jasny"][data-accent="koralowy"] { --accent: #d1503c; --accent-strong: #b23f2d; --accent-dim: rgba(209,80,60,.13); --accent-ring: rgba(209,80,60,.26); }
 :root[data-motyw="jasny"][data-accent="amber"] { --accent: #b3720a; --accent-strong: #965f06; --accent-dim: rgba(179,114,10,.13); --accent-ring: rgba(179,114,10,.26); }
 
 /* ------------------------------------------------- Lawendowa mgla (nowy wyglad)
