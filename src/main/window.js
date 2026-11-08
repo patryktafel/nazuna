@@ -83,7 +83,7 @@ function pageBackground(url, prywatne = false) {
    shell.css i pages.css) - tu kolor malowany, zanim strona sie narysuje. */
 function tloOkna(prywatne = false) {
   const motyw = motywTeraz();
-  if (prywatne && motyw === 'mgla') return '#120f24';
+  if (prywatne && motyw === 'mgla') return '#0a0b12';
   return TLA[motyw].okno;
 }
 

@@ -503,23 +503,27 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
 }
 
 /* ------------------------------------------- Lawendowa mgla: okno prywatne
-   Strony nazuna:// w oknie prywatnym (data-prywatne z pagekit.js/newtab.js)
-   dostaja te same chlodne, ciemniejsze barwy co pasek prywatny (koniec
-   shell.css): indygo i stalowy blekit zamiast wybranego zestawu kolorow. */
+   Okno prywatne ma wlasny charakter, nie tylko ciemniejsza mgle (prosba
+   uzytkownika: za malo sie roznilo): prawie czarne tlo, chlodna turkusowa
+   poswiata od dolu i turkusowy akcent. Te same barwy co pasek prywatny
+   (koniec shell.css) i tlo okna (tloOkna w window.js). data-prywatne
+   ustawiaja pagekit.js i newtab.js. */
 :root[data-motyw="mgla"][data-prywatne="1"] {
-  --bg: #120f24;
-  --aurora-1: rgba(56, 52, 150, .70);
-  --aurora-2: rgba(38, 92, 150, .50);
-  --aurora-3: rgba(70, 50, 130, .55);
-  --accent: #9fb0ff;
-  --accent-strong: #c3ceff;
-  --accent-dim: rgba(159, 176, 255, 0.18);
-  --accent-ring: rgba(159, 176, 255, 0.32);
+  --bg: #0a0b12;
+  --aurora-1: rgba(18, 92, 104, .55);
+  --aurora-2: rgba(22, 120, 128, .45);
+  --aurora-3: rgba(30, 44, 96, .45);
+  --accent: #4fc9c4;
+  --accent-strong: #8fe6e1;
+  --accent-dim: rgba(79, 201, 196, 0.16);
+  --accent-ring: rgba(79, 201, 196, 0.32);
 }
+/* Licznik blokad dotyczy zwyklych okien - w prywatnym tylko by mylil. */
+:root[data-prywatne="1"] .nt-licznik { display: none !important; }
 .nt-prywatne { display: none; }
 :root[data-motyw="mgla"] .nt-prywatne:not([hidden]) {
   display: inline-flex; margin-top: 6px; padding: 7px 14px; border-radius: 999px;
-  font-size: 12.5px; font-weight: 700; color: #dfe4ff;
-  background: linear-gradient(135deg, rgba(120, 104, 230, 0.30) 0%, rgba(60, 120, 200, 0.24) 100%);
-  box-shadow: inset 0 0 0 1px rgba(200, 190, 255, 0.20);
+  font-size: 12.5px; font-weight: 700; color: #d8f6f4;
+  background: rgba(79, 201, 196, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(143, 230, 225, 0.28);
 }

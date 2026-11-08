@@ -650,30 +650,37 @@ body:not(.expanded) #layer { pointer-events: none; }
 :root[data-motyw="mgla"] .menu-item:hover, :root[data-motyw="mgla"] .menu-item.hover { background: rgba(255, 255, 255, 0.08); }
 :root[data-motyw="mgla"] .findbar .wrap { border-radius: 999px; }
 
-/* ------------------------------------ Lawendowa mgla: okno prywatne (etap 5)
+/* ------------------------------------ Lawendowa mgla: okno prywatne
    Okno prywatne poznaje sie po widocznej plakietce #privateBadge (shell.js
-   pokazuje ja tylko przy state.isPrivate). Pasek ma wtedy ciemniejsze,
-   chlodne plamy (indygo i stalowy blekit) niezaleznie od wybranego zestawu
-   kolorow, a plakietka jest wyrazna pigulka. Wymiary paska bez zmian. */
+   pokazuje ja tylko przy state.isPrivate). Wlasny charakter zamiast
+   ciemniejszej mgly: prawie czarny pasek, turkusowa poswiata i akcent oraz
+   cienka turkusowa linia pod paskiem (jak strony w pages.css). Wymiary bez zmian. */
+:root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) {
+  --accent: #4fc9c4;
+  --accent-strong: #8fe6e1;
+  --accent-dim: rgba(79, 201, 196, 0.16);
+  --accent-ring: rgba(79, 201, 196, 0.32);
+}
 :root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) #chrome {
   background:
-    linear-gradient(180deg, rgba(18, 15, 36, 0.40) 0%, rgba(18, 15, 36, 0.70) 100%),
-    radial-gradient(34% 190% at 6% 0%, rgba(56, 52, 150, 0.55) 0%, transparent 72%),
-    radial-gradient(30% 170% at 94% 0%, rgba(38, 92, 150, 0.45) 0%, transparent 72%),
-    radial-gradient(40% 150% at 52% 130%, rgba(70, 50, 130, 0.40) 0%, transparent 70%),
-    #120f24;
-  border-bottom-color: rgba(140, 160, 255, 0.10);
+    linear-gradient(180deg, rgba(10, 11, 18, 0.35) 0%, rgba(10, 11, 18, 0.75) 100%),
+    radial-gradient(30% 170% at 8% 0%, rgba(18, 92, 104, 0.45) 0%, transparent 72%),
+    radial-gradient(28% 160% at 92% 0%, rgba(30, 44, 96, 0.40) 0%, transparent 72%),
+    #0a0b12;
+  border-bottom: 1px solid rgba(79, 201, 196, 0.45);
+  box-shadow: 0 1px 14px -2px rgba(79, 201, 196, 0.35);
 }
 :root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) .toolbar {
-  background: rgba(14, 12, 30, 0.58);
-  box-shadow: inset 0 0 0 1px rgba(160, 170, 255, 0.10), 0 8px 24px -16px rgba(4, 3, 14, 0.95);
+  background: rgba(8, 9, 16, 0.70);
+  box-shadow: inset 0 0 0 1px rgba(143, 230, 225, 0.12), 0 8px 24px -16px rgba(0, 0, 0, 0.95);
 }
-:root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) .tabs.przewijane .tab-add { background: #16132c; box-shadow: -10px 0 10px -4px #16132c; }
+:root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) .tab.active { background: rgba(143, 230, 225, 0.12); }
+:root[data-motyw="mgla"]:has(#privateBadge:not([hidden])) .tabs.przewijane .tab-add { background: #0d0f18; box-shadow: -10px 0 10px -4px #0d0f18; }
 /* Plakietka "Prywatne" - widoczna tylko w oknie prywatnym. */
 :root[data-motyw="mgla"] .private-badge {
   height: 26px; margin: 0 8px 8px; padding: 0 12px 0 9px; gap: 7px;
-  font-size: 12px; font-weight: 700; letter-spacing: .02em; color: #f2f0ff;
-  background: linear-gradient(135deg, rgba(120, 104, 230, 0.38) 0%, rgba(60, 120, 200, 0.30) 100%);
-  box-shadow: inset 0 0 0 1px rgba(200, 190, 255, 0.22), 0 0 16px -4px rgba(120, 104, 230, 0.55);
+  font-size: 12px; font-weight: 700; letter-spacing: .02em; color: #e6fbfa;
+  background: rgba(79, 201, 196, 0.20);
+  box-shadow: inset 0 0 0 1px rgba(143, 230, 225, 0.40), 0 0 16px -4px rgba(79, 201, 196, 0.55);
 }
-:root[data-motyw="mgla"] .private-badge .icon { width: 15px; height: 15px; color: #c9d2ff; }
+:root[data-motyw="mgla"] .private-badge .icon { width: 15px; height: 15px; color: #8fe6e1; }
