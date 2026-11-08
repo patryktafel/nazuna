@@ -64,7 +64,7 @@ let obceCiasteczka = true;   // czy blokujemy ciasteczka podmiotow trzecich
 let webrtcProtekcja = true;  // czy WebRTC ma ukrywac lokalny adres IP
 function refreshFlags() {
   dntEnabled = data.settings.get('doNotTrack', true) !== false;
-  obceCiasteczka = data.settings.get('blockThirdPartyCookies', true) !== false;
+  obceCiasteczka = data.settings.get('slojkiCiasteczek', true) !== false;
   webrtcProtekcja = data.settings.get('webrtcLeakProtection', true) !== false;
 }
 
@@ -118,30 +118,10 @@ function kluczPary(strona, osadzona) { return `${strona}>${osadzona}`; }
 function dodajWyjatek(ses, strona, osadzona) {
   if (strona && osadzona) wyjatkiDlaSesji(ses).add(kluczPary(strona, osadzona));
 }
-/* Flagi dla preloadu web.js: blokada document.cookie/cookieStore w obcych
-   ramkach plus pary ze zgoda storage-access tej sesji. Przy wylaczonym
-   ustawieniu pusto, wiec nic sie nie zmienia. */
-function flagiObcychCiasteczek(partition) {
-  if (data.settings.get('blockThirdPartyCookies', true) === false) return [];
-  const flagi = ['--nazuna-blokuj-obce-ciasteczka'];
-  try {
-    const wyjatki = [...wyjatkiDlaSesji(forPartition(partition))].slice(-200); // limit dlugosci wiersza polecen
-    if (wyjatki.length) flagi.push(`--nazuna-wyjatki-ciasteczek=${encodeURIComponent(wyjatki.join(','))}`);
-  } catch (_) {}
-  return flagi;
-}
-/* Zgoda storage-access: dopisz wyjatek i odblokuj ramki juz otwarte. Odpowiedz
-   z lekkim opoznieniem, zeby wiadomosc dotarla do ramki przed dalszym kodem po
-   await requestStorageAccess(). */
-function zgodaNaDaneRamki(ses, wc, strona, osadzona, callback) {
-  dodajWyjatek(ses, strona, osadzona);
-  if (!obceCiasteczka) return callback(true);
-  try {
-    for (const f of wc.mainFrame.framesInSubtree) {
-      try { f.send('nazuna:obce-ciasteczka-zgoda', kluczPary(strona, osadzona)); } catch (_) {}
-    }
-  } catch (_) {}
-  setTimeout(() => callback(true), 30);
+/* Flaga dla preloadu web.js: przy sloikach ciasteczek document.cookie i
+   cookieStore w osadzonych elementach zapisuja do sloika tej strony. */
+function flagiObcychCiasteczek() {
+  return data.settings.get('slojkiCiasteczek', true) === false ? [] : ['--nazuna-slojki-ciasteczek'];
 }
 function maWyjatek(ses, strona, osadzona) {
   return wyjatkiDlaSesji(ses).has(kluczPary(strona, osadzona));
@@ -180,6 +160,17 @@ function wczytajWyjatki(ses) {
 
 /* Zapytanie jest "obce", gdy idzie do innej domeny niz ta, ktora widzisz
    w pasku adresu. Wlasnie tedy plynie sledzenie miedzy stronami. */
+/* Set-Cookie od osadzonego elementu -> ciasteczko w jego sloiku (CHIPS).
+   Partitioned wymaga Secure i SameSite=None. */
+function doSloika(naglowek) {
+  let s = String(naglowek || '');
+  if (!s || /;\s*partitioned\s*(;|$)/i.test(s)) return s;
+  if (!/;\s*secure\s*(;|$)/i.test(s)) s += '; Secure';
+  if (/;\s*samesite\s*=/i.test(s)) s = s.replace(/;\s*samesite\s*=\s*[^;]*/i, '; SameSite=None');
+  else s += '; SameSite=None';
+  return s + '; Partitioned';
+}
+
 function obce(ses, details) {
   if (details.webContentsId === undefined) return false;
   // Sama nawigacja karty (wpisany adres, klikniety link, przekierowanie
@@ -328,18 +319,17 @@ function prepare(ses, efemeryczna) {
         const referer = refererDoPowtorki(details, ses);
         if (referer) headers['Referer'] = referer;
       }
-      if (obceCiasteczka && obce(ses, details)) {
-        delete headers['Cookie'];
-        delete headers['cookie'];
-      }
+      // Ciasteczek osadzonych elementow juz tu nie wycinamy: Chromium sam
+      // wysyla im tylko ich sloik dla tej strony (patrz index.js).
       callback({ requestHeaders: headers });
     } catch (_) {
       callback({});
     }
   });
 
-  /* Druga polowa blokowania obcych ciasteczek: nie dosc, ze ich nie wysylamy,
-     to jeszcze nie pozwalamy ich sobie zakladac. */
+  /* Ciasteczko zakladane przez osadzony element trafia do jego sloika dla
+     tej strony: dopisujemy Partitioned. Bez tego Chromium by je odrzucil, a
+     strony z osadzonymi logowaniami, czatami czy odtwarzaczami by sie psuly. */
   ses.webRequest.onHeadersReceived((details, callback) => {
     // Ta sama zasada co wyzej w onBeforeSendHeaders - callback musi zostac
     // wywolany zawsze, inaczej to zadanie wisi w nieskonczonosc.
@@ -350,7 +340,10 @@ function prepare(ses, efemeryczna) {
       if (!h) return callback({});
       let ruszone = false;
       for (const klucz of Object.keys(h)) {
-        if (klucz.toLowerCase() === 'set-cookie') { delete h[klucz]; ruszone = true; }
+        if (klucz.toLowerCase() !== 'set-cookie') continue;
+        const lista = Array.isArray(h[klucz]) ? h[klucz] : [h[klucz]];
+        h[klucz] = lista.map(doSloika);
+        ruszone = true;
       }
       callback(ruszone ? { responseHeaders: h } : {});
     } catch (_) {
@@ -366,20 +359,22 @@ function prepare(ses, efemeryczna) {
     if (AUTO_ALLOW.has(permission)) return callback(true);
     if (!ASK.has(permission)) return callback(false);
 
-    /* Dostep do wlasnych danych przez element osadzony w cudzej stronie.
-       Pytanie dotyczy PARY stron, wiec i zapamietujemy je parami. */
+    /* Prosba osadzonego elementu o jego zwykle ciasteczka (Storage Access
+       API). Przy sloikach odmawiamy po cichu, bez okienka - element dalej
+       dziala na swoim sloiku dla tej strony, tak jak w Firefoksie. */
+    if (permission === 'storage-access' && obceCiasteczka) return callback(false);
     if (permission === 'storage-access') {
       const strona = domenyKart.get(webContents.id) || '';
       const osadzona = getDomain(details && details.requestingUrl ? details.requestingUrl : '') || origin;
       const para = kluczPary(strona, osadzona);
       const pamiec = zgodaZapamietana(ses, efemeryczna, para, permission);
-      if (pamiec === 'allow') return zgodaNaDaneRamki(ses, webContents, strona, osadzona, callback);
+      if (pamiec === 'allow') { dodajWyjatek(ses, strona, osadzona); return callback(true); }
       if (pamiec === 'deny') return callback(false);
       if (!permissionPrompt) return callback(false);
       try {
         const odp = await permissionPrompt({ webContents, permission, origin: para, details, strona, osadzona });
-        if (odp === 'allow') return zgodaNaDaneRamki(ses, webContents, strona, osadzona, callback);
-        return callback(false);
+        if (odp === 'allow') dodajWyjatek(ses, strona, osadzona);
+        return callback(odp === 'allow');
       } catch (_) { return callback(false); }
     }
 

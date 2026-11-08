@@ -90,22 +90,16 @@ try {
   if (arg) fpSeed = arg.slice('--nazuna-fp-seed='.length);
 } catch (_) {}
 
-/* ------------------------------------------------------- obce ciasteczka (N30)
-   Sama blokada w session.js wycina tylko naglowki Cookie/Set-Cookie. Skrypt w
-   obcej ramce czytal i zapisywal swoje ciasteczka przez document.cookie i
-   cookieStore, wiec sledzenie miedzy stronami dalej dzialalo. Tu robimy to, co
-   Chrome z ta sama blokada: obca ramka widzi puste ciasteczka.
-
-   Dziala tylko z flaga --nazuna-blokuj-obce-ciasteczka (ustawienie
-   blockThirdPartyCookies). Bez flagi nic sie nie zmienia. Znane ograniczenia:
-   Service Worker tu nie siega (preload go nie obejmuje), a flaga obowiazuje od
-   nowej karty, tak jak pozostale flagi z pageFlags.
+/* ------------------------------------------------- sloiki ciasteczek
+   Przy wlaczonym ustawieniu "Osobne ciasteczka dla kazdej strony" (flaga
+   --nazuna-slojki-ciasteczek) osadzony element z innej strony zapisuje
+   ciasteczka do swojego sloika dla tej strony (Partitioned), patrz index.js
+   i session.js. Odczyt robi sam Chromium.
 
    Preload dziala w piaskownicy, wiec nie ma tu tldts z listy sufiksow. Pomylka
-   ponizszego przyblizenia prawie zawsze oznacza brak blokady (np. a.github.io
-   i b.github.io), a nie zablokowanie ramki tej samej domeny. Odwrotnie bywa
-   tylko, gdy ktos ma strone wprost na nazwie typu net.de (www.net.de i
-   cdn.net.de). */
+   ponizszego przyblizenia oznacza najwyzej, ze zapis ramki trafi do sloika
+   albo zostanie odrzucony przez Chromium - nigdy, ze ramka zobaczy cudze
+   ciasteczka. */
 const DRUGI_POZIOM = new Set(['ac', 'biz', 'co', 'com', 'edu', 'go', 'gob', 'gouv', 'gov', 'info', 'ne', 'net', 'nom', 'or', 'org']);
 function domenaGlowna(host) {
   const czlony = host.split('.');
@@ -121,42 +115,24 @@ function wDomenie(host, domena) {
   return !!domena && (host === domena || host.endsWith('.' + domena));
 }
 
-// Nazwa zdarzenia odblokowujacego: losowa, bo znaja ja tylko ten preload i
-// skrypt ponizej, a obca ramka nie moze odblokowac sie sama.
+// Osadzony element z innej strony niz ta w pasku adresu: jego zapisy ciasteczek
+// ida do sloika tej strony (Partitioned), patrz skrypt nizej i session.js.
 let znacznikCiasteczek = '';
 if (!internal) {
   try {
-    if (window !== window.top && process.argv.indexOf('--nazuna-blokuj-obce-ciasteczka') !== -1) {
-      // Ostatni przodek to strona w pasku adresu. Blokada naglowkow porownuje
-      // tez tylko z nia, a origin "null" konczy sie tu wyjatkiem z new URL.
+    if (window !== window.top && process.argv.indexOf('--nazuna-slojki-ciasteczek') !== -1) {
+      // Ostatni przodek to strona w pasku adresu; origin "null" konczy sie tu wyjatkiem.
       const przodkowie = location.ancestorOrigins;
       const szczyt = new URL(przodkowie[przodkowie.length - 1]);
-      // window.origin, bo about:blank i srcdoc dziedzicza origin (i ciasteczka)
-      // po tworcy, a location.origin mialyby tam "null".
+      // window.origin, bo about:blank i srcdoc dziedzicza origin po tworcy.
       const ramka = new URL(window.origin);
       const www = (u) => u.protocol === 'https:' || u.protocol === 'http:';
       if (www(szczyt) && www(ramka) && maDomene(szczyt.hostname) && maDomene(ramka.hostname)
         && domenaGlowna(szczyt.hostname) !== domenaGlowna(ramka.hostname)) {
-        // Para "strona>osadzona" z domenami policzonymi przez tldts w session.js.
-        const naszaPara = (para) => {
-          const [strona, osadzona] = String(para).split('>');
-          return wDomenie(szczyt.hostname, strona) && wDomenie(ramka.hostname, osadzona);
-        };
-        const arg = process.argv.find((a) => a.indexOf('--nazuna-wyjatki-ciasteczek=') === 0);
-        const wyjatki = arg ? decodeURIComponent(arg.slice('--nazuna-wyjatki-ciasteczek='.length)).split(',') : [];
-        if (!wyjatki.some(naszaPara)) {
-          znacznikCiasteczek = 'n' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-          // Zgoda storage-access dana juz po starcie tej ramki. Sama odpowiedz
-          // document.requestStorageAccess nie wystarcza jako dowod zgody, bo
-          // czekamy na decyzje z procesu glownego, ktorej strona nie podrobi.
-          ipcRenderer.on('nazuna:obce-ciasteczka-zgoda', (_event, para) => {
-            if (naszaPara(para)) document.dispatchEvent(new Event(znacznikCiasteczek));
-          });
-        }
+        znacznikCiasteczek = 'sloik';
       }
     }
   } catch (_) {
-    // Nie da sie ustalic domen: zostawiamy ramke w spokoju, zeby nie psuc strony.
     znacznikCiasteczek = '';
   }
 }
@@ -517,10 +493,11 @@ if (!internal) {
      Patrz "obce ciasteczka" wyzej. Zachowanie jak w Chrome z blokada: odczyt
      pusty, zapis po cichu ignorowany. Oryginaly zostaja na czas po zgodzie
      uzytkownika na dostep do danych (storage-access). */
+  /* --- Sloik ciasteczek osadzonego elementu --------------------------------
+     Odczyt zalatwia sam Chromium (element widzi tylko swoj sloik dla tej
+     strony). Zapis bez "Partitioned" Chromium by odrzucil, wiec dopisujemy
+     go - tak jak Firefox, ktory sam trzyma takie ciasteczka osobno. */
   if (ZNACZNIK_CIASTECZEK) try {
-    let odblokowane = false;
-    document.addEventListener(ZNACZNIK_CIASTECZEK, () => { odblokowane = true; }, { once: true });
-
     const podmien = (proto, nazwa, opis) => {
       const stary = Object.getOwnPropertyDescriptor(proto, nazwa);
       if (!stary) return;
@@ -528,36 +505,26 @@ if (!internal) {
       nowy.enumerable = stary.enumerable;
       Object.defineProperty(proto, nazwa, nowy);
     };
-
+    const doSloika = (v) => {
+      let s = String(v);
+      if (/;\\s*partitioned\\s*(;|$)/i.test(s)) return s;
+      if (!/;\\s*secure\\s*(;|$)/i.test(s)) s += '; Secure';
+      if (/;\\s*samesite\\s*=/i.test(s)) s = s.replace(/;\\s*samesite\\s*=\\s*[^;]*/i, '; SameSite=None');
+      else s += '; SameSite=None';
+      return s + '; Partitioned';
+    };
     podmien(Document.prototype, 'cookie', (stary) => ({
-      get cookie() { return odblokowane ? stary.get.call(this) : ''; },
-      set cookie(v) { if (odblokowane) stary.set.call(this, v); }
+      get cookie() { return stary.get.call(this); },
+      set cookie(v) { stary.set.call(this, doSloika(v)); }
     }));
-    podmien(Navigator.prototype, 'cookieEnabled', (stary) => ({
-      get cookieEnabled() { return odblokowane ? stary.get.call(this) : false; }
-    }));
-    // Strona pyta o to, zanim poprosi o zgode. Odpowiedz "masz dostep" przy
-    // pustych ciasteczkach znaczylaby, ze o zgode nie poprosi nigdy.
-    podmien(Document.prototype, 'hasStorageAccess', (stary) => ({
-      hasStorageAccess(...args) { return odblokowane ? stary.value.apply(this, args) : Promise.resolve(false); }
-    }));
-
     if (window.CookieStore && window.cookieStore) {
-      const cs = CookieStore.prototype;
-      const naWynik = (nazwa, pusty) => {
-        podmien(cs, nazwa, (stary) => ({
-          [nazwa](...args) { return odblokowane ? stary.value.apply(this, args) : Promise.resolve(pusty); }
-        }));
-      };
-      naWynik('get', null);
-      naWynik('getAll', []);
-      naWynik('set', undefined);
-      naWynik('delete', undefined);
-      // Zdarzenie change niesie wartosci ciasteczek. Ten nasluch jest pierwszy,
-      // wiec odcina tez onchange i addEventListener strony.
-      window.cookieStore.addEventListener('change', (e) => {
-        if (!odblokowane) e.stopImmediatePropagation();
-      });
+      podmien(CookieStore.prototype, 'set', (stary) => ({
+        set(nazwa, wartosc) {
+          const opcje = nazwa && typeof nazwa === 'object' ? Object.assign({}, nazwa) : { name: nazwa, value: wartosc };
+          opcje.partitioned = true;
+          return stary.value.call(this, opcje);
+        }
+      }));
     }
   } catch (_) {}
 })();`;

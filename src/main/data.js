@@ -19,6 +19,10 @@ const DEFAULT_SETTINGS = {
   doNotTrack: true,
   passkeys: false,
   blockThirdPartyCookies: true,
+  // Osobne "sloiki" ciasteczek dla kazdej strony (jak Total Cookie Protection
+  // w Firefoksie) - patrz index.js i session.js. Nowy klucz, bo stare
+  // blockThirdPartyCookies=false u czesci osob nie moze tego wylaczac.
+  slojkiCiasteczek: true,
   securityWarningsEnabled: true,
   hardwareAcceleration: true,
   // Domyslnie wylaczone: Chromium laduje slownik sprawdzania pisowni do

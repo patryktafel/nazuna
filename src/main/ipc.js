@@ -571,7 +571,7 @@ function zastosujZmianyUstawien(klucze) {
   if (zmienione.has('adblockMode')) adblock.setMode(data.settings.get('adblockMode', 'safe'), sessionList);
   if (zmienione.has('extensionsEnabled')) reloadExtensions();
   if (zmienione.has('theme')) W.repaintTheme();
-  if (zmienione.has('doNotTrack') || zmienione.has('blockThirdPartyCookies') || zmienione.has('webrtcLeakProtection')) sessions.refreshFlags();
+  if (zmienione.has('doNotTrack') || zmienione.has('slojkiCiasteczek') || zmienione.has('webrtcLeakProtection')) sessions.refreshFlags();
   if (zmienione.has('webrtcLeakProtection')) sessions.applyWebRtcToAll();
   if (zmienione.has('secureDns')) privacy.applySecureDns();
   for (const w of W.windows) { w.layout(); w.scheduleSync(); }

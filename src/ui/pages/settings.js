@@ -141,7 +141,7 @@ function render() {
         <div class="body"><div class="title">Listy filtrów</div><div class="sub" id="filterInfo">sprawdzam...</div></div>
         <div class="ctl"><button class="btn" id="updateFilters">Zaktualizuj teraz</button></div>
       </div>
-      ${toggleRow('blockThirdPartyCookies', 'Blokuj ciasteczka podmiotów trzecich', 'Odcina ciasteczka wysyłane do domen innych niż ta w pasku adresu. Tędy płynie śledzenie między stronami')}
+      ${toggleRow('slojkiCiasteczek', 'Osobne ciasteczka dla każdej strony', 'Jak w Firefoksie: osadzone elementy (przyciski Facebooka, reklamy, odtwarzacze) dostają osobne ciasteczka na każdej stronie, więc nie śledzą Cię między stronami. Zmiana działa po ponownym uruchomieniu Nazuny')}
       ${toggleRow('doNotTrack', 'Wysyłaj nagłówek Do Not Track', 'Prośba, żeby strony nie śledziły. Nie każda ja uszanuje')}
       ${toggleRow('extensionsEnabled', 'Rozszerzenia', 'Wyłączenie odłącza wszystkie naraz, bez usuwania')}
     </div>

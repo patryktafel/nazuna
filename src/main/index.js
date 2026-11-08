@@ -73,6 +73,12 @@ app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling');
 const data = require('./data');
 data.init();
 if (!data.settings.get('hardwareAcceleration', true)) app.disableHardwareAcceleration();
+/* Sloiki ciasteczek (jak Total Cookie Protection w Firefoksie): Chromium sam
+   ukrywa przed osadzonymi elementami ich zwykle ciasteczka, a przepuszcza tylko
+   ciasteczka "Partitioned" - trzymane osobno dla kazdej strony w pasku adresu.
+   Zwykle ciasteczka osadzonych elementow zamieniamy na takie w session.js
+   (naglowki) i preload/web.js (document.cookie). Dziala od startu programu. */
+if (data.settings.get('slojkiCiasteczek', true) !== false) app.commandLine.appendSwitch('test-third-party-cookie-phaseout');
 
 /* Argument uruchomienia zamieniony na adres, ktory da sie otworzyc w karcie.
    Zwykly http(s)-owy link przechodzi bez zmian. Lokalny plik .pdf (tak

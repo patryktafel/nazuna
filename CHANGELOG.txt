@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.95 - 8 listopada 2026
+-------------------------
+
+Osobne ciasteczka dla kazdej strony (jak w Firefoksie)
+
+- Osadzone elementy (przyciski Facebooka, reklamy, odtwarzacze, okienka
+  "Kontynuuj jako" itp.) dostaja osobne ciasteczka na kazdej stronie. To, co
+  zapisza na stronie A, jest niewidoczne na stronie B, wiec nie moga sledzic
+  Cie miedzy stronami. Strony, na ktore wchodzisz sam, dzialaja bez zmian.
+- Zniknelo okienko "Element osadzony prosi o swoje ciasteczka" - takie prosby
+  sa po cichu odrzucane, a element dziala na swoich osobnych ciasteczkach.
+- Banery cookies samych stron wyswietlaja sie jak dotad.
+- Ustawienie: Prywatnosc > "Osobne ciasteczka dla kazdej strony" (domyslnie
+  wlaczone, zmiana dziala po ponownym uruchomieniu).
+
 0.1.94 - 1 listopada 2026
 -------------------------
 
