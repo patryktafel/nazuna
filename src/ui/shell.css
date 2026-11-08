@@ -615,6 +615,14 @@ body:not(.expanded) #layer { pointer-events: none; }
 /* Karta "rozkwita" przy otwarciu: krotkie powiekszenie z przejrzystosci. */
 @keyframes tabRozkwit { from { opacity: 0; transform: scale(.82); } 60% { opacity: 1; transform: scale(1.03); } }
 :root[data-motyw="mgla"] .tab.tab-enter { animation: tabRozkwit .24s var(--ease); }
+/* Windows "Pokazuj animacje" wylaczone: karta pojawia sie od razu, bez
+   rozkwitu (i bez starego wsuniecia w Klasycznym), jak reszta ruchu mgly.
+   Prawie zerowy czas zamiast animation: none - animationend musi dojsc,
+   bo dopiero on zdejmuje klase tab-enter (shell.js); bez tego klasa
+   zostawala na stale i gasila tez animacje zamykania .tab-leave. */
+@media (prefers-reduced-motion: reduce) {
+  .tab.tab-enter, :root[data-motyw="mgla"] .tab.tab-enter { animation-duration: .01ms; }
+}
 
 /* Rzad z adresem jako szklana belka odsunieta od krawedzi okna. */
 :root[data-motyw="mgla"] .toolbar {

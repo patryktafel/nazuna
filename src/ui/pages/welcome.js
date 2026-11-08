@@ -45,7 +45,11 @@ const KROKI = [
   },
   {
     tytul: () => 'Dopasuj kolory',
-    opis: 'Wybierz nastrój. Zobaczysz go od razu w całej przeglądarce.',
+    // Okno prywatne ma zawsze swoje nocne kolory (data-prywatne nadpisuje
+    // zestaw tla), wiec obietnica "od razu" tu by nie byla prawdziwa.
+    opis: () => (cfg.prywatne && cfg.values.wyglad !== 'klasyczny'
+      ? 'Wybierz nastrój. To okno prywatne ma zawsze swoje nocne kolory, więc zmianę zobaczysz w zwykłym oknie.'
+      : 'Wybierz nastrój. Zobaczysz go od razu w całej przeglądarce.'),
     tresc: () => {
       if (cfg.values.wyglad === 'klasyczny') {
         const t = cfg.values.theme === 'light' || cfg.values.theme === 'system' ? cfg.values.theme : 'dark';
@@ -87,14 +91,23 @@ const KROKI = [
 
 function rysuj() {
   const k = KROKI[krok];
+  // Fokus klawiatury: karty sa rysowane od nowa, a "Wstecz" bywa chowane -
+  // bez tego fokus spadalby na body i znikalo zaznaczenie.
+  const aktywny = document.activeElement;
+  const wybor = aktywny && aktywny.dataset ? aktywny.dataset.wybor : null;
   document.getElementById('tytul').textContent = k.tytul();
-  document.getElementById('opis').textContent = k.opis;
+  document.getElementById('opis').textContent = typeof k.opis === 'function' ? k.opis() : k.opis;
   document.getElementById('kropki').innerHTML = KROKI.map((_, i) => `<span class="${i === krok ? 'teraz' : ''}"></span>`).join('');
   document.getElementById('krok').innerHTML = k.tresc();
   document.getElementById('wstecz').hidden = krok === 0;
   document.getElementById('pomin').hidden = krok === KROKI.length - 1;
   document.getElementById('dalej').textContent = krok === KROKI.length - 1 ? 'Zaczynamy' : 'Dalej';
   document.getElementById('zawsze').checked = cfg.values.pokazujPowitanie === true;
+  const nowa = wybor ? document.querySelector(`[data-wybor="${CSS.escape(wybor)}"]`) : null;
+  if (nowa) nowa.focus();
+  else if (aktywny && aktywny !== document.body && (aktywny.hidden || !aktywny.isConnected)) {
+    document.getElementById('dalej').focus();
+  }
 }
 
 function zakoncz() {

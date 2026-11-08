@@ -116,10 +116,12 @@
   --glass-soft: rgba(255, 255, 255, 0.80);
 }
 
-:root[data-motyw="jasny"][data-accent="zloty"]    { --accent: #9a7400; --accent-strong: #7d5e00; --accent-dim: rgba(154,116,0,.13); --accent-ring: rgba(154,116,0,.26); }
+/* Zloty i koralowy przyciemnione tak, zeby bialy napis na akcencie (np.
+   przycisk w powiadomieniu, plakietka na pasku) mial min. 4.5:1. */
+:root[data-motyw="jasny"][data-accent="zloty"]    { --accent: #8a6800; --accent-strong: #7d5e00; --accent-dim: rgba(138,104,0,.13); --accent-ring: rgba(138,104,0,.26); }
 :root[data-motyw="jasny"][data-accent="srebrny"]  { --accent: #5d6472; --accent-strong: #474d59; --accent-dim: rgba(93,100,114,.13); --accent-ring: rgba(93,100,114,.26); }
 :root[data-motyw="jasny"][data-accent="sky"]   { --accent: #1a7fe0; --accent-strong: #1568bb; --accent-dim: rgba(26,127,224,.13); --accent-ring: rgba(26,127,224,.26); }
-:root[data-motyw="jasny"][data-accent="koralowy"] { --accent: #d1503c; --accent-strong: #b23f2d; --accent-dim: rgba(209,80,60,.13); --accent-ring: rgba(209,80,60,.26); }
+:root[data-motyw="jasny"][data-accent="koralowy"] { --accent: #bf4633; --accent-strong: #b23f2d; --accent-dim: rgba(191,70,51,.13); --accent-ring: rgba(191,70,51,.26); }
 
 /* ------------------------------------------------- Lawendowa mgla (nowy wyglad)
    Domyslny wyglad od wersji z nowym wygladem (claude_nazuna.md sekcja 13).
@@ -140,7 +142,9 @@
   --text-dim:      #c8c3e6;
   --text-faint:    #948db8;
   --danger:        #ff7a8a;
-  --ok:            #8fe3c9;
+  /* Cieply jasnozielony, a nie mieta: turkus/mieta sa zarezerwowane dla okna
+     prywatnego (ZASADA KOLOROW), a stary #8fe3c9 byl prawie jak #8fe6e1. */
+  --ok:            #b5e48c;
   --warn:          #ffcf7a;
   --on-accent:     #1b1830;
   --sel-text:      #ffffff;
@@ -235,6 +239,14 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 4px 14px -6px var(--accent-ring);
 }
 .btn.primary:hover { background: linear-gradient(160deg, var(--accent-strong), var(--accent-strong)); box-shadow: 0 6px 18px -6px var(--accent-ring); }
+/* Klasyczny jasny: ciemny napis na akcencie mial tylko ok. 3:1, wiec bialy
+   napis na ciemniejszym akcencie (min. 5.6:1 przy kazdym kolorze akcentu).
+   :where() - ta sama waga co .btn.primary, reguly stron dalej wygrywaja. */
+:where(:root[data-motyw="jasny"]) .btn.primary {
+  background: linear-gradient(160deg, var(--accent-strong), color-mix(in srgb, var(--accent-strong) 86%, #000));
+  color: var(--on-accent);
+}
+:where(:root[data-motyw="jasny"]) .btn.primary:hover { background: color-mix(in srgb, var(--accent-strong) 90%, #000); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--text-dim); }
 .btn.ghost:hover { background: rgba(var(--tint), .07); color: var(--text); }
 .btn.danger { color: var(--danger); }
@@ -262,6 +274,9 @@ a:hover { text-decoration: underline; }
 }
 .switch input:checked ~ .track { background: var(--accent); }
 .switch input:checked ~ .thumb { transform: translateX(16px); background: #14141f; }
+/* Pole wyboru jest niewidoczne (opacity 0), wiec fokus z klawiatury pokazuje
+   tor przelacznika - w kazdym wygladzie, takze w Klasycznym. */
+.switch input:focus-visible ~ .track { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
 
 /* ------------------------------ Lawendowa mgla: wspolne kontrolki (etap 5)
    Przyciski jak pigulki, pola zaokraglone, szklane tla. Selektor
@@ -284,13 +299,14 @@ a:hover { text-decoration: underline; }
 }
 :where(:root[data-motyw="mgla"]) .btn:hover { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.20); }
 :where(:root[data-motyw="mgla"]) .btn:active { transform: scale(.97); }
-:where(:root[data-motyw="mgla"]) .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+/* Pelny kolor zamiast polprzezroczystego cienia: cien --accent-ring mial na
+   tle mgly tylko ok. 1.9:1, a ramka fokusu potrzebuje min. 3:1 (jak w pasku). */
+:where(:root[data-motyw="mgla"]) .btn:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
 :where(:root[data-motyw="mgla"]) .btn.primary {
   background: var(--accent-strong); border-color: transparent; color: var(--on-accent); font-weight: 800;
   box-shadow: 0 10px 26px -12px var(--accent-ring);
 }
 :where(:root[data-motyw="mgla"]) .btn.primary:hover { background: var(--accent-strong); filter: brightness(1.06); box-shadow: 0 12px 28px -10px var(--accent-ring); }
-:where(:root[data-motyw="mgla"]) .btn.primary:focus-visible { box-shadow: 0 0 0 3px var(--accent-ring), 0 10px 26px -12px var(--accent-ring); }
 :where(:root[data-motyw="mgla"]) .btn.ghost { background: transparent; border-color: transparent; color: var(--text-dim); }
 :where(:root[data-motyw="mgla"]) .btn.ghost:hover { background: rgba(255, 255, 255, 0.08); border-color: transparent; color: var(--text); }
 /* Jasniejszy czerwony niz --danger: na czerwonawym szkle nad plama koloru
@@ -317,4 +333,5 @@ a:hover { text-decoration: underline; }
 :where(:root[data-motyw="mgla"]) .switch .thumb { width: 18px; height: 18px; background: #f2f0ff; box-shadow: 0 2px 6px rgba(8, 5, 25, 0.45); }
 :where(:root[data-motyw="mgla"]) .switch input:checked ~ .track { background: var(--accent); box-shadow: 0 0 12px -3px var(--accent-ring); }
 :where(:root[data-motyw="mgla"]) .switch input:checked ~ .thumb { transform: translateX(18px); background: var(--on-accent); }
-:where(:root[data-motyw="mgla"]) .switch input:focus-visible ~ .track { box-shadow: 0 0 0 3px var(--accent-ring); }
+/* Fokus przelacznika: wspolna regula .switch input:focus-visible ~ .track wyzej
+   (pelna ramka --accent-strong zamiast slabego cienia). */

@@ -7,7 +7,7 @@ let cfg = null;
    innego. */
 const ACCENTY = {
   ciemny: { violet: '#8b7cff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', srebrny: '#c9cdd6' },
-  jasny:  { violet: '#6a5aef', zloty: '#9a7400', sky: '#1a7fe0', koralowy: '#d1503c', srebrny: '#5d6472' },
+  jasny:  { violet: '#6a5aef', zloty: '#8a6800', sky: '#1a7fe0', koralowy: '#bf4633', srebrny: '#5d6472' },
   mgla:   { violet: '#a996ff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', srebrny: '#c9cdd6' }
 };
 /* Zestawy plam koloru w tle Lawendowej mgly (theme.css, data-mgla). */

@@ -1,7 +1,7 @@
 'use strict';
 const path = require('path');
 const fs = require('fs');
-const { ipcMain, app, shell, net, clipboard, dialog, session } = require('electron');
+const { ipcMain, app, shell, net, clipboard, dialog, session, nativeTheme } = require('electron');
 const data = require('./data');
 const localFiles = require('./localFiles');
 const urls = require('./urls');
@@ -444,10 +444,15 @@ const handlers = {
      DNS, WebRTC i reszta dalej dzialaly po staremu az do restartu, a
      otwarte karty ustawien nie wiedzialy o zmianie. Teraz idzie ta sama
      droga co zwykla zmiana ustawienia. Okno, jego rozmiar i zapamietana
-     sesja to nie preferencje, wiec zostaja. */
+     sesja to nie preferencje, wiec zostaja. Tak samo znaczniki stanu: kreator
+     juz pokazany (inaczej wyskakiwal znow), dzisiejszy licznik blokad i
+     wykonana migracja kluczy dostepu (inaczej wlaczala je ponownie). */
   'settings.reset': () => {
+    // Licznik z ostatniej minuty jest jeszcze tylko w pamieci - najpierw do ustawien.
+    try { data.zapiszLicznikBlokad(); } catch (_) {}
     const zostaw = {};
-    for (const klucz of ['windowBounds', 'windowMaximized', 'restoreSession', 'restoreSessionOkna', 'restoreSessionAktywne']) {
+    for (const klucz of ['windowBounds', 'windowMaximized', 'restoreSession', 'restoreSessionOkna', 'restoreSessionAktywne',
+      'kreatorWersja', 'licznikBlokad', 'migracjaPasskeys']) {
       if (data.settings.data[klucz] !== undefined) zostaw[klucz] = data.settings.data[klucz];
     }
     data.settings.data = Object.assign(JSON.parse(JSON.stringify(data.DEFAULT_SETTINGS)), zostaw);
@@ -565,15 +570,27 @@ const handlers = {
   'app.quit': () => app.quit()
 };
 
+function ciemneStrony() {
+  try { return !!nativeTheme.shouldUseDarkColors; } catch (_) { return null; }
+}
+
 /* Wszystko, co trzeba zrobic od razu po zmianie ustawien (bez restartu). */
 function zastosujZmianyUstawien(klucze) {
   const zmienione = new Set(klucze);
+  // Widoczny tryb stron przed zmiana - przeladowujemy karty tylko, gdy naprawde
+  // sie zmienil (nie przy "Przywroc domyslne" ani np. "Jak w Windows" -> "Ciemne"
+  // przy ciemnym Windows, bo wtedy film w innym oknie zaczynal sie od nowa).
+  const ciemneStronyPrzed = ciemneStrony();
   const sessionList = [...new Set([...W.windows].map((w) => w.session))];
   if (zmienione.has('adblockEnabled')) adblock.setGlobal(data.settings.get('adblockEnabled', true), sessionList);
   if (zmienione.has('adblockMode')) adblock.setMode(data.settings.get('adblockMode', 'safe'), sessionList);
   if (zmienione.has('extensionsEnabled')) reloadExtensions();
   if (zmienione.has('theme') || zmienione.has('wyglad') || zmienione.has('motywStron')) W.repaintTheme();
-  if (zmienione.has('motywStron')) W.przeladujPoZmianieMotywuStron();
+  if (zmienione.has('motywStron')) {
+    const ciemneStronyPo = ciemneStrony();
+    // null = nie udalo sie odczytac - wtedy jak dawniej przeladowujemy.
+    if (ciemneStronyPrzed === null || ciemneStronyPo === null || ciemneStronyPrzed !== ciemneStronyPo) W.przeladujPoZmianieMotywuStron();
+  }
   if (zmienione.has('doNotTrack') || zmienione.has('slojkiCiasteczek') || zmienione.has('webrtcLeakProtection')) sessions.refreshFlags();
   if (zmienione.has('webrtcLeakProtection')) sessions.applyWebRtcToAll();
   if (zmienione.has('secureDns')) privacy.applySecureDns();

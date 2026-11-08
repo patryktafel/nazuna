@@ -958,9 +958,16 @@ class AppWindow {
     /* Wylaczanie, restart albo wylogowanie z Windows: Electron nie wysyla
        wtedy before-quit ani 'close' okien, a proces moze zostac ubity zaraz
        potem. Zapisujemy karty od razu i synchronicznie. */
-    this.win.on('query-session-end', () => zapamietajSesje(null, { synchronicznie: true }));
-    this.win.on('session-end', () => {
+    // Licznik blokad z ostatniej minuty jest jeszcze tylko w pamieci (data.js
+    // zapisuje go raz na minute i w before-quit, ktorego tu nie ma) - wkladamy
+    // go do ustawien przed synchronicznym zapisem, inaczej by przepadl.
+    const zapiszPrzyWylaczaniu = () => {
+      try { data.zapiszLicznikBlokad(); } catch (_) {}
       zapamietajSesje(null, { synchronicznie: true });
+    };
+    this.win.on('query-session-end', zapiszPrzyWylaczaniu);
+    this.win.on('session-end', () => {
+      zapiszPrzyWylaczaniu();
       // Windows i tak konczy proces - zamykane potem okna (albo zapis okresowy)
       // nie moga nadpisac pelnej sesji kartami jednego, ostatniego okna.
       zamykanieProgramu = true;
@@ -2317,7 +2324,9 @@ function kartyDoSesji(w) {
 function zapamietajSesje(pierwsze = null, { synchronicznie = false } = {}) {
   try {
     const zwykle = [...windows].filter((w) => !w.isPrivate && w._kartyGotowe);
-    if (!zwykle.length) return;
+    // Bez zwyklych okien sesji nie nadpisujemy, ale przy wylaczaniu Windows
+    // reszta ustawien (np. licznik blokad) i tak ma trafic na dysk od razu.
+    if (!zwykle.length) { if (synchronicznie) zapiszUstawieniaOdRazu(); return; }
     let glowne = pierwsze && !pierwsze.isPrivate ? pierwsze : null;
     if (!glowne) glowne = zwykle.find((w) => w.win && !w.win.isDestroyed() && w.win.isFocused()) || ostatnioAktywneZwykle;
     if (glowne && zwykle.includes(glowne)) zwykle.sort((a, b) => (a === glowne ? -1 : b === glowne ? 1 : 0));

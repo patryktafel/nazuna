@@ -66,6 +66,7 @@ async function load() {
       return false;
     }
   }
+  podepnijLicznik(blocker);
   applyAllowlist();
   ready = true;
   setTimeout(() => refresh(false).catch(() => {}), 8000);
@@ -94,14 +95,17 @@ async function refresh(force) {
   try {
     const fresh = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch);
     saveCache(fresh);
+    /* Sesje trybu Agresywnego odpinamy od STAREGO obiektu, zanim go podmienimy -
+       odwrotna kolejnosc zostawiala stary wlaczony, a nowy sie nie wlaczal
+       (podwojna rejestracja ipcMain.handle) i sesja po cichu wracala do trybu
+       Bezpiecznego. */
+    const sessions = [...ghosterySessions];
+    for (const ses of sessions) disableFor(ses);
     blocker = fresh;
+    podepnijLicznik(blocker);
     applyAllowlist();
     ready = true;
-    if (ghosterySessions.size) {
-      const sessions = [...ghosterySessions];
-      for (const ses of sessions) disableFor(ses);
-      for (const ses of sessions) enableFor(ses);
-    }
+    for (const ses of sessions) enableFor(ses);
     return { ok: true, updatedAt: updatedAt() };
   } catch (err) {
     return { ok: false, reason: err.message };
@@ -133,6 +137,25 @@ function bump(id) {
     const wc = webContents.fromId(id);
     if (wc && wc.session && wc.session.isPersistent()) data.dodajBlokade();
   } catch (_) {}
+}
+
+/* Tryb Agresywny: blokuje sama biblioteka (enableBlockingInSession), a nie nasz
+   attachNetworkFilter, wiec bump() trzeba wolac z jej zdarzenia - inaczej licznik
+   na karcie i licznik dnia na nowej karcie staly na 0. Zdarzenie przychodzi tez
+   z naszego blocker.match w trybie Bezpiecznym (to ten sam silnik), wiec liczymy
+   tylko sesje oddane bibliotece - bez podwojnego liczenia. Okna prywatne pomija
+   sam bump() (licznik dnia). load() i refresh() tworza nowy obiekt blocker, wiec
+   nasluch podpinamy przy kazdym nowym. */
+function podepnijLicznik(engine) {
+  if (!engine || typeof engine.on !== 'function') return;
+  engine.on('request-blocked', (request) => {
+    try {
+      const id = request && request.tabId;   // w adblocker-electron tabId = webContentsId
+      if (!id || !ghosterySessions.size || engine !== blocker) return;
+      const wc = webContents.fromId(id);
+      if (wc && !wc.isDestroyed() && ghosterySessions.has(wc.session)) bump(id);
+    } catch (_) {}
+  });
 }
 
 function documentHost(details) {

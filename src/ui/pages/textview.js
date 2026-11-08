@@ -35,6 +35,40 @@ function zastosujWyglad(s) {
     delete root.dataset.mgla;
     root.dataset.accent = 'violet';
   }
+  // Okno prywatne: nocna paleta z turkusem jak na innych stronach (pagekit.js).
+  if (s.prywatne) { dodajPalettePrywatna(); root.dataset.prywatne = '1'; } else delete root.dataset.prywatne;
+}
+/* Paleta okna prywatnego - te same barwy co w pages.css pod
+   :root[data-motyw="mgla"][data-prywatne="1"], ale textview.html nie laduje
+   pages.css. Styl dokladamy raz na koniec <head>: ta sama waga co zestawy
+   data-mgla i akcenty z theme.css, wiec wygrywa, bo stoi pozniej. Szklo
+   paska i karty z tekstem tez prawie czarne zamiast fioletowego. */
+const PALETA_PRYWATNA = `
+:root[data-motyw="mgla"][data-prywatne="1"] {
+  --bg: #0a0b12;
+  --aurora-1: rgba(18, 92, 104, .55);
+  --aurora-2: rgba(22, 120, 128, .45);
+  --aurora-3: rgba(30, 44, 96, .45);
+  --accent: #4fc9c4;
+  --accent-strong: #8fe6e1;
+  --accent-dim: rgba(79, 201, 196, 0.16);
+  --accent-ring: rgba(79, 201, 196, 0.32);
+}
+:root[data-motyw="mgla"][data-prywatne="1"] body { --text-faint: #a7b6bd; }
+:root[data-motyw="mgla"][data-prywatne="1"] #toolbar {
+  background: rgba(8, 9, 16, 0.86);
+  border-color: rgba(143, 230, 225, 0.14);
+}
+:root[data-motyw="mgla"][data-prywatne="1"] #code {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03)), rgba(10, 11, 18, 0.62);
+  border-color: rgba(143, 230, 225, 0.12);
+}`;
+function dodajPalettePrywatna() {
+  if (document.getElementById('paletaPrywatna')) return;
+  const styl = document.createElement('style');
+  styl.id = 'paletaPrywatna';
+  styl.textContent = PALETA_PRYWATNA;
+  document.head.appendChild(styl);
 }
 function odswiezWyglad() {
   if (!api || !api.invoke) return;

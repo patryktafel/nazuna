@@ -134,6 +134,10 @@ function wyglad() {
     if (s.values && s.values.accent) document.documentElement.dataset.accent = s.values.accent;
     document.documentElement.dataset.motyw = s.motyw || 'ciemny';
     document.documentElement.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
+    // Okno prywatne: nocna karta z turkusem (toast.html). Plakietki
+    // #privateBadge, po ktorej poznaje je shell.css, tu nie ma.
+    if (s.prywatne) document.documentElement.dataset.prywatne = '1';
+    else delete document.documentElement.dataset.prywatne;
     // W mgle karta ma inne odstepy i czcionke - widoczne powiadomienie
     // zmienia wtedy rozmiar, wiec warstwe trzeba zmierzyc jeszcze raz.
     zglosRozmiarPozniej();

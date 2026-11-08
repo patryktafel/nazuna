@@ -72,6 +72,28 @@
   :root[data-motyw="mgla"] .update-toast .actions .later { color: var(--text-dim); }
   :root[data-motyw="mgla"] .update-toast .actions .later:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); }
   :root[data-motyw="mgla"] .update-toast button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+  /* Okno prywatne (data-prywatne ustawia toast.js wedlug settings.get): ta sama
+     nocna paleta z turkusem co pasek prywatny (shell.css) i strony (pages.css),
+     zamiast fioletowej karty zwyklego okna. Reguly stoja po zwyklych, wiec
+     przy tej samej wadze wygrywaja; obwodke bledu trzeba wtedy powtorzyc. */
+  :root[data-motyw="mgla"][data-prywatne="1"] {
+    --aurora-1: rgba(18, 92, 104, .55);
+    --aurora-2: rgba(22, 120, 128, .45);
+    --aurora-3: rgba(30, 44, 96, .45);
+    --accent: #4fc9c4;
+    --accent-strong: #8fe6e1;
+    --accent-dim: rgba(79, 201, 196, 0.16);
+    --accent-ring: rgba(79, 201, 196, 0.32);
+  }
+  :root[data-motyw="mgla"][data-prywatne="1"] .update-toast {
+    background:
+      radial-gradient(130% 150% at 0% 0%, color-mix(in srgb, var(--aurora-1) 34%, transparent) 0%, transparent 62%),
+      radial-gradient(110% 140% at 100% 100%, color-mix(in srgb, var(--aurora-3) 26%, transparent) 0%, transparent 66%),
+      #0d0f18;
+    border-color: rgba(143, 230, 225, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 18px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.35);
+  }
+  :root[data-motyw="mgla"][data-prywatne="1"] .update-toast.error { border-color: rgba(255, 122, 138, 0.28); }
   /* Wejscie: karta lagodnie opada spod paska (miesci sie w gornym marginesie #slot). */
   @keyframes toastMgla { from { opacity: 0; transform: translateY(-8px) scale(.96); } 60% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
