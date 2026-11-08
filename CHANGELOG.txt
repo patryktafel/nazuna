@@ -1,6 +1,18 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.101 - 8 listopada 2026
+--------------------------
+
+Naprawiona aktualizacja listy niebezpiecznych stron
+
+- Lista zlosliwych domen znow sie aktualizuje. Dotychczasowe zrodlo
+  (URLhaus) wylaczylo stary adres, wiec lista stala od 21 pazdziernika.
+  Teraz pochodzi z projektu malware-filter i ma zapasowe adresy.
+- Doszla lista stron wyludzajacych hasla i dane (falszywe banki, sklepy,
+  strony logowania). Razem okolo 22 tysiecy niebezpiecznych domen.
+- Czytelniejszy komunikat, gdy listy nie da sie pobrac.
+
 0.1.100 - 8 listopada 2026
 --------------------------
 
