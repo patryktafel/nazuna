@@ -1,8 +1,20 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.98 - 8 listopada 2026
+-------------------------
+
+Spokojniejsze aktualizacje przy klopotach serwerow
+
+- Chwilowa awaria serwerow GitHuba albo brak internetu nie pokazuje juz
+  okienka "Nie udalo sie pobrac aktualizacji" z surowa odpowiedzia serwera.
+  Nazuna po cichu sprawdza ponownie za 15 minut.
+- Prawdziwe bledy aktualizacji (np. nieprawidlowy podpis) dalej sa pokazywane,
+  ale jednym krotkim zdaniem, bez technicznych szczegolow.
+
 0.1.97 - 8 listopada 2026
 -------------------------
+
 Klucze dostepu (passkeys) wlaczone i wybor konta; osobne ciasteczka dla stron
 
 - Klucze dostepu sa teraz domyslnie wlaczone, takze u osob, ktore mialy je

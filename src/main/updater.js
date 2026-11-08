@@ -105,6 +105,29 @@ async function sprawdzPodpis(wystawcy, plik) {
 let stanAktualizacji = { status: 'niedostepna' };
 let nasluchujacy = null;
 
+/* Chwilowe klopoty sieci albo serwerow GitHuba (503, 504, brak internetu)
+   to nie blad aktualizacji - nie pokazujemy okienka, tylko sprawdzamy znowu
+   za 15 minut. Wczesniej wyskakiwala cala surowa odpowiedz serwera, z
+   naglowkami i ciasteczkami GitHuba (8.11.2026). */
+const CHWILOWY = /^(50[0-9]|429)\b|(HttpError|Response code|status code)\D{0,3}(50[0-9]|429)\b|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ENETUNREACH|socket hang up|net::ERR_|Service Unavailable|Gateway Time-?out|No server is available/i;
+let ponowienie = null;
+function bladAktualizacji(err) {
+  const tresc = String((err && (err.message || err)) || '');
+  const pierwszaLinia = tresc.split('\n')[0];
+  if (CHWILOWY.test(tresc)) {
+    log('info', 'chwilowy problem z serwerem/siecia, ponowie za 15 min:', pierwszaLinia.slice(0, 200));
+    if (!ponowienie) {
+      ponowienie = setTimeout(() => { ponowienie = null; sprawdz('ponowienie-po-bledzie-sieci').catch(() => {}); }, 15 * 60 * 1000);
+      if (ponowienie.unref) ponowienie.unref();
+    }
+    ustaw({ status: 'gotowa', komunikat: null });
+    return;
+  }
+  // Prawdziwy blad: jedno krotkie zdanie, bez zrzutu odpowiedzi serwera.
+  const zdanie = pierwszaLinia.replace(/\s*(Headers|Data):.*$/i, '').trim().slice(0, 160);
+  ustaw({ status: 'blad', komunikat: zdanie || 'Nieznany błąd' });
+}
+
 function ustaw(patch) {
   stanAktualizacji = { ...stanAktualizacji, ...patch };
   if (nasluchujacy) { try { nasluchujacy(stanAktualizacji); } catch (_) {} }
@@ -150,7 +173,7 @@ function init(onZmiana) {
   autoUpdater.on('update-not-available', (info) => { log('info', 'update-not-available, aktualna wersja to', info && info.version); ustaw({ status: 'aktualna', wersja: null, komunikat: null }); });
   autoUpdater.on('download-progress', (p) => ustaw({ status: 'pobieranie', procent: Math.round(p.percent) }));
   autoUpdater.on('update-downloaded', (info) => { log('info', 'update-downloaded', info && info.version); ustaw({ status: 'pobrana', wersja: info.version, komunikat: null }); });
-  autoUpdater.on('error', (err) => { log('error', 'error event:', err && (err.stack || err.message)); ustaw({ status: 'blad', komunikat: (err && err.message) || 'Nieznany błąd' }); });
+  autoUpdater.on('error', (err) => { log('error', 'error event:', err && (err.stack || err.message)); bladAktualizacji(err); });
 
   ustaw({ status: 'gotowa' });
   log('info', 'init() koniec, autoUpdater gotowy');
@@ -164,14 +187,14 @@ async function sprawdz(zrodlo) {
     log('info', 'checkForUpdates() zakonczone, updateInfo.version=', wynik && wynik.updateInfo && wynik.updateInfo.version);
   } catch (err) {
     log('error', 'checkForUpdates() rzucilo wyjatek:', err && (err.stack || err.message));
-    ustaw({ status: 'blad', komunikat: err.message });
+    bladAktualizacji(err);
   }
   return stanAktualizacji;
 }
 
 function pobierz() {
   if (!autoUpdater) return;
-  autoUpdater.downloadUpdate().catch((err) => ustaw({ status: 'blad', komunikat: err.message }));
+  autoUpdater.downloadUpdate().catch((err) => bladAktualizacji(err));
 }
 
 function zainstaluj() {
