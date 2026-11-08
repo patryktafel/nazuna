@@ -592,6 +592,7 @@ function menuAction(win, id, value) {
     case 'extensions': win.newTab({ url: 'nazuna://extensions' }); break;
     case 'settings': win.newTab({ url: 'nazuna://settings' }); break;
     case 'about': win.newTab({ url: 'nazuna://about' }); break;
+    case 'welcome': win.newTab({ url: 'nazuna://welcome' }); break;
     case 'find': win.openFind(); break;
     case 'print': { const t = win.activeTab(); if (t) t.wc.print({}, () => {}); break; }
     case 'devtools': { const t = win.activeTab(); if (t) t.wc.toggleDevTools(); break; }

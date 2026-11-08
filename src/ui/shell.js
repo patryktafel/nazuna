@@ -1774,6 +1774,7 @@ function mainMenu() {
     { id: 'devtools', label: 'Narzędzia dewelopera', icon: 'code', accel: 'F12' },
     { type: 'separator' },
     { id: 'settings', label: 'Ustawienia', icon: 'settings' },
+    { id: 'welcome', label: 'Ekran powitalny', icon: 'flower' },
     { id: 'about', label: 'O Nazunie', icon: 'info' },
     { id: 'quit', label: 'Zamknij przeglądarkę', icon: 'x' }
   ];

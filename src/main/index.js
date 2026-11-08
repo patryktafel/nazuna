@@ -307,6 +307,16 @@ if (!gotLock) {
     /* Pozostale okna z zapisanej sesji tworzymy przed glownym, zeby to z
        linkiem (albo ostatnio aktywne) pokazalo sie na koncu, na wierzchu. */
     if (!tylkoPrywatne) for (const okno of dodatkoweOkna) W.createWindow(okno);
+    /* Ekran powitalny: raz kazdemu po wejsciu nowej wersji kreatora (takze
+       obecnym uzytkownikom, jakby instalowali Nazune pierwszy raz) albo przy
+       kazdym starcie, gdy tak sobie zaznaczyl. Karta dochodzi na koniec i jest
+       aktywna; welcome.js zapisuje kreatorWersja, gdy sie pokaze. */
+    const WERSJA_KREATORA = 1;
+    if (!tylkoPrywatne && (data.settings.get('kreatorWersja', 0) < WERSJA_KREATORA || data.settings.get('pokazujPowitanie', false) === true)) {
+      // Bez innych kart sam kreator - po "Zaczynamy" ta karta staje sie nowa karta.
+      initial = [...initial, 'nazuna://welcome'];
+      aktywna = initial.length - 1;
+    }
     W.ustawMotywStron(); // strony dostaja ciemny/jasny tryb zgodny z wygladem Nazuny
     W.createWindow(tylkoPrywatne ? { isPrivate: true } : { urls: initial, aktywna });
     // Linki nie trafiaja do okna prywatnego - dostaja jedno zwykle okno.

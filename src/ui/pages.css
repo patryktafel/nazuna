@@ -259,3 +259,97 @@ body.newtab:not(.nt-ready) .nt-foot { opacity: 0; }
   font-size: 13px; color: var(--text-dim);
 }
 :root[data-motyw="mgla"] .nt-licznik .icon { width: 15px; height: 15px; color: var(--ok); }
+
+/* ------------------------------------------------ ekran powitalny (etap 4)
+   nazuna://welcome. Kolory z biezacego motywu (wybor w kreatorze zmienia je
+   na zywo), czcionka naglowka Fraunces (--font-display, w mgle). */
+body.powitanie { background: var(--bg); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+:root[data-motyw="mgla"] body.powitanie { background: radial-gradient(900px 520px at 50% 14%, #2b2350 0%, var(--bg) 62%); }
+.pw-wrap {
+  position: relative; flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 48px 24px 24px; gap: 12px; opacity: 0; transition: opacity .3s var(--ease);
+}
+body.pw-gotowe .pw-wrap { opacity: 1; }
+.pw-kwiat { width: 112px; height: 112px; overflow: visible; }
+.pw-poswiata { fill: var(--accent); opacity: .10; }
+.pw-platek { transform-box: fill-box; transform-origin: center; }
+.pw-platek.p1, .pw-platek.p3 { fill: #d6ccff; }
+.pw-platek.p2, .pw-platek.p4 { fill: #b3a3ff; }
+.pw-srodek { fill: #ffffff; }
+/* Kwiat rozkwita: platki wyrastaja po kolei, potem srodek. */
+@keyframes pwPlatek { from { transform: scale(0); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } to { transform: scale(1); } }
+body.pw-gotowe .pw-platek { animation: pwPlatek .6s var(--ease) both; }
+body.pw-gotowe .pw-platek.p2 { animation-delay: .12s; }
+body.pw-gotowe .pw-platek.p3 { animation-delay: .24s; }
+body.pw-gotowe .pw-platek.p4 { animation-delay: .36s; }
+.pw-srodek { transform-box: fill-box; transform-origin: center; }
+body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
+@media (prefers-reduced-motion: reduce) { body.pw-gotowe .pw-platek, body.pw-gotowe .pw-srodek { animation: none; } }
+.pw-marka { font-size: 15px; letter-spacing: 8px; font-weight: 700; color: var(--accent-strong); text-transform: lowercase; }
+.pw-tytul {
+  margin: 6px 0 0; font-family: var(--font-display, Georgia, serif); font-weight: 500;
+  font-size: 44px; line-height: 1.15; text-align: center; color: var(--text);
+}
+.pw-opis { margin: 0; max-width: 560px; text-align: center; font-size: 16px; line-height: 1.55; color: var(--text-dim); }
+.pw-kropki { display: flex; gap: 8px; margin: 6px 0 4px; }
+.pw-kropki span { width: 6px; height: 6px; border-radius: 3px; background: rgba(var(--tint), .22); transition: width .25s var(--ease), background .25s var(--ease); }
+.pw-kropki span.teraz { width: 28px; background: var(--accent-strong); }
+.pw-krok { width: 100%; max-width: 860px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.pw-etykieta { font-size: 14px; font-weight: 700; color: var(--text); }
+.pw-karty { display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); gap: 16px; justify-content: center; width: 100%; }
+.pw-karty.trzy { grid-template-columns: repeat(3, minmax(0, 250px)); }
+.pw-karta {
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 10px 14px; text-align: left; cursor: pointer;
+  border-radius: 18px; background: rgba(var(--tint), .05); border: 1px solid var(--border);
+  color: var(--text); transition: background .15s var(--ease), border-color .15s var(--ease), transform .15s var(--ease);
+}
+.pw-karta:hover { background: rgba(var(--tint), .08); transform: translateY(-2px); }
+.pw-karta.wybrana { border-color: var(--accent-strong); box-shadow: 0 0 0 2px var(--accent-ring); background: rgba(var(--tint), .09); }
+.pw-karta:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+.pw-karta-nazwa { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 700; padding: 0 4px; }
+.pw-karta-nazwa .icon { color: var(--accent-strong); width: 18px; height: 18px; }
+.pw-karta-opis { font-size: 12.5px; color: var(--text-dim); padding: 0 4px; }
+/* Male podglady wygladu: pasek, adres i "strona". */
+.pw-podglad { height: 110px; border-radius: 12px; display: flex; flex-direction: column; gap: 6px; padding: 8px; overflow: hidden; }
+.pw-podglad i { display: block; border-radius: 6px; }
+.pw-podglad i:nth-child(1) { height: 10px; width: 55%; }
+.pw-podglad i:nth-child(2) { height: 14px; border-radius: 7px; }
+.pw-podglad i:nth-child(3) { flex: 1; border-radius: 8px; }
+.pw-podglad.mgla { background: linear-gradient(160deg, #3a3260, #1b1830); }
+.pw-podglad.mgla i { background: rgba(255,255,255,.16); }
+.pw-podglad.mgla i:nth-child(3) { background: radial-gradient(60% 80% at 30% 40%, rgba(169,150,255,.45), transparent), rgba(255,255,255,.06); }
+.pw-podglad.klasyczny, .pw-podglad.ciemny { background: #121419; }
+.pw-podglad.klasyczny i, .pw-podglad.ciemny i { background: #1f222b; }
+.pw-podglad.klasyczny i:nth-child(3), .pw-podglad.ciemny i:nth-child(3) { background: #0d0e12; }
+.pw-podglad.jasny { background: #e3e6ef; }
+.pw-podglad.jasny i { background: #ffffff; }
+.pw-podglad.system { background: linear-gradient(90deg, #121419 50%, #e3e6ef 50%); }
+.pw-podglad.system i { background: rgba(127,127,140,.45); }
+.pw-podglad.lawenda { background: #1b1830; }
+.pw-podglad.roz { background: #1b1830; }
+.pw-podglad.morski { background: #1b1830; }
+.pw-podglad.lawenda i, .pw-podglad.roz i, .pw-podglad.morski i { background: rgba(255,255,255,.12); }
+.pw-podglad.lawenda i:nth-child(3) { background: radial-gradient(50% 70% at 25% 35%, rgba(91,71,201,.9), transparent), radial-gradient(45% 60% at 80% 70%, rgba(217,119,182,.6), transparent); }
+.pw-podglad.roz i:nth-child(3) { background: radial-gradient(50% 70% at 25% 35%, rgba(217,119,182,.9), transparent), radial-gradient(45% 60% at 80% 70%, rgba(255,170,140,.6), transparent); }
+.pw-podglad.morski i:nth-child(3) { background: radial-gradient(50% 70% at 25% 35%, rgba(48,160,170,.9), transparent), radial-gradient(45% 60% at 80% 70%, rgba(90,140,255,.6), transparent); }
+.pw-lista { list-style: none; margin: 0; padding: 0; width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 10px; }
+.pw-ochrona { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: rgba(var(--tint), .05); border: 1px solid var(--border); }
+.pw-ochrona b { display: block; font-size: 14.5px; color: var(--text); }
+.pw-ochrona small { display: block; font-size: 12.5px; color: var(--text-dim); margin-top: 3px; line-height: 1.45; }
+.pw-ochrona-ikona { width: 38px; height: 38px; flex: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(143, 227, 201, .14); color: var(--ok); }
+.pw-ochrona.wylaczona .pw-ochrona-ikona { background: rgba(var(--tint), .08); color: var(--text-faint); }
+.pw-stopka { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 18px 40px 26px; }
+.pw-stopka-lewo .remember { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-dim); cursor: pointer; }
+.pw-stopka-prawo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pw-dalej {
+  height: 46px; padding: 0 34px; border-radius: 999px; cursor: pointer;
+  background: var(--accent-strong); color: var(--on-accent); font-weight: 800; font-size: 15px;
+  box-shadow: 0 10px 26px -12px var(--accent-ring); transition: transform .12s var(--ease), filter .15s var(--ease);
+}
+.pw-dalej:hover { filter: brightness(1.06); }
+.pw-dalej:active { transform: scale(.97); }
+@media (max-width: 760px) {
+  .pw-karty, .pw-karty.trzy { grid-template-columns: minmax(0, 1fr); max-width: 360px; }
+  .pw-tytul { font-size: 34px; }
+  .pw-stopka { padding: 16px; }
+}

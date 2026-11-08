@@ -6,7 +6,7 @@ const { pathToFileURL } = require('url');
 const { UI_DIR, ASSETS_DIR } = require('./constants');
 const starttrace = require('./starttrace');
 
-const PAGES = new Set(['newtab', 'settings', 'history', 'bookmarks', 'downloads', 'extensions', 'about', 'error', 'warning', 'pdf', 'textview']);
+const PAGES = new Set(['newtab', 'settings', 'history', 'bookmarks', 'downloads', 'extensions', 'about', 'error', 'warning', 'pdf', 'textview', 'welcome']);
 
 // Prog, od ktorego pojedyncze zadanie nazuna:// trafia do start.log (patrz
 // starttrace.js) - normalny odczyt lokalnego pliku to ulamek milisekundy,

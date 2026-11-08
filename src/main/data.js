@@ -54,6 +54,11 @@ const DEFAULT_SETTINGS = {
   // Jasny/ciemny tryb stron WWW (prefers-color-scheme), niezalezny od wygladu
   // Nazuny. Przycisk slonca/ksiezyca na pasku przelacza jasne <-> ciemne.
   motywStron: 'system',     // system | light | dark
+  // Ekran powitalny (nazuna://welcome): kreatorWersja = ostatnia pokazana wersja
+  // kreatora (index.js pokazuje go raz kazdemu, gdy WERSJA_KREATORA wzrosnie);
+  // pokazujPowitanie = pokazuj przy kazdym starcie (checkbox w kreatorze).
+  kreatorWersja: 0,
+  pokazujPowitanie: false,
   accent: 'violet',
   restoreSession: null,
   // Ukrywanie lokalnego adresu IP w WebRTC (WEBRTC_IP_HANDLING_POLICY) - patrz

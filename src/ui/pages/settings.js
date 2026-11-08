@@ -141,6 +141,11 @@ function render() {
         </select></div>
       </div>
       ${toggleRow('showBookmarksBar', 'Pasek zakładek', 'Widoczny pod paskiem adresu')}
+      ${toggleRow('pokazujPowitanie', 'Ekran powitalny przy każdym starcie', 'Kreator z wyborem wyglądu i kolorów pokazuje się przy każdym uruchomieniu Nazuny')}
+      <div class="row">
+        <div class="body"><div class="title">Ekran powitalny</div><div class="sub">Otwórz kreator teraz, w nowej karcie</div></div>
+        <div class="ctl"><button class="btn" id="pokazPowitanie">Pokaż powitanie</button></div>
+      </div>
     </div>
 
     <div class="card">
@@ -230,6 +235,8 @@ function render() {
   }
 
   page.querySelectorAll('[data-accent]').forEach((b) => b.addEventListener('click', () => save({ accent: b.dataset.accent })));
+  const pp = page.querySelector('#pokazPowitanie');
+  if (pp) pp.addEventListener('click', () => api.send('tab.new', { url: 'nazuna://welcome' }));
   page.querySelectorAll('[data-mgla-kolory]').forEach((b) => b.addEventListener('click', () => save({ mglaKolory: b.dataset.mglaKolory })));
   document.getElementById('chooseDir').addEventListener('click', async () => {
     const dir = await api.invoke('downloads.chooseDir');

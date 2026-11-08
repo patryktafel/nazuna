@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pl" data-accent="violet">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src nazuna:; img-src nazuna: data:; style-src nazuna: 'unsafe-inline'; script-src nazuna:">
+<title>Witaj w Nazunie</title>
+<link rel="stylesheet" href="nazuna://ui/theme.css">
+<link rel="stylesheet" href="nazuna://ui/pages.css">
+</head>
+<body class="powitanie">
+  <div class="aurora"><i></i></div>
+  <main class="pw-wrap">
+    <svg class="pw-kwiat" viewBox="0 0 100 100" role="img" aria-label="Kwiat Nazuny">
+      <circle class="pw-poswiata" cx="50" cy="50" r="46"></circle>
+      <ellipse class="pw-platek p1" cx="50" cy="27" rx="14" ry="21"></ellipse>
+      <ellipse class="pw-platek p2" cx="73" cy="50" rx="21" ry="14"></ellipse>
+      <ellipse class="pw-platek p3" cx="50" cy="73" rx="14" ry="21"></ellipse>
+      <ellipse class="pw-platek p4" cx="27" cy="50" rx="21" ry="14"></ellipse>
+      <circle class="pw-srodek" cx="50" cy="50" r="9"></circle>
+    </svg>
+    <div class="pw-marka">nazuna</div>
+    <h1 class="pw-tytul" id="tytul"></h1>
+    <p class="pw-opis" id="opis"></p>
+    <div class="pw-kropki" id="kropki" aria-hidden="true"></div>
+    <section class="pw-krok" id="krok"></section>
+  </main>
+  <footer class="pw-stopka">
+    <div class="pw-stopka-lewo">
+      <label class="remember"><span class="switch"><input type="checkbox" id="zawsze"><span class="track"></span><span class="thumb"></span></span> Pokazuj ten ekran przy każdym starcie</label>
+    </div>
+    <div class="pw-stopka-prawo">
+      <button class="btn ghost" id="wstecz" type="button">Wstecz</button>
+      <button class="btn ghost" id="pomin" type="button">Pomiń, ustawię później</button>
+      <button class="pw-dalej" id="dalej" type="button">Dalej</button>
+    </div>
+  </footer>
+  <script src="nazuna://ui/icons.js"></script>
+  <script src="pagekit.js"></script>
+  <script src="welcome.js"></script>
+</body>
+</html>
