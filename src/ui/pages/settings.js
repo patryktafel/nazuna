@@ -1,25 +1,8 @@
 const page = document.getElementById('page');
 let cfg = null;
 
-/* Kropki wyboru koloru maja pokazywac to, co uzytkownik naprawde dostanie.
-   W jasnym motywie akcenty sa ciemniejsze, zeby byly czytelne na bieli, wiec
-   probki tez musza byc ciemniejsze. Inaczej klikasz pastel, a wychodzi cos
-   innego. */
-const ACCENTY = {
-  ciemny: { violet: '#8b7cff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', srebrny: '#c9cdd6' },
-  jasny:  { violet: '#6a5aef', zloty: '#8a6800', sky: '#1a7fe0', koralowy: '#bf4633', srebrny: '#5d6472' },
-  mgla:   { violet: '#a996ff', zloty: '#e3b341', sky: '#5aa7ff', koralowy: '#ff7f6b', srebrny: '#c9cdd6' }
-};
 /* Zestawy plam koloru w tle Lawendowej mgly (theme.css, data-mgla). */
 const KOLORY_MGLY = [['lawenda', 'Lawenda', '#7b63e0'], ['roz', 'Róż', '#d977b6'], ['morski', 'Morski', '#3f74e0']];
-const NAZWY_AKCENTOW = ['violet', 'zloty', 'sky', 'koralowy', 'srebrny'];
-const NAZWY_AKCENTOW_PL = { violet: 'Fioletowy', zloty: 'Złoty', sky: 'Niebieski', koralowy: 'Koralowy', srebrny: 'Srebrny' };
-
-function probkiAkcentow() {
-  const m = document.documentElement.dataset.motyw;
-  const motyw = m === 'jasny' || m === 'mgla' ? m : 'ciemny';
-  return NAZWY_AKCENTOW.map((name) => [name, ACCENTY[motyw][name]]);
-}
 
 /* Naglowek sekcji. Ikona jest czysto dekoracyjna i widac ja tylko w Lawendowej
    mgle (style w settings.html) - w wygladzie Klasyczny jest ukryta. */
@@ -168,12 +151,8 @@ function render() {
           <option value="system" ${v.theme === 'system' ? 'selected' : ''}>Jak w systemie</option>
         </select></div>
       </div>
-      <div class="row" ${v.wyglad === 'washi' ? 'hidden' : ''}>
-        <div class="body"><div class="title">Kolor akcentu</div><div class="sub">Wpływa na podświetlenia i aktywne elementy</div></div>
-        <div class="ctl">${probkiAkcentow().map(([name, color]) => `
-          <button class="accent-dot${v.accent === name ? ' wybrana' : ''}" data-accent="${name}" title="${NAZWY_AKCENTOW_PL[name] || name}" aria-label="${NAZWY_AKCENTOW_PL[name] || name}" aria-pressed="${v.accent === name}" style="--kolor:${color}"></button>`).join('')}
-        </div>
-      </div>
+      <!-- Wybor "Kolor akcentu" usuniety (decyzja uzytkownika 2026-11-09): kazdy wyglad
+           ma swoj staly charakter; akcent to zawsze domyslny akcent danego wygladu. -->
       <div class="row">
         <div class="body"><div class="title">Wygląd stron</div>
           <div class="sub">Strony, które mają ciemny tryb, przełączą się same. Szybko zmienisz to też przyciskiem słońca i księżyca na pasku</div></div>
@@ -277,7 +256,6 @@ function render() {
     pole.setSelectionRange(pisane.start, pisane.end);
   }
 
-  page.querySelectorAll('[data-accent]').forEach((b) => b.addEventListener('click', () => save({ accent: b.dataset.accent })));
   const pp = page.querySelector('#pokazPowitanie');
   if (pp) pp.addEventListener('click', () => api.send('tab.new', { url: 'nazuna://welcome' }));
   page.querySelectorAll('[data-mgla-kolory]').forEach((b) => b.addEventListener('click', () => save({ mglaKolory: b.dataset.mglaKolory })));

@@ -95,7 +95,9 @@ function init() {
      zostaje uszanowane (znacznik migracjaPasskeys). */
   /* Akcenty mint i rose zastapione (nowy wyglad): u kogo byly wybrane, ten
      dostaje najblizszy nowy. */
-  { const a = settings.get('accent', 'violet'); if (a === 'mint') settings.set('accent', 'zloty'); else if (a === 'rose') settings.set('accent', 'koralowy'); else if (a === 'amber') settings.set('accent', 'zloty'); }
+  /* Wybor akcentu usuniety (kazdy wyglad ma staly akcent) - kto mial inny,
+     wraca do domyslnego. */
+  if (settings.get('accent', 'violet') !== 'violet') settings.set('accent', 'violet');
   if (settings.get('migracjaPasskeys', 0) < 1) {
     settings.set('passkeys', true);
     settings.set('migracjaPasskeys', 1);
