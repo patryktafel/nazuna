@@ -2116,11 +2116,11 @@ function runContextAction(appWindow, id) {
     case 'open-link-window': createWindow({ urls: [params.linkURL] }); break;
     case 'open-link-private': createWindow({ isPrivate: true, urls: [params.linkURL] }); break;
     case 'copy-link': clipboard.writeText(params.linkURL); break;
-    case 'save-link': downloads.oznaczGest(wc); wc.downloadURL(params.linkURL); break;
+    case 'save-link': downloads.zapiszJako(wc); wc.downloadURL(params.linkURL); break;
     case 'open-image': appWindow.newTab({ url: params.srcURL, background: true }); break;
     case 'copy-image': wc.copyImageAt(params.x, params.y); break;
     case 'copy-image-url': clipboard.writeText(params.srcURL); break;
-    case 'save-image': case 'save-media': downloads.oznaczGest(wc); wc.downloadURL(params.srcURL); break;
+    case 'save-image': case 'save-media': downloads.zapiszJako(wc); wc.downloadURL(params.srcURL); break;
     case 'copy-media-url': clipboard.writeText(params.srcURL); break;
     case 'undo': wc.undo(); break;
     case 'redo': wc.redo(); break;
@@ -2137,7 +2137,7 @@ function runContextAction(appWindow, id) {
     case 'back': appWindow.goBack(); break;
     case 'forward': appWindow.goForward(); break;
     case 'reload': appWindow.reload(); break;
-    case 'save-page': downloads.oznaczGest(wc); wc.downloadURL(wc.getURL()); break;
+    case 'save-page': downloads.zapiszJako(wc); wc.downloadURL(wc.getURL()); break;
     case 'print': wc.print({}, () => {}); break;
     case 'inspect': wc.inspectElement(params.x, params.y); break;
     default: break;

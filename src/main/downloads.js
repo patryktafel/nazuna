@@ -157,6 +157,40 @@ function oknoZapisuDozwolone(klucz, wc) {
    swiadomy wybor uzytkownika, choc klik trafil w pasek, a nie w karte. */
 function oznaczGest(wc) { if (wc) gesty.set(wc, Date.now()); }
 
+/* "Zapisz obraz/link/strone jako..." z menu kontekstowego: zawsze okno zapisu
+   Windows (miejsce, nazwa, typ), niezaleznie od ustawienia "pytaj, gdzie
+   zapisac" - tak jak w Chrome i Firefoksie. Znacznik dotyczy jednej karty i
+   najblizszego pobrania z niej w ciagu kilkunastu sekund. */
+const zapiszJakoZnacznik = new WeakMap();
+const ZAPISZ_JAKO_MS = 15000;
+function zapiszJako(wc) {
+  if (!wc) return;
+  gesty.set(wc, Date.now());
+  zapiszJakoZnacznik.set(wc, Date.now());
+}
+function czyZapiszJako(wc) {
+  if (!wc) return false;
+  const t = zapiszJakoZnacznik.get(wc);
+  if (!t) return false;
+  zapiszJakoZnacznik.delete(wc);
+  return Date.now() - t < ZAPISZ_JAKO_MS;
+}
+
+/* Obrazy z wyszukiwarek (np. Google Grafika) czesto maja adres bez
+   rozszerzenia ("images?q=..."), wiec plik dostawal nazwe bez typu. Dokladamy
+   rozszerzenie z typu MIME. */
+const ROZSZERZENIA_MIME = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+  'image/avif': 'avif', 'image/svg+xml': 'svg', 'image/bmp': 'bmp', 'image/x-icon': 'ico',
+  'image/vnd.microsoft.icon': 'ico', 'video/mp4': 'mp4', 'video/webm': 'webm',
+  'audio/mpeg': 'mp3', 'audio/ogg': 'ogg', 'application/pdf': 'pdf', 'text/html': 'html'
+};
+function zRozszerzeniem(filename, mime) {
+  if (path.extname(filename)) return filename;
+  const ext = ROZSZERZENIA_MIME[String(mime || '').split(';')[0].trim().toLowerCase()];
+  return ext ? `${filename}.${ext}` : filename;
+}
+
 /* Ile pobieran naprawde trwa (do pytania przy zamykaniu programu). */
 function ileAktywnych() { return active.size; }
 
@@ -180,12 +214,13 @@ function attach(session) {
     let prywatna = false;
     try { prywatna = !session.isPersistent(); } catch (_) {}
     const dir = defaultDir();
-    const filename = safeFilename(item.getFilename());
+    const filename = safeFilename(zRozszerzeniem(item.getFilename(), item.getMimeType()));
     const risky = isRisky(filename);
+    const jako = czyZapiszJako(webContents);
 
     // Plik wykonywalny zawsze przechodzi przez okno zapisu, zeby nie wladowal
-    // sie do Pobranych bez twojej wiedzy.
-    if (!risky && !data.settings.get('askWhereToSave', false)) {
+    // sie do Pobranych bez twojej wiedzy. "Zapisz ... jako" z menu - tez.
+    if (!risky && !jako && !data.settings.get('askWhereToSave', false)) {
       try { fs.mkdirSync(dir, { recursive: true }); } catch (_) {}
       item.setSavePath(uniquePath(dir, filename));
     } else {
@@ -197,7 +232,7 @@ function attach(session) {
       if (rodzic) {
         const ext = path.extname(filename).replace(/^\./, '');
         const wybor = dialog.showSaveDialogSync(rodzic, {
-          title: 'Zapisz plik',
+          title: jako ? 'Zapisz jako' : 'Zapisz plik',
           defaultPath: path.join(dir, filename),
           filters: ext ? [{ name: ext.toUpperCase(), extensions: [ext] }, { name: 'Wszystkie pliki', extensions: ['*'] }] : []
         });
@@ -334,4 +369,4 @@ async function chooseDir(parentWindow) {
   return res.filePaths[0];
 }
 
-module.exports = { ustawOknoDla, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir, ileAktywnych, oznaczGest };
+module.exports = { ustawOknoDla, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir, ileAktywnych, oznaczGest, zapiszJako };
