@@ -69,6 +69,40 @@ function podpis() {
   return JSON.stringify([cfg.values, cfg.downloadDir, document.documentElement.dataset.motyw]);
 }
 
+/* Przenoszenie zakladek z innych przegladarek (import.wykryj / import.zakladki).
+   Lista wykrywana raz na otwarcie strony; wyniki trzymamy tu, bo strona
+   przerysowuje sie przy kazdej zmianie ustawien. */
+let importy = null;
+let importySzukam = false;
+const importWyniki = {};
+function zakladkiSlownie(n) {
+  if (n === 1) return '1 zakładka';
+  const r10 = n % 10, r100 = n % 100;
+  return `${n} ${r10 >= 2 && r10 <= 4 && (r100 < 12 || r100 > 14) ? 'zakładki' : 'zakładek'}`;
+}
+function kartaImportu() {
+  if (cfg.prywatne) return '';
+  let wiersze;
+  if (importy === null) wiersze = '<div class="row"><div class="body"><div class="sub">Szukam zakładek w innych przeglądarkach...</div></div></div>';
+  else if (!importy.length) wiersze = '<div class="row"><div class="body"><div class="title">Nie znaleziono innych przeglądarek z zakładkami</div><div class="sub">Sprawdzane: Chrome, Edge, Brave, Vivaldi, Opera i Firefox na tym komputerze</div></div></div>';
+  else wiersze = importy.map((z) => {
+    const w = importWyniki[z.id];
+    const opis = w === 'trwa' ? 'Przenoszę...'
+      : w && w.ok ? `Przeniesiono: ${zakladkiSlownie(w.dodane)}${w.pominiete ? ` (pominięto powtórki: ${w.pominiete})` : ''}`
+      : w ? (w.powod || 'Nie udało się przenieść')
+      : `${zakladkiSlownie(z.liczba)}${z.profil ? ` · profil ${z.profil}` : ''}`;
+    return `<div class="row">
+        <div class="body"><div class="title">${esc(z.przegladarka)}</div><div class="sub">${esc(opis)}</div></div>
+        <div class="ctl"><button class="btn" data-import="${esc(z.id)}" ${w === 'trwa' ? 'disabled' : ''}>${w && w.ok ? 'Przenieś ponownie' : 'Przenieś zakładki'}</button></div>
+      </div>`;
+  }).join('');
+  return `<div class="card">
+      ${naglowek('bookmark', 'Zakładki z innej przeglądarki')}
+      ${wiersze}
+      <div class="hint">Pasek zakładek trafi na pasek Nazuny, reszta do menu zakładek, w folderze z nazwą przeglądarki. Powtórki są pomijane, nic nie jest wysyłane do internetu.</div>
+    </div>`;
+}
+
 function render() {
   const v = cfg.values;
   // Przerysowanie (np. zmiana motywu systemu) nie moze skasowac tekstu, ktory ktos wlasnie pisze.
@@ -84,6 +118,7 @@ function render() {
         <div class="ctl"><button class="btn" id="setDefaultBrowser">Ustaw jako domyślną</button></div>
       </div>
     </div>
+    ${kartaImportu()}
     <div class="card">
       ${naglowek('search', 'Wyszukiwanie i start')}
       <div class="row">
@@ -246,6 +281,16 @@ function render() {
   const pp = page.querySelector('#pokazPowitanie');
   if (pp) pp.addEventListener('click', () => api.send('tab.new', { url: 'nazuna://welcome' }));
   page.querySelectorAll('[data-mgla-kolory]').forEach((b) => b.addEventListener('click', () => save({ mglaKolory: b.dataset.mglaKolory })));
+  page.querySelectorAll('[data-import]').forEach((b) => b.addEventListener('click', async () => {
+    const id = b.dataset.import;
+    importWyniki[id] = 'trwa'; render();
+    importWyniki[id] = await api.invoke('import.zakladki', { id }).catch(() => null) || { ok: false };
+    render();
+  }));
+  if (importy === null && !importySzukam && !cfg.prywatne) {
+    importySzukam = true;
+    api.invoke('import.wykryj').catch(() => []).then((l) => { importy = l || []; render(); });
+  }
   document.getElementById('chooseDir').addEventListener('click', async () => {
     const dir = await api.invoke('downloads.chooseDir');
     if (dir) load();

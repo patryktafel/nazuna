@@ -381,6 +381,10 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
 .pw-ochrona small { display: block; font-size: 12.5px; color: var(--text-dim); margin-top: 3px; line-height: 1.45; }
 .pw-ochrona-ikona { width: 38px; height: 38px; flex: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
 .pw-ochrona.wylaczona .pw-ochrona-ikona { background: rgba(var(--tint), .08); color: var(--text-faint); }
+/* Krok "Twoje zakladki": tekst rozpycha sie, przycisk Przenies po prawej. */
+.pw-import-tekst { flex: 1; min-width: 0; }
+.pw-ochrona > .btn { flex: none; }
+.pw-import .pw-ochrona-ikona { background: var(--accent-dim); color: var(--accent-strong); }
 .pw-stopka { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 18px 40px 26px; }
 /* Stopka przyklejona do dolu okna: przy oknie 1280x820 (strona ok. 694 px), a na
    laptopie juz w kroku 1, przycisk Dalej/Zaczynamy byl pod dolna krawedzia.

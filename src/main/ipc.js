@@ -16,6 +16,7 @@ const updater = require('./updater');
 const security = require('./security');
 const diagnostics = require('./diagnostics');
 const privacy = require('./privacy');
+const importZakladek = require('./importzakladek');
 const { SEARCH_ENGINES, APP_NAME, rozstrzygnijMotyw } = require('./constants');
 const W = require('./window');
 
@@ -242,6 +243,9 @@ const handlers = {
   'bookmarks.list': () => data.bookmarkList(),
   'bookmarks.add': (win, p) => { const r = data.addBookmark(p); W.broadcastAll('bookmarks:changed'); return r; },
   'bookmarks.addFolder': (win, p) => { const r = data.addFolder(p.title, p.parent); W.broadcastAll('bookmarks:changed'); return r; },
+  /* Przenoszenie zakladek z innych przegladarek (importzakladek.js) - kreator i Ustawienia. */
+  'import.wykryj': () => importZakladek.wykryj(),
+  'import.zakladki': (win, p) => { const r = importZakladek.importuj(String(p.id || '')); if (r.ok) W.broadcastAll('bookmarks:changed'); return r; },
   'bookmarks.addSeparator': (win, p) => { const r = data.addSeparator(p.parent); W.broadcastAll('bookmarks:changed'); return r; },
   'bookmarks.update': (win, p) => { const r = data.updateBookmark(p.id, p.patch); W.broadcastAll('bookmarks:changed'); return r; },
   'bookmarks.remove': (win, p) => { data.removeBookmark(p.id); W.broadcastAll('bookmarks:changed'); },
