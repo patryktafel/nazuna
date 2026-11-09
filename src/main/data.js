@@ -50,6 +50,7 @@ const DEFAULT_SETTINGS = {
   // Nowy wyglad (claude_nazuna.md sekcja 13). Osobny klucz, zeby zainstalowana
   // starsza Nazuna czytajaca ten sam settings.json dalej rozumiala 'theme'.
   wyglad: 'mgla',           // mgla (Lawendowa mgla) | washi (papier) | klasyczny
+  washiTryb: 'auto',        // Washi: dzien | noc | auto (razem ze sloncem/ksiezycem)
   mglaKolory: 'lawenda',    // lawenda | roz | morski - plamy koloru w tle mgly
   // Jasny/ciemny tryb stron WWW (prefers-color-scheme), niezalezny od wygladu
   // Nazuny. Przycisk slonca/ksiezyca na pasku przelacza jasne <-> ciemne.

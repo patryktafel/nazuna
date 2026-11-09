@@ -8,7 +8,7 @@
     if (s.values && s.values.accent) root.dataset.accent = s.values.accent;
     root.dataset.motyw = s.motyw || 'ciemny';
     root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
-    if (s.values && s.values.wyglad === 'washi' && !s.prywatne) root.dataset.washi = '1'; else delete root.dataset.washi;
+    if (s.values && s.values.wyglad === 'washi' && !s.prywatne) root.dataset.washi = s.washiNoc ? 'noc' : 'dzien'; else delete root.dataset.washi;
     if (s.prywatne) root.dataset.prywatne = '1'; else delete root.dataset.prywatne;
     const info = document.getElementById('prywatneInfo');
     if (info) info.hidden = !s.prywatne;
@@ -168,6 +168,20 @@ const POWITANIA = [
   [22, 24, 'Późno już. Może jeszcze chwilka?'],
   [0, 5, 'Późno już. Może jeszcze chwilka?']
 ];
+/* Washi: dawne japonskie nazwy miesiecy (kalendarz ksiezycowy, dzis uzywane
+   poetycko) i japonskie powitanie wg pory dnia. Widac tylko w Washi (washi.css). */
+const MIESIACE_JP = [
+  ['睦月', 'Mutsuki', 'miesiąc przyjaźni'], ['如月', 'Kisaragi', 'miesiąc ciepłych ubrań'],
+  ['弥生', 'Yayoi', 'miesiąc rozkwitu'], ['卯月', 'Uzuki', 'miesiąc kwiatów deucji'],
+  ['皐月', 'Satsuki', 'miesiąc sadzenia ryżu'], ['水無月', 'Minazuki', 'miesiąc wody'],
+  ['文月', 'Fumizuki', 'miesiąc listów'], ['葉月', 'Hazuki', 'miesiąc liści'],
+  ['長月', 'Nagatsuki', 'miesiąc długich nocy'], ['神無月', 'Kannazuki', 'miesiąc bez bogów'],
+  ['霜月', 'Shimotsuki', 'miesiąc szronu'], ['師走', 'Shiwasu', 'miesiąc pędzących mnichów']
+];
+const POWITANIA_JP = [
+  [5, 10, 'おはよう · ohayō'], [10, 17, 'こんにちは · konnichiwa'],
+  [17, 22, 'こんばんは · konbanwa'], [22, 24, 'おやすみ · oyasumi'], [0, 5, 'おやすみ · oyasumi']
+];
 function odswiezZegar() {
   const teraz = new Date();
   document.getElementById('czas').textContent =
@@ -175,6 +189,10 @@ function odswiezZegar() {
   const h = teraz.getHours();
   const p = POWITANIA.find(([od, do_]) => h >= od && h < do_);
   document.getElementById('powitanie').textContent = p ? p[2] : '';
+  const m = MIESIACE_JP[teraz.getMonth()];
+  document.getElementById('jpMiesiac').textContent = `${m[0]}  ·  ${m[1]}  ·  ${m[2]}`;
+  const pj = POWITANIA_JP.find(([od, do_]) => h >= od && h < do_);
+  document.getElementById('jpPowitanie').textContent = pj ? pj[2] : '';
   // Nastepne odswiezenie rowno z poczatkiem kolejnej minuty.
   setTimeout(odswiezZegar, 60000 - (teraz.getSeconds() * 1000 + teraz.getMilliseconds()) + 50);
 }

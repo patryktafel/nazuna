@@ -47,7 +47,7 @@ const KROKI = [
       return `<div class="pw-etykieta">Krok ${n} · Wybierz wygląd</div>
         <div class="pw-karty trzy">
           ${karta('wyglad:mgla', 'Lawendowa mgła', 'Miękkie kolory, szklany pasek', 'mgla', w === 'mgla')}
-          ${karta('wyglad:washi', 'Washi', 'Jasny japoński papier i czerwień pieczątki', 'washi', w === 'washi')}
+          ${karta('wyglad:washi', 'Washi', 'Japoński ogród sakury, za dnia i nocą', 'washi', w === 'washi')}
           ${karta('wyglad:klasyczny', 'Klasyczny', 'Wygląd sprzed zmiany, jasny albo ciemny', 'klasyczny', w === 'klasyczny')}
         </div>`;
     }
@@ -57,19 +57,19 @@ const KROKI = [
     // Okno prywatne ma zawsze swoje nocne kolory (data-prywatne nadpisuje
     // zestaw tla), wiec obietnica "od razu" tu by nie byla prawdziwa.
     opis: () => (cfg.values.wyglad === 'washi'
-      ? 'Washi ma jeden, papierowy zestaw kolorów. Wybierz, jak mają wyglądać strony internetowe.'
+      ? 'Washi ma dwie pory: jasny papier za dnia i świecącą sakurę nocą. Automatycznie przełącza się razem ze słońcem i księżycem na pasku.'
       : cfg.prywatne && cfg.values.wyglad !== 'klasyczny'
       ? 'Wybierz nastrój. To okno prywatne ma zawsze swoje nocne kolory, więc zmianę zobaczysz w zwykłym oknie.'
       : 'Wybierz nastrój. Zobaczysz go od razu w całej przeglądarce.'),
-    tresc: () => {
+    tresc: (n) => {
       if (cfg.values.wyglad === 'washi') {
-        // Washi ma jeden, papierowy zestaw kolorow - tu wybor wygladu stron.
-        const m = cfg.values.motywStron === 'light' || cfg.values.motywStron === 'dark' ? cfg.values.motywStron : 'system';
-        return `<div class="pw-etykieta">Krok ${n} · Wygląd stron</div>
+        // Washi: dzien (papier), noc (czern + swiecaca sakura) albo automatycznie.
+        const t = cfg.values.washiTryb === 'dzien' || cfg.values.washiTryb === 'noc' ? cfg.values.washiTryb : 'auto';
+        return `<div class="pw-etykieta">Krok ${n} · Pora dnia</div>
           <div class="pw-karty trzy">
-            ${karta('motywStron:system', 'Jak w Windows', 'Strony same wybierają jasny albo ciemny', 'system', m === 'system')}
-            ${karta('motywStron:light', 'Jasne', 'Pasują do papieru', 'jasny', m === 'light')}
-            ${karta('motywStron:dark', 'Ciemne', 'Strony z ciemnym trybem przełączą się same', 'ciemny', m === 'dark')}
+            ${karta('washiTryb:dzien', 'Dzień', 'Kremowy papier i pastelowa sakura', 'washi-dzien', t === 'dzien')}
+            ${karta('washiTryb:noc', 'Noc', 'Głęboka czerń i świecąca sakura', 'washi-noc', t === 'noc')}
+            ${karta('washiTryb:auto', 'Automatycznie', 'Razem ze słońcem i księżycem na pasku', 'washi', t === 'auto')}
           </div>`;
       }
       if (cfg.values.wyglad === 'klasyczny') {

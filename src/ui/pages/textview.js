@@ -30,7 +30,7 @@ function zastosujWyglad(s) {
     root.dataset.motyw = 'mgla';
     root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
     root.dataset.accent = (s.values && s.values.accent) || 'violet';
-    if (s.values && s.values.wyglad === 'washi' && !s.prywatne) root.dataset.washi = '1'; else delete root.dataset.washi;
+    if (s.values && s.values.wyglad === 'washi' && !s.prywatne) root.dataset.washi = s.washiNoc ? 'noc' : 'dzien'; else delete root.dataset.washi;
   } else {
     delete root.dataset.motyw;
     delete root.dataset.mgla;

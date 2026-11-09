@@ -1,12 +1,12 @@
-/* Wyglad "Washi" (japonski papier) - trzeci wyglad Nazuny, 0.1.102.
-   Zbudowany NA Lawendowej mgle: ten sam uklad (zegar, pigulki, karty), tylko
-   papierowe kolory. Dziala, gdy <html> ma data-motyw="mgla" ORAZ data-washi
-   (ustawiane w shell.js, pagekit.js, newtab.js, toast.js, pdf.js, textview.js
-   przy wyglad === 'washi'). W oknie prywatnym data-washi NIE jest ustawiane -
-   okno prywatne zostaje noc + turkus (ZASADA KOLOROW). Akcent staly: czerwien
-   pieczatki (#c8473a); wybor akcentu w Ustawieniach dotyczy mgly i Klasycznego.
-   Reguly maja wieksza wage niz mgla (:root[..][data-washi]), wiec wygrywaja
-   niezaleznie od kolejnosci plikow. */
+/* Wyglad "Washi" - japonski ogrod sakury, DZIEN i NOC (0.1.102).
+   Zbudowany NA Lawendowej mgle (ten sam uklad: zegar, pigulki, karty), tylko inne
+   kolory. Dziala, gdy <html> ma data-motyw="mgla" i data-washi="dzien" albo "noc"
+   (ustawiaja shell.js, pagekit.js, newtab.js, toast.js, pdf.js, textview.js, gdy
+   wyglad === 'washi'; pora z ustawienia washiTryb: dzien | noc | auto = razem ze
+   sloncem/ksiezycem). W oknie prywatnym data-washi NIE jest ustawiane - okno
+   prywatne zostaje noc + turkus (ZASADA KOLOROW). Akcent staly: sakura.
+   Noc ma o jeden atrybut wiecej w selektorze ([data-washi="noc"][data-washi]),
+   wiec wygrywa z regulami dnia. Drzewa: washi-drzewo-dzien.svg / -noc.svg. */
 :root[data-motyw="mgla"][data-washi] {
   --bg:            #f6f1e7;
   --bg-raised:     #fbf8f1;
@@ -38,10 +38,10 @@
   --aurora-opacity-3: .5;
   --glass:      rgba(255, 253, 248, 0.94);
   --glass-soft: rgba(255, 253, 248, 0.80);
-  --accent:        #c8473a;
-  --accent-strong: #a8372c;
-  --accent-dim:    rgba(200, 71, 58, 0.12);
-  --accent-ring:   rgba(200, 71, 58, 0.28);
+  --accent:        #b9506f;
+  --accent-strong: #9e3d5b;
+  --accent-dim:    rgba(214, 112, 146, 0.12);
+  --accent-ring:   rgba(214, 112, 146, 0.28);
   --radius-sm: 8px;
   --radius:    10px;
   --radius-lg: 14px;
@@ -54,11 +54,11 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .36 0 0 0 0 .24 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 :root[data-motyw="mgla"][data-washi] #chrome { background-color: var(--chrome-top); }
-:root[data-motyw="mgla"][data-washi] ::selection { background: rgba(200, 71, 58, .2); color: #26221d; }
+:root[data-motyw="mgla"][data-washi] ::selection { background: rgba(214, 112, 146, .2); color: #26221d; }
 /* naglowki i zegar szeryfowa czcionka jak w konceptach */
 :root[data-motyw="mgla"][data-washi] .nt-czas { font-family: var(--font-display); font-weight: 400; letter-spacing: -2px; color: #26221d; }
 :root[data-motyw="mgla"][data-washi] .nt-powitanie { font-family: var(--font-display); font-style: italic; color: #6b6255; }
-:root[data-motyw="mgla"][data-washi] .nt-logo { color: #a8372c; opacity: 1; }
+:root[data-motyw="mgla"][data-washi] .nt-logo { color: #9e3d5b; opacity: 1; }
 
 /* ---- pasek: papierowe karty i pole adresu (zamiast ciemnego szkla) */
 :root[data-motyw="mgla"][data-washi] #chrome { border-bottom: 1px solid #e3d9c7; box-shadow: 0 8px 22px -20px rgba(80, 60, 30, .6); }
@@ -72,12 +72,12 @@
 :root[data-motyw="mgla"][data-washi] .omnibox:focus-within { background: #fffdf8; }
 :root[data-motyw="mgla"][data-washi] .bm:hover { background: rgba(38, 34, 29, 0.06); }
 :root[data-motyw="mgla"][data-washi] .panel { background: rgba(255, 253, 248, 0.98); border-color: #e3d9c7; }
-:root[data-motyw="mgla"][data-washi] .menu-item:hover, :root[data-motyw="mgla"][data-washi] .menu-item.hover { background: rgba(200, 71, 58, 0.08); }
+:root[data-motyw="mgla"][data-washi] .menu-item:hover, :root[data-motyw="mgla"][data-washi] .menu-item.hover { background: rgba(214, 112, 146, 0.08); }
 
 /* ---- strony nazuna:// : karty jak kartki papieru */
 :root[data-motyw="mgla"][data-washi] .page-head { background: linear-gradient(180deg, rgba(246, 241, 231, .92), rgba(246, 241, 231, .7)); }
 :root[data-motyw="mgla"][data-washi] .page-head h1 .icon,
-:root[data-motyw="mgla"][data-washi] .card > h2 > .ust-ikona { box-shadow: inset 0 0 0 1px rgba(200, 71, 58, .18); }
+:root[data-motyw="mgla"][data-washi] .card > h2 > .ust-ikona { box-shadow: inset 0 0 0 1px rgba(214, 112, 146, .18); }
 :root[data-motyw="mgla"][data-washi] .card {
   background: #fffdf8; border-color: #e3d9c7;
   box-shadow: 0 1px 0 #e3d9c7, 0 18px 40px -30px rgba(80, 60, 30, .45);
@@ -89,7 +89,7 @@
 :root[data-motyw="mgla"][data-washi] .iconbtn:hover { background: rgba(38, 34, 29, 0.06); }
 :root[data-motyw="mgla"][data-washi] .btn { background: #f6f1e7; border-color: #e3d9c7; color: #26221d; }
 :root[data-motyw="mgla"][data-washi] .btn:hover { background: #efe7d9; border-color: #d3c6af; }
-:root[data-motyw="mgla"][data-washi] .btn.primary { background: #c8473a; border-color: #c8473a; color: #fffdf8; }
+:root[data-motyw="mgla"][data-washi] .btn.primary { background: #b9506f; border-color: #b9506f; color: #fffdf8; }
 :root[data-motyw="mgla"][data-washi] .btn.ghost:hover { background: rgba(38, 34, 29, 0.06); }
 :root[data-motyw="mgla"][data-washi] .btn.danger { color: #b3261e; background: rgba(179, 38, 30, .06); border-color: rgba(179, 38, 30, .22); }
 :root[data-motyw="mgla"][data-washi] .field, :root[data-motyw="mgla"][data-washi] select.field,
@@ -111,18 +111,14 @@
 :root[data-motyw="mgla"][data-washi] input[type="url"] { background-color: #f6f1e7 !important; border: 1px solid #e3d9c7 !important; color: #26221d !important; box-shadow: none !important; }
 :root[data-motyw="mgla"][data-washi] .switch .track { background: #e3d9c7; box-shadow: inset 0 0 0 1px #d3c6af; }
 :root[data-motyw="mgla"][data-washi] .switch .thumb { background: #fffdf8; box-shadow: 0 1px 3px rgba(80, 60, 30, .35); }
-:root[data-motyw="mgla"][data-washi] .switch input:checked ~ .track { background: #c8473a; box-shadow: none; }
+:root[data-motyw="mgla"][data-washi] .switch input:checked ~ .track { background: #b9506f; box-shadow: none; }
 :root[data-motyw="mgla"][data-washi] .switch input:checked ~ .thumb { background: #fffdf8; }
-/* kwiat: czerwien pieczatki i tusz */
+/* kwiat w kolorach sakury */
 :root[data-motyw="mgla"][data-washi] .pw-platek.p1, :root[data-motyw="mgla"][data-washi] .pw-platek.p3,
-:root[data-motyw="mgla"][data-washi] .ab-platek.p1, :root[data-motyw="mgla"][data-washi] .ab-platek.p3 { fill: #c8473a; }
+:root[data-motyw="mgla"][data-washi] .ab-platek.p1, :root[data-motyw="mgla"][data-washi] .ab-platek.p3 { fill: #eaa2b6; }
 :root[data-motyw="mgla"][data-washi] .pw-platek.p2, :root[data-motyw="mgla"][data-washi] .pw-platek.p4,
-:root[data-motyw="mgla"][data-washi] .ab-platek.p2, :root[data-motyw="mgla"][data-washi] .ab-platek.p4 { fill: #a8372c; }
+:root[data-motyw="mgla"][data-washi] .ab-platek.p2, :root[data-motyw="mgla"][data-washi] .ab-platek.p4 { fill: #d97a96; }
 
-/* podglad Washi na karcie wyboru w kreatorze (zawsze widoczny) */
-.pw-podglad.washi { background: #f6f1e7; box-shadow: inset 0 0 0 1px #e3d9c7; }
-.pw-podglad.washi i { background: #ece4d6; }
-.pw-podglad.washi i:nth-child(3) { background: radial-gradient(40% 70% at 82% 70%, rgba(200,71,58,.55), transparent 70%), #fffdf8; box-shadow: inset 0 0 0 1px #e3d9c7; }
 
 /* ---- ostrzezenie (warning.html): papierowa kartka z czerwona/bursztynowa obwodka */
 :root[data-motyw="mgla"][data-washi] .err.danger {
@@ -140,7 +136,7 @@
 }
 :root[data-motyw="mgla"][data-washi] .sep { background: #e3d9c7; }
 :root[data-motyw="mgla"][data-washi] .tbtn:hover { background: rgba(38, 34, 29, 0.06); }
-:root[data-motyw="mgla"][data-washi] .tytul-ikona { box-shadow: inset 0 0 0 1px rgba(200, 71, 58, .18); }
+:root[data-motyw="mgla"][data-washi] .tytul-ikona { box-shadow: inset 0 0 0 1px rgba(214, 112, 146, .18); }
 :root[data-motyw="mgla"][data-washi] #code {
   background: #fffdf8; border-color: #e3d9c7;
   box-shadow: 0 1px 0 #e3d9c7, 0 18px 40px -30px rgba(80, 60, 30, .45);
@@ -148,19 +144,114 @@
 :root[data-motyw="mgla"][data-washi] #lines { border-right-color: #eee6d8; }
 :root[data-motyw="mgla"][data-washi] #hasloPole { background: #f6f1e7; border-color: #e3d9c7; color: #26221d; }
 
-/* ---- logo nad zegarem: jasnolawendowy mark.png ginal na papierze - czerwony kwiat pieczatki */
-:root[data-motyw="mgla"][data-washi] body.newtab .nt-logo img {
-  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='73' cy='50' rx='21' ry='14' fill='%23a8372c'/%3E%3Cellipse cx='27' cy='50' rx='21' ry='14' fill='%23a8372c'/%3E%3Cellipse cx='50' cy='27' rx='14' ry='21' fill='%23c8473a'/%3E%3Cellipse cx='50' cy='73' rx='14' ry='21' fill='%23c8473a'/%3E%3Ccircle cx='50' cy='50' r='9' fill='%23fffdf8'/%3E%3C/svg%3E");
-}
 
-
-/* ---- galazka tasznika tuszem + pieczatka w rogu nowej karty (z konceptu Washi).
-   Tylko w szerokim i wysokim oknie - w mniejszym zaslanialaby kafelki. */
+/* ---- nowa karta: logo Nazuny zawsze widoczne + pieczec z kanji 薺 (nazuna) */
+:root[data-motyw="mgla"][data-washi] body.newtab .nt-logo { display: flex !important; flex-direction: row; align-items: center; gap: 12px; opacity: 1; margin-bottom: 6px; order: -1; }
+:root[data-motyw="mgla"][data-washi] body.newtab .nt-logo img { width: 34px; height: 34px; content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='73' cy='50' rx='21' ry='14' fill='%23d97a96'/%3E%3Cellipse cx='27' cy='50' rx='21' ry='14' fill='%23d97a96'/%3E%3Cellipse cx='50' cy='27' rx='14' ry='21' fill='%23eaa2b6'/%3E%3Cellipse cx='50' cy='73' rx='14' ry='21' fill='%23eaa2b6'/%3E%3Ccircle cx='50' cy='50' r='9' fill='%23fffdf8'/%3E%3C/svg%3E"); filter: drop-shadow(0 0 8px rgba(234, 160, 182, .6)); }
+:root[data-motyw="mgla"][data-washi] body.newtab .nt-logo b { font-family: var(--font-display); font-size: 21px; font-weight: 500; letter-spacing: 9px; color: #9e3d5b; }
+:root[data-motyw="mgla"][data-washi] body.newtab .nt-logo::after { content: ""; width: 26px; height: 34px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 52'%3E%3Crect x='1.5' y='1.5' width='37' height='49' rx='5' fill='%23c0506f'/%3E%3Crect x='4.5' y='4.5' width='31' height='43' rx='3' fill='none' stroke='%23fdf4f0' stroke-width='1' opacity='.7'/%3E%3Ctext x='20' y='35' text-anchor='middle' font-family='Yu Mincho, MS Mincho, serif' font-size='26' font-weight='600' fill='%23fdf4f0'%3E%E8%96%BA%3C/text%3E%3C/svg%3E") no-repeat center / contain; transform: rotate(4deg); margin-left: 2px; }
+/* dawna japonska nazwa miesiaca nad zegarem i japonskie powitanie pod polskim (newtab.js) */
+.nt-jp-miesiac, .nt-jp-powitanie { display: none; }
+:root[data-motyw="mgla"][data-washi] .nt-jp-miesiac { display: block; text-align: center; font-size: 12.5px; letter-spacing: 4px; text-transform: uppercase; color: #8a6f75; font-family: "Yu Mincho", var(--font); margin-bottom: 2px; }
+:root[data-motyw="mgla"][data-washi] .nt-jp-powitanie { display: block; margin-top: 8px; text-align: center; font-family: "Yu Mincho", var(--font-display); font-size: 15px; letter-spacing: 3px; color: #8a6f75; }
+:root[data-motyw="mgla"][data-washi] .nt-czas { text-shadow: 0 0 26px rgba(234, 160, 182, .25); }
+/* drzewo sakury w prawym dolnym rogu (washi-drzewo-*.svg); w malym oknie znika */
 :root[data-motyw="mgla"][data-washi] body.newtab::after {
-  content: ""; position: fixed; right: 3.5vw; bottom: 0; z-index: 0;
-  width: 230px; height: 290px; pointer-events: none; opacity: .82;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 380'%3E %3Cg fill='none' stroke='%2326221d' stroke-linecap='round' stroke-linejoin='round'%3E %3Cpath d='M150 370 C150 300 146 240 152 170 C156 120 150 80 154 40' stroke-width='2.2'/%3E %3Cpath d='M151 250 C120 236 98 214 84 186' stroke-width='1.6'/%3E %3Cpath d='M152 200 C182 188 204 168 218 140' stroke-width='1.6'/%3E %3Cpath d='M153 130 C130 118 116 100 108 80' stroke-width='1.4'/%3E %3Cpath d='M84 186 l-14 -6 l6 -12 z M218 140 l14 -4 l-4 -13 z M108 80 l-12 -8 l9 -9 z' stroke-width='1.3'/%3E %3Cpath d='M150 340 C120 330 104 340 90 356 C116 360 136 356 150 340 Z M150 330 C178 316 196 322 212 336 C188 344 168 344 150 330 Z' stroke-width='1.4'/%3E %3Ccircle cx='154' cy='40' r='5' stroke-width='1.4'/%3E%3Ccircle cx='146' cy='52' r='4' stroke-width='1.4'/%3E%3Ccircle cx='162' cy='54' r='4' stroke-width='1.4'/%3E %3C/g%3E %3Crect x='210' y='300' width='50' height='50' rx='8' fill='%23c8473a'/%3E %3Cg transform='translate(235 325) scale(0.38) translate(-50 -50)' fill='%23fffdf8'%3E%3Cellipse cx='50' cy='27' rx='14' ry='21'/%3E%3Cellipse cx='50' cy='73' rx='14' ry='21'/%3E%3Cellipse cx='27' cy='50' rx='21' ry='14'/%3E%3Cellipse cx='73' cy='50' rx='21' ry='14'/%3E%3C/g%3E %3C/svg%3E") no-repeat center bottom / contain;
+  content: ""; position: fixed; right: -50px; bottom: 0; z-index: 0;
+  width: 340px; height: 296px; pointer-events: none;
+  background: url("washi-drzewo-dzien.svg") no-repeat right bottom / contain;
 }
 @media (max-width: 1180px), (max-height: 600px) {
   :root[data-motyw="mgla"][data-washi] body.newtab::after { display: none; }
 }
+
+/* =================================================================== NOC
+   Washi noc (sumi + sakura): mocna czern, swiecaca sakura (uwagi kuzyna:
+   bez jasnych plam i ksiezyca, czern mocniej). */
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] {
+  --bg: #08070a; --bg-raised: #0e0c10; --chrome-top: #0b0a0d; --chrome-bottom: #08070a;
+  --surface: #121014; --surface-2: #19151b; --surface-3: #221c24;
+  --border: rgba(255, 140, 180, 0.08); --border-strong: rgba(255, 140, 180, 0.15);
+  --text: #f6eaf0; --text-dim: #cbb6c1; --text-faint: #8e7884;
+  --danger: #ff7a8a; --ok: #b9d68a; --warn: #f2bf6a; --on-accent: #1a0710; --sel-text: #ffffff;
+  --tint: 255, 200, 220; --sink: 0, 0, 0;
+  --chrome-line: rgba(0, 0, 0, .6); --chrome-glow: rgba(0, 0, 0, .8);
+  --aurora-1: rgba(120, 10, 55, .14); --aurora-2: rgba(0, 0, 0, 0); --aurora-3: rgba(255, 50, 130, .10);
+  --aurora-opacity: .5; --aurora-opacity-3: .4;
+  --glass: rgba(14, 12, 16, .95); --glass-soft: rgba(14, 12, 16, .82);
+  --shadow-float: 0 18px 40px rgba(0, 0, 0, .7); --shadow-panel: 0 22px 50px rgba(0, 0, 0, .8);
+  --accent: #ff6f9f; --accent-strong: #ff9cbe; --accent-dim: rgba(255, 111, 159, .14); --accent-ring: rgba(255, 111, 159, .35);
+  color-scheme: dark;
+}
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] body, :root[data-motyw="mgla"][data-washi="noc"][data-washi] #chrome { background-color: var(--bg); background-image: none; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] #chrome { background-color: var(--chrome-top); border-bottom-color: rgba(255, 140, 180, .06); box-shadow: none; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] ::selection { background: rgba(255, 111, 159, .35); color: #ffffff; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tab:hover { background: rgba(255, 200, 220, .05); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tab.active { background: #1a1519; box-shadow: inset 0 0 0 1px rgba(255, 140, 180, .10); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tabs.przewijane .tab-add { background: var(--chrome-top); box-shadow: -10px 0 10px -4px var(--chrome-top); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .toolbar { background: #100d11; box-shadow: inset 0 0 0 1px rgba(255, 140, 180, .08); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tool:hover, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .bm:hover { background: rgba(255, 200, 220, .06); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .omnibox, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .omnibox:hover, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .omnibox:focus-within { background: #060507; border-color: rgba(255, 140, 180, .10); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .panel { background: rgba(16, 13, 17, .98); border-color: rgba(255, 140, 180, .10); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .menu-item:hover, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .menu-item.hover { background: rgba(255, 111, 159, .10); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .nt-czas { color: #fbeff4; text-shadow: 0 0 28px rgba(255, 80, 140, .25); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .nt-powitanie { color: #cbb6c1; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .nt-jp-miesiac, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .nt-jp-powitanie { color: #a58f9a; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .nt-search, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .nt-search:focus-within { background: #110e12; box-shadow: inset 0 0 0 1px rgba(255, 140, 180, .12), 0 16px 34px -20px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .nt-search input, :root[data-motyw="mgla"][data-washi="noc"][data-washi] input[type="text"], :root[data-motyw="mgla"][data-washi="noc"][data-washi] input[type="search"] { background-color: transparent; color: #f6eaf0; border-color: transparent; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tile .glyph { background: #19151b; box-shadow: inset 0 0 0 1px rgba(255, 140, 180, .10), 0 10px 22px -14px rgba(0, 0, 0, .9); color: #ff6f9f; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tile:hover .glyph { background: #19151b; box-shadow: inset 0 0 0 1px rgba(255, 111, 159, .45), 0 0 22px -6px rgba(255, 80, 140, .5); }
+/* czarne ikony stron (GitHub, Spotify...) znikalyby na czerni - delikatna jasna obwodka */
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tile .glyph img { filter: drop-shadow(0 0 1px rgba(255, 255, 255, .55)) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .nt-licznik:not([hidden]) { background: rgba(255, 140, 180, .05); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .page-head { background: linear-gradient(180deg, rgba(8, 7, 10, .95), rgba(8, 7, 10, .75)); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .page-head h1 .icon, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .card > h2 > .ust-ikona { box-shadow: inset 0 0 0 1px rgba(255, 111, 159, .22); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .card { background: #110e12; border-color: rgba(255, 140, 180, .08); box-shadow: 0 18px 40px -28px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .row, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .list-item { border-bottom-color: rgba(255, 140, 180, .06); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .row.clickable:hover, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .list-item:hover { background: rgba(255, 200, 220, .04); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .iconbtn:hover { background: rgba(255, 200, 220, .07); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .row .sub, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .card .hint { color: #8e7884; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .btn { background: #1a161b; border-color: rgba(255, 140, 180, .14); color: #f6eaf0; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .btn:hover { background: #241e25; border-color: rgba(255, 140, 180, .22); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .btn.primary { background: #ff6f9f; border-color: #ff6f9f; color: #1a0710; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .btn.ghost:hover { background: rgba(255, 200, 220, .07); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .btn.danger { color: #ff9aa6; background: rgba(255, 122, 138, .08); border-color: rgba(255, 122, 138, .25); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .field, :root[data-motyw="mgla"][data-washi="noc"][data-washi] select.field { background-color: #0a090c; border-color: rgba(255, 140, 180, .14); color: #f6eaf0; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] select, :root[data-motyw="mgla"][data-washi="noc"][data-washi] input:not([type]), :root[data-motyw="mgla"][data-washi="noc"][data-washi] input[type="url"] { background-color: #0a090c !important; border: 1px solid rgba(255, 140, 180, .14) !important; color: #f6eaf0 !important; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] select.field { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbb6c1' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>"); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tag { background: rgba(255, 200, 220, .07); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tag.low { color: #ff9aa6; background: rgba(255, 122, 138, .12); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .switch .track { background: #2a2229; box-shadow: none; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .switch .thumb { background: #f6eaf0; box-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .switch input:checked ~ .track { background: #ff6f9f; box-shadow: 0 0 12px -2px rgba(255, 80, 140, .6); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .switch input:checked ~ .thumb { background: #fff4f8; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] body.powitanie { background: radial-gradient(900px 520px at 50% 10%, #1c0b14 0%, var(--bg) 62%); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .pw-platek.p1, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .pw-platek.p3, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .ab-platek.p1, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .ab-platek.p3 { fill: #ff9cbe; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .pw-platek.p2, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .pw-platek.p4, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .ab-platek.p2, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .ab-platek.p4 { fill: #ff5c97; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .pw-srodek, :root[data-motyw="mgla"][data-washi="noc"][data-washi] .ab-srodek { fill: #08070a; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .err.danger { background: linear-gradient(180deg, rgba(var(--ostrz-rgb), 0.10) 0%, transparent 55%), #110e12; box-shadow: 0 28px 60px -32px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .err.danger { --ostrz-rgb: 255, 122, 138; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .err.danger:has(#proceed):not(:has(#details)) { --ostrz-rgb: 242, 191, 106; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] body { --text-faint: #8e7884; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] #toolbar { background: rgba(16, 13, 17, .94); border-color: rgba(255, 140, 180, .10); box-shadow: 0 14px 32px -20px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .sep { background: rgba(255, 140, 180, .12); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tbtn:hover { background: rgba(255, 200, 220, .07); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] .tytul-ikona { box-shadow: inset 0 0 0 1px rgba(255, 111, 159, .22); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] #code { background: #110e12; border-color: rgba(255, 140, 180, .08); box-shadow: 0 18px 40px -28px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] #lines { border-right-color: rgba(255, 140, 180, .08); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] #hasloPole { background: #0a090c; border-color: rgba(255, 140, 180, .14); color: #f6eaf0; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] body.newtab .nt-logo img { content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='73' cy='50' rx='21' ry='14' fill='%23ff5c97'/%3E%3Cellipse cx='27' cy='50' rx='21' ry='14' fill='%23ff5c97'/%3E%3Cellipse cx='50' cy='27' rx='14' ry='21' fill='%23ff9cbe'/%3E%3Cellipse cx='50' cy='73' rx='14' ry='21' fill='%23ff9cbe'/%3E%3Ccircle cx='50' cy='50' r='9' fill='%2308070a'/%3E%3C/svg%3E"); filter: drop-shadow(0 0 10px rgba(255, 80, 140, .55)); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] body.newtab .nt-logo b { color: #ff9cbe; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] body.newtab .nt-logo::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 52'%3E%3Crect x='1.5' y='1.5' width='37' height='49' rx='5' fill='%23e8467f'/%3E%3Crect x='4.5' y='4.5' width='31' height='43' rx='3' fill='none' stroke='%23120509' stroke-width='1' opacity='.7'/%3E%3Ctext x='20' y='35' text-anchor='middle' font-family='Yu Mincho, MS Mincho, serif' font-size='26' font-weight='600' fill='%23120509'%3E%E8%96%BA%3C/text%3E%3C/svg%3E"); }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] body.newtab::after { background-image: url("washi-drzewo-noc.svg"); }
+
+/* podglad Washi na karcie wyboru w kreatorze: pol dnia, pol nocy, sakura */
+.pw-podglad.washi { background: linear-gradient(105deg, #f6f1e7 0 52%, #0b0a0d 52% 100%); box-shadow: inset 0 0 0 1px rgba(128, 110, 100, .25); }
+.pw-podglad.washi i { background: linear-gradient(105deg, #e6dccb 0 52%, #1d171c 52% 100%); }
+.pw-podglad.washi i:nth-child(3) { background: radial-gradient(26% 60% at 30% 70%, rgba(234, 160, 182, .7), transparent 70%), radial-gradient(26% 60% at 80% 66%, rgba(255, 92, 151, .85), transparent 70%), linear-gradient(105deg, #fffdf8 0 52%, #121014 52% 100%); }
+.pw-podglad.washi-dzien { background: #f6f1e7; box-shadow: inset 0 0 0 1px #e3d9c7; }
+.pw-podglad.washi-dzien i { background: #e6dccb; }
+.pw-podglad.washi-dzien i:nth-child(3) { background: radial-gradient(34% 70% at 80% 70%, rgba(234, 160, 182, .8), transparent 70%), #fffdf8; }
+.pw-podglad.washi-noc { background: #0b0a0d; box-shadow: inset 0 0 0 1px rgba(255, 140, 180, .12); }
+.pw-podglad.washi-noc i { background: #1d171c; }
+.pw-podglad.washi-noc i:nth-child(3) { background: radial-gradient(34% 70% at 80% 70%, rgba(255, 92, 151, .9), transparent 70%), #121014; }

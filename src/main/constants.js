@@ -97,7 +97,8 @@ const TLA = {
   ciemny: { okno: '#0e0f13', wewnetrzne: '#0e0f13' },
   jasny:  { okno: '#f5f6fa', wewnetrzne: '#f5f6fa' },
   mgla:   { okno: '#1b1830', wewnetrzne: '#1b1830' },
-  washi:  { okno: '#f6f1e7', wewnetrzne: '#f6f1e7' }
+  washi:  { okno: '#f6f1e7', wewnetrzne: '#f6f1e7' },
+  washiNoc: { okno: '#08070a', wewnetrzne: '#08070a' }
 };
 
 function resourcesDir() {
