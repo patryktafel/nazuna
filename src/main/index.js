@@ -190,6 +190,20 @@ if (!gotLock) {
       W.broadcastAll(channel, payload, payload && payload.prywatne ? (w) => w.isPrivate : null);
     });
 
+    downloads.ustawZamykaniePustejKarty((wc) => {
+      if (!wc || wc.isDestroyed()) return;
+      // Tylko karta otwarta z adresem (link w nowej karcie), ktora nie pokazala
+      // jeszcze zadnej strony: pusta albo z zapasowa nowa karta pod spodem.
+      let ile = 0;
+      try { ile = wc.navigationHistory.length(); } catch (_) {}
+      const url = wc.getURL();
+      if (ile > 1 || (url && url !== 'about:blank' && !url.startsWith('nazuna://newtab'))) return;
+      for (const w of W.allWindows()) {
+        const tab = w.tabs.find((t) => t.wc === wc);
+        if (tab && tab.otwartaZAdresem) { w.closeTab(tab.id); return; }
+      }
+    });
+
     downloads.ustawOknoDla((wc) => {
       const { BrowserWindow } = require('electron');
       const nasze = W.allWindows().find((w) => w.tabs.some((t) => t.wc === wc) || (w._spareTab && w._spareTab.wc === wc));

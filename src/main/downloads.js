@@ -23,6 +23,11 @@ function setBroadcaster(fn) { broadcast = fn; }
    a nawet schowac sie pod oknem przegladarki. */
 let oknoDla = () => null;
 function ustawOknoDla(fn) { oknoDla = fn; }
+/* Karta otwarta tylko po to, zeby cos pobrac (link w nowej karcie, ktory
+   okazal sie plikiem), zostawala pusta. Tak jak Chrome - zamykamy ja.
+   index.js podaje funkcje, ktora zna karty. */
+let zamknijPustaKarte = () => {};
+function ustawZamykaniePustejKarty(fn) { zamknijPustaKarte = fn; }
 
 function defaultDir() {
   const custom = data.settings.get('downloadDir', '');
@@ -197,6 +202,7 @@ function ileAktywnych() { return active.size; }
 function attach(session) {
   oznaczPrzerwanePoRestarcie();
   session.on('will-download', (event, item, webContents) => {
+    setImmediate(() => { try { zamknijPustaKarte(webContents); } catch (_) {} });
     // Ten sam mechanizm co ostrzezenia przy nawigacji (security.js), tylko
     // bez pytania - plik z listy zlosliwych domen po prostu sie nie sciaga,
     // z krotkim powiadomieniem w rogu okna zamiast pelnoekranowego ostrzezenia
@@ -369,4 +375,4 @@ async function chooseDir(parentWindow) {
   return res.filePaths[0];
 }
 
-module.exports = { ustawOknoDla, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir, ileAktywnych, oznaczGest, zapiszJako };
+module.exports = { ustawOknoDla, ustawZamykaniePustejKarty, attach, list, control, clearFinished, setBroadcaster, defaultDir, chooseDir, ileAktywnych, oznaczGest, zapiszJako };

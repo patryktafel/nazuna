@@ -243,12 +243,14 @@ function podmienNaPodglad(details, ses) {
   // Podglad pobiera plik jeszcze raz, zwyklym GET-em. Odpowiedz na wyslany
   // formularz (POST) dostalby wtedy inna, albo zadna.
   if (details.method && details.method !== 'GET') return false;
-  // Strona sama poprosila o pobranie (Content-Disposition: attachment) - to
-  // jej swiadoma decyzja, ze plik ma trafic na dysk, a nie do podgladu.
-  // Chrome i Firefox tak samo respektuja ten naglowek nawet dla PDF-ow.
-  if (/attachment/i.test(naglowek(details.responseHeaders, 'content-disposition'))) return false;
   const widok = VIEWER_TYPES[typZasobu(details.responseHeaders)];
   if (!widok) return false;
+  // Strona prosi o pobranie (Content-Disposition: attachment). JSON i tekst
+  // wtedy pobieramy. PDF-y otwieramy jednak w podgladzie, tak jak Firefox (od
+  // wersji 98): np. Discord wysyla kazdy zalacznik jako "attachment" i bez tego
+  // klik w PDF tylko po cichu zapisywal plik, a karta zostawala pusta. Podglad
+  // ma przycisk Pobierz.
+  if (widok !== 'pdf' && /attachment/i.test(naglowek(details.responseHeaders, 'content-disposition'))) return false;
   const wc = webContents.fromId(details.webContentsId);
   if (!wc || wc.isDestroyed()) return false;
   const cel = `nazuna://${widok}?src=${encodeURIComponent(details.url)}`;

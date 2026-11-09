@@ -1185,6 +1185,10 @@ class AppWindow {
     } else {
       tab = new Tab(this, { url: resolved });
     }
+    // Karta otwarta od razu z adresem (link w nowej karcie) - gdy ten adres
+    // okaze sie plikiem do pobrania, karta zamyka sie sama (index.js,
+    // downloads.ustawZamykaniePustejKarty).
+    tab.otwartaZAdresem = !lazy && resolved !== NEW_TAB;
     if (index === null || index < 0 || index > this.tabs.length) this.tabs.push(tab);
     else this.tabs.splice(index, 0, tab);
     // Karta lazy nie ma jeszcze widoku (patrz konstruktor Tab) - nie ma wiec
