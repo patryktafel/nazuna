@@ -1,7 +1,7 @@
 {
   "name": "nazuna",
   "productName": "Nazuna",
-  "version": "0.1.101",
+  "version": "0.1.102",
   "description": "Nazuna - przegladarka internetowa stawiajaca na prywatnosc i szybkosc",
   "main": "src/main/index.js",
   "author": "Tafel",

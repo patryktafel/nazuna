@@ -1,6 +1,25 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.102 - 10 listopada 2026
+---------------------------
+
+Nowy wyglad Washi i przenoszenie zakladek
+
+- Trzeci wyglad "Washi" - japonski ogrod sakury. Za dnia kremowy papier z
+  pastelowym drzewem sakury, noca gleboka czern ze swiecacym rozowym
+  drzewem. Pora zmienia sie sama razem z przyciskiem slonca i ksiezyca albo
+  na stale (Ustawienia > Wyglad > Pora Washi). Na nowej karcie logo z
+  pieczecia, dawna japonska nazwa miesiaca i japonskie powitanie.
+- Przenoszenie zakladek z Chrome, Edge, Brave, Vivaldi, Opery i Firefoksa:
+  w ekranie powitalnym i w Ustawieniach. Nic nie jest wysylane do internetu.
+- "Zapisz obraz/link/strone jako..." zawsze pokazuje okno wyboru miejsca i
+  nazwy. Obrazki z Google Grafiki dostaja wlasciwe rozszerzenie.
+- PDF-y z Discorda i podobnych stron otwieraja sie w podgladzie zamiast
+  zapisywac sie po cichu. Pusta karta otwarta tylko do pobrania pliku sama
+  sie zamyka.
+- Usuniety wybor koloru akcentu - kazdy wyglad ma swoj staly charakter.
+
 0.1.101 - 8 listopada 2026
 --------------------------
 
