@@ -147,3 +147,8 @@
 }
 :root[data-motyw="mgla"][data-washi] #lines { border-right-color: #eee6d8; }
 :root[data-motyw="mgla"][data-washi] #hasloPole { background: #f6f1e7; border-color: #e3d9c7; color: #26221d; }
+
+/* ---- logo nad zegarem: jasnolawendowy mark.png ginal na papierze - czerwony kwiat pieczatki */
+:root[data-motyw="mgla"][data-washi] body.newtab .nt-logo img {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='73' cy='50' rx='21' ry='14' fill='%23a8372c'/%3E%3Cellipse cx='27' cy='50' rx='21' ry='14' fill='%23a8372c'/%3E%3Cellipse cx='50' cy='27' rx='14' ry='21' fill='%23c8473a'/%3E%3Cellipse cx='50' cy='73' rx='14' ry='21' fill='%23c8473a'/%3E%3Ccircle cx='50' cy='50' r='9' fill='%23fffdf8'/%3E%3C/svg%3E");
+}
