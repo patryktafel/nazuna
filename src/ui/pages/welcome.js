@@ -46,9 +46,9 @@ const KROKI = [
       const w = cfg.values.wyglad === 'klasyczny' || cfg.values.wyglad === 'washi' ? cfg.values.wyglad : 'mgla';
       return `<div class="pw-etykieta">Krok ${n} · Wybierz wygląd</div>
         <div class="pw-karty trzy">
-          ${karta('wyglad:mgla', 'Lawendowa mgła', 'Miękkie kolory, szklany pasek', 'mgla', w === 'mgla')}
-          ${karta('wyglad:washi', 'Washi', 'Japoński ogród sakury, za dnia i nocą', 'washi', w === 'washi')}
-          ${karta('wyglad:klasyczny', 'Klasyczny', 'Wygląd sprzed zmiany, jasny albo ciemny', 'klasyczny', w === 'klasyczny')}
+          ${karta('wyglad:mgla', 'Lawendowa mgła', 'Miękkie kolory, szklany pasek', 'zdjecie mgla', w === 'mgla')}
+          ${karta('wyglad:washi', 'Washi', 'Japoński ogród sakury, za dnia i nocą', 'zdjecie washi', w === 'washi')}
+          ${karta('wyglad:klasyczny', 'Klasyczny', 'Wygląd sprzed zmiany, jasny albo ciemny', 'zdjecie klasyczny', w === 'klasyczny')}
         </div>`;
     }
   },
@@ -67,9 +67,9 @@ const KROKI = [
         const t = cfg.values.washiTryb === 'dzien' || cfg.values.washiTryb === 'noc' ? cfg.values.washiTryb : 'auto';
         return `<div class="pw-etykieta">Krok ${n} · Pora dnia</div>
           <div class="pw-karty trzy">
-            ${karta('washiTryb:dzien', 'Dzień', 'Kremowy papier i pastelowa sakura', 'washi-dzien', t === 'dzien')}
-            ${karta('washiTryb:noc', 'Noc', 'Głęboka czerń i świecąca sakura', 'washi-noc', t === 'noc')}
-            ${karta('washiTryb:auto', 'Automatycznie', 'Razem ze słońcem i księżycem na pasku', 'washi', t === 'auto')}
+            ${karta('washiTryb:dzien', 'Dzień', 'Kremowy papier i pastelowa sakura', 'zdjecie washi-dzien', t === 'dzien')}
+            ${karta('washiTryb:noc', 'Noc', 'Głęboka czerń i świecąca sakura', 'zdjecie washi-noc', t === 'noc')}
+            ${karta('washiTryb:auto', 'Automatycznie', 'Razem ze słońcem i księżycem na pasku', 'zdjecie washi', t === 'auto')}
           </div>`;
       }
       if (cfg.values.wyglad === 'klasyczny') {

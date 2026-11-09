@@ -361,6 +361,15 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
 .pw-podglad.mgla { background: linear-gradient(160deg, #3a3260, #1b1830); }
 .pw-podglad.mgla i { background: rgba(255,255,255,.16); }
 .pw-podglad.mgla i:nth-child(3) { background: radial-gradient(60% 80% at 30% 40%, rgba(169,150,255,.45), transparent), rgba(255,255,255,.06); }
+/* Karty wyboru WYGLADU w kreatorze: prawdziwe miniatury nowej karty (src/ui/podglady,
+   zrzuty z czystego profilu z przykladowymi kafelkami) zamiast abstrakcyjnych paskow. */
+.pw-karta .pw-podglad.zdjecie { height: 140px; padding: 0; background-color: #121419; background-size: cover; background-position: center 35%; box-shadow: inset 0 0 0 1px rgba(128, 128, 140, .25); }
+.pw-karta .pw-podglad.zdjecie i { display: none; }
+.pw-podglad.zdjecie.mgla { background-image: url("podglady/mgla.jpg"); }
+.pw-podglad.zdjecie.klasyczny { background-image: url("podglady/klasyczny.jpg"); }
+.pw-podglad.zdjecie.washi { background-image: url("podglady/washi.jpg"); }
+.pw-podglad.zdjecie.washi-dzien { background-image: url("podglady/washi-dzien.jpg"); }
+.pw-podglad.zdjecie.washi-noc { background-image: url("podglady/washi-noc.jpg"); }
 .pw-podglad.klasyczny, .pw-podglad.ciemny { background: #121419; }
 .pw-podglad.klasyczny i, .pw-podglad.ciemny i { background: #1f222b; }
 .pw-podglad.klasyczny i:nth-child(3), .pw-podglad.ciemny i:nth-child(3) { background: #0d0e12; }
