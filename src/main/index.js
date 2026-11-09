@@ -329,7 +329,7 @@ if (!gotLock) {
        z linku spala w tle, a na wierzchu byl kreator). Kreator czeka w karcie
        obok; nie pokazal sie, wiec kreatorWersja sie nie zapisze i przy
        nastepnym zwyklym starcie wyskoczy jak zwykle. */
-    const WERSJA_KREATORA = 1;
+    const WERSJA_KREATORA = 2; // 2 = 0.1.102 (Washi, przenoszenie zakladek) - kazdy zobaczy kreator raz
     if (!tylkoPrywatne && (data.settings.get('kreatorWersja', 0) < WERSJA_KREATORA || data.settings.get('pokazujPowitanie', false) === true)) {
       // Bez innych kart sam kreator - po "Zaczynamy" ta karta staje sie nowa karta.
       initial = [...initial, 'nazuna://welcome'];

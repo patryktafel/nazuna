@@ -4,7 +4,7 @@
    Kazdy wybor zapisuje sie od razu, wiec cala przegladarka zmienia sie na
    zywo, jeszcze w trakcie kreatora. */
 
-const WERSJA_KREATORA = 1; // to samo co w index.js
+const WERSJA_KREATORA = 2; // to samo co w index.js
 
 let cfg = { values: {} };
 let krok = 0;
