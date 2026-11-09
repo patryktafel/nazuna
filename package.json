@@ -7,7 +7,7 @@
   "author": "Tafel",
   "license": "MIT",
   "scripts": {
-    "start": "electron .",
+    "start": "node tools/start-dev.js",
     "pobierz-silnik": "node tools/pobierz-electron-wv.js",
     "dist": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --win nsis",
     "dist:publish": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --win nsis --publish always",
