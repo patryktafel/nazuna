@@ -84,6 +84,8 @@ function pageBackground(url, prywatne = false) {
 function tloOkna(prywatne = false) {
   const motyw = motywTeraz();
   if (prywatne && motyw === 'mgla') return '#0a0b12';
+  // Washi = uklad mgly z papierowymi kolorami (washi.css).
+  if (motyw === 'mgla' && data.settings.get('wyglad', 'mgla') === 'washi') return TLA.washi.okno;
   return TLA[motyw].okno;
 }
 

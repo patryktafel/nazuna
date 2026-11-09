@@ -843,6 +843,9 @@ function renderToolbar() {
   document.documentElement.dataset.accent = (state.settings && state.settings.accent) || 'violet';
   document.documentElement.dataset.motyw = state.motyw || 'ciemny';
   document.documentElement.dataset.mgla = (state.settings && state.settings.mglaKolory) || 'lawenda';
+  // Washi (washi.css) - nie w oknie prywatnym, ono zostaje noc + turkus.
+  if (state.settings && state.settings.wyglad === 'washi' && !state.isPrivate) document.documentElement.dataset.washi = '1';
+  else delete document.documentElement.dataset.washi;
   {
     const b = $('#motywStron');
     const ikona = state.ciemneStrony ? 'moon' : 'sun';

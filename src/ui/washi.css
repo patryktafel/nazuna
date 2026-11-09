@@ -1,0 +1,149 @@
+/* Wyglad "Washi" (japonski papier) - trzeci wyglad Nazuny, 0.1.102.
+   Zbudowany NA Lawendowej mgle: ten sam uklad (zegar, pigulki, karty), tylko
+   papierowe kolory. Dziala, gdy <html> ma data-motyw="mgla" ORAZ data-washi
+   (ustawiane w shell.js, pagekit.js, newtab.js, toast.js, pdf.js, textview.js
+   przy wyglad === 'washi'). W oknie prywatnym data-washi NIE jest ustawiane -
+   okno prywatne zostaje noc + turkus (ZASADA KOLOROW). Akcent staly: czerwien
+   pieczatki (#c8473a); wybor akcentu w Ustawieniach dotyczy mgly i Klasycznego.
+   Reguly maja wieksza wage niz mgla (:root[..][data-washi]), wiec wygrywaja
+   niezaleznie od kolejnosci plikow. */
+:root[data-motyw="mgla"][data-washi] {
+  --bg:            #f6f1e7;
+  --bg-raised:     #fbf8f1;
+  --chrome-top:    #ece4d6;
+  --chrome-bottom: #f1eadf;
+  --surface:       #fffdf8;
+  --surface-2:     #f3ecdf;
+  --surface-3:     #e9dfcd;
+  --border:        rgba(38, 34, 29, 0.10);
+  --border-strong: rgba(38, 34, 29, 0.18);
+  --text:          #26221d;
+  --text-dim:      #5a5246;
+  --text-faint:    #8a7f6e;
+  --danger:        #b3261e;
+  --ok:            #6b7d2a;
+  --warn:          #a8620c;
+  --on-accent:     #fffdf8;
+  --sel-text:      #26221d;
+  --tint: 38, 34, 29;
+  --sink: 255, 253, 248;
+  --chrome-line:   rgba(120, 95, 60, 0.18);
+  --chrome-glow:   rgba(120, 95, 60, 0.10);
+  --shadow-float:  0 1px 0 #e3d9c7, 0 16px 36px rgba(80, 60, 30, .10);
+  --shadow-panel:  0 1px 0 #e3d9c7, 0 22px 50px rgba(80, 60, 30, .16);
+  --aurora-1:      rgba(232, 214, 186, .55);
+  --aurora-2:      rgba(240, 222, 205, .45);
+  --aurora-3:      rgba(226, 200, 180, .35);
+  --aurora-opacity: .7;
+  --aurora-opacity-3: .5;
+  --glass:      rgba(255, 253, 248, 0.94);
+  --glass-soft: rgba(255, 253, 248, 0.80);
+  --accent:        #c8473a;
+  --accent-strong: #a8372c;
+  --accent-dim:    rgba(200, 71, 58, 0.12);
+  --accent-ring:   rgba(200, 71, 58, 0.28);
+  --radius-sm: 8px;
+  --radius:    10px;
+  --radius-lg: 14px;
+  color-scheme: light;
+}
+/* faktura papieru: drobne wlokna (szum SVG) */
+:root[data-motyw="mgla"][data-washi] body,
+:root[data-motyw="mgla"][data-washi] #chrome {
+  background-color: var(--bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .36 0 0 0 0 .24 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+:root[data-motyw="mgla"][data-washi] #chrome { background-color: var(--chrome-top); }
+:root[data-motyw="mgla"][data-washi] ::selection { background: rgba(200, 71, 58, .2); color: #26221d; }
+/* naglowki i zegar szeryfowa czcionka jak w konceptach */
+:root[data-motyw="mgla"][data-washi] .nt-czas { font-family: var(--font-display); font-weight: 400; letter-spacing: -2px; color: #26221d; }
+:root[data-motyw="mgla"][data-washi] .nt-powitanie { font-family: var(--font-display); font-style: italic; color: #6b6255; }
+:root[data-motyw="mgla"][data-washi] .nt-logo { color: #a8372c; opacity: 1; }
+
+/* ---- pasek: papierowe karty i pole adresu (zamiast ciemnego szkla) */
+:root[data-motyw="mgla"][data-washi] #chrome { border-bottom: 1px solid #e3d9c7; box-shadow: 0 8px 22px -20px rgba(80, 60, 30, .6); }
+:root[data-motyw="mgla"][data-washi] .tab:hover { background: rgba(38, 34, 29, 0.05); }
+:root[data-motyw="mgla"][data-washi] .tab.active { background: #fffdf8; box-shadow: 0 1px 0 #e3d9c7, 0 6px 16px -10px rgba(80, 60, 30, .45); }
+:root[data-motyw="mgla"][data-washi] .tabs.przewijane .tab-add { background: var(--chrome-top); box-shadow: -10px 0 10px -4px var(--chrome-top); }
+:root[data-motyw="mgla"][data-washi] .toolbar { background: rgba(255, 253, 248, 0.6); box-shadow: inset 0 0 0 1px #e3d9c7; }
+:root[data-motyw="mgla"][data-washi] .tool:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-washi] .omnibox { background: #fffdf8; border-color: #e3d9c7; }
+:root[data-motyw="mgla"][data-washi] .omnibox:hover { background: #fffdf8; border-color: #d3c6af; }
+:root[data-motyw="mgla"][data-washi] .omnibox:focus-within { background: #fffdf8; }
+:root[data-motyw="mgla"][data-washi] .bm:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-washi] .panel { background: rgba(255, 253, 248, 0.98); border-color: #e3d9c7; }
+:root[data-motyw="mgla"][data-washi] .menu-item:hover, :root[data-motyw="mgla"][data-washi] .menu-item.hover { background: rgba(200, 71, 58, 0.08); }
+
+/* ---- strony nazuna:// : karty jak kartki papieru */
+:root[data-motyw="mgla"][data-washi] .page-head { background: linear-gradient(180deg, rgba(246, 241, 231, .92), rgba(246, 241, 231, .7)); }
+:root[data-motyw="mgla"][data-washi] .page-head h1 .icon,
+:root[data-motyw="mgla"][data-washi] .card > h2 > .ust-ikona { box-shadow: inset 0 0 0 1px rgba(200, 71, 58, .18); }
+:root[data-motyw="mgla"][data-washi] .card {
+  background: #fffdf8; border-color: #e3d9c7;
+  box-shadow: 0 1px 0 #e3d9c7, 0 18px 40px -30px rgba(80, 60, 30, .45);
+}
+:root[data-motyw="mgla"][data-washi] .row { border-bottom-color: #eee6d8; }
+:root[data-motyw="mgla"][data-washi] .row.clickable:hover,
+:root[data-motyw="mgla"][data-washi] .list-item:hover { background: rgba(38, 34, 29, 0.035); }
+:root[data-motyw="mgla"][data-washi] .list-item { border-bottom-color: #eee6d8; }
+:root[data-motyw="mgla"][data-washi] .iconbtn:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-washi] .btn { background: #f6f1e7; border-color: #e3d9c7; color: #26221d; }
+:root[data-motyw="mgla"][data-washi] .btn:hover { background: #efe7d9; border-color: #d3c6af; }
+:root[data-motyw="mgla"][data-washi] .btn.primary { background: #c8473a; border-color: #c8473a; color: #fffdf8; }
+:root[data-motyw="mgla"][data-washi] .btn.ghost:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-washi] .btn.danger { color: #b3261e; background: rgba(179, 38, 30, .06); border-color: rgba(179, 38, 30, .22); }
+:root[data-motyw="mgla"][data-washi] .field, :root[data-motyw="mgla"][data-washi] select.field,
+:root[data-motyw="mgla"][data-washi] input[type="text"], :root[data-motyw="mgla"][data-washi] input[type="search"] {
+  background-color: #f6f1e7; border-color: #e3d9c7; color: #26221d;
+}
+:root[data-motyw="mgla"][data-washi] select.field {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235a5246' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+}
+:root[data-motyw="mgla"][data-washi] .tag { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-washi] .tag.low { color: #b3261e; background: rgba(179, 38, 30, .08); }
+/* nowa karta: kafelki jak papierowe kartoniki */
+:root[data-motyw="mgla"][data-washi] .tile .glyph { background: #fffdf8; box-shadow: 0 1px 0 #e3d9c7, 0 10px 22px -14px rgba(80, 60, 30, .5); }
+:root[data-motyw="mgla"][data-washi] .tile:hover .glyph { background: #fffdf8; box-shadow: 0 1px 0 #d3c6af, 0 14px 26px -12px rgba(80, 60, 30, .55); }
+/* powitanie */
+:root[data-motyw="mgla"][data-washi] body.powitanie { background: radial-gradient(900px 520px at 50% 14%, #fffdf8 0%, var(--bg) 62%); }
+:root[data-motyw="mgla"][data-washi] .row .sub, :root[data-motyw="mgla"][data-washi] .card .hint { color: #8a7f6e; }
+:root[data-motyw="mgla"][data-washi] select, :root[data-motyw="mgla"][data-washi] input:not([type]),
+:root[data-motyw="mgla"][data-washi] input[type="url"] { background-color: #f6f1e7 !important; border: 1px solid #e3d9c7 !important; color: #26221d !important; box-shadow: none !important; }
+:root[data-motyw="mgla"][data-washi] .switch .track { background: #e3d9c7; box-shadow: inset 0 0 0 1px #d3c6af; }
+:root[data-motyw="mgla"][data-washi] .switch .thumb { background: #fffdf8; box-shadow: 0 1px 3px rgba(80, 60, 30, .35); }
+:root[data-motyw="mgla"][data-washi] .switch input:checked ~ .track { background: #c8473a; box-shadow: none; }
+:root[data-motyw="mgla"][data-washi] .switch input:checked ~ .thumb { background: #fffdf8; }
+/* kwiat: czerwien pieczatki i tusz */
+:root[data-motyw="mgla"][data-washi] .pw-platek.p1, :root[data-motyw="mgla"][data-washi] .pw-platek.p3,
+:root[data-motyw="mgla"][data-washi] .ab-platek.p1, :root[data-motyw="mgla"][data-washi] .ab-platek.p3 { fill: #c8473a; }
+:root[data-motyw="mgla"][data-washi] .pw-platek.p2, :root[data-motyw="mgla"][data-washi] .pw-platek.p4,
+:root[data-motyw="mgla"][data-washi] .ab-platek.p2, :root[data-motyw="mgla"][data-washi] .ab-platek.p4 { fill: #a8372c; }
+
+/* podglad Washi na karcie wyboru w kreatorze (zawsze widoczny) */
+.pw-podglad.washi { background: #f6f1e7; box-shadow: inset 0 0 0 1px #e3d9c7; }
+.pw-podglad.washi i { background: #ece4d6; }
+.pw-podglad.washi i:nth-child(3) { background: radial-gradient(40% 70% at 82% 70%, rgba(200,71,58,.55), transparent 70%), #fffdf8; box-shadow: inset 0 0 0 1px #e3d9c7; }
+
+/* ---- ostrzezenie (warning.html): papierowa kartka z czerwona/bursztynowa obwodka */
+:root[data-motyw="mgla"][data-washi] .err.danger {
+  --ostrz-rgb: 179, 38, 30;
+  background: linear-gradient(180deg, rgba(var(--ostrz-rgb), 0.06) 0%, transparent 55%), #fffdf8;
+  box-shadow: 0 1px 0 #e3d9c7, 0 28px 60px -32px rgba(80, 60, 30, .45);
+}
+:root[data-motyw="mgla"][data-washi] .err.danger:has(#proceed):not(:has(#details)) { --ostrz-rgb: 168, 98, 12; }
+
+/* ---- podglad PDF i tekstu (pdf.html, textview.html): jasny pasek narzedzi */
+:root[data-motyw="mgla"][data-washi] body { --text-faint: #8a7f6e; }
+:root[data-motyw="mgla"][data-washi] #toolbar {
+  background: rgba(255, 253, 248, 0.92); border-color: #e3d9c7;
+  box-shadow: 0 1px 0 #e3d9c7, 0 14px 32px -20px rgba(80, 60, 30, .45);
+}
+:root[data-motyw="mgla"][data-washi] .sep { background: #e3d9c7; }
+:root[data-motyw="mgla"][data-washi] .tbtn:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-washi] .tytul-ikona { box-shadow: inset 0 0 0 1px rgba(200, 71, 58, .18); }
+:root[data-motyw="mgla"][data-washi] #code {
+  background: #fffdf8; border-color: #e3d9c7;
+  box-shadow: 0 1px 0 #e3d9c7, 0 18px 40px -30px rgba(80, 60, 30, .45);
+}
+:root[data-motyw="mgla"][data-washi] #lines { border-right-color: #eee6d8; }
+:root[data-motyw="mgla"][data-washi] #hasloPole { background: #f6f1e7; border-color: #e3d9c7; color: #26221d; }

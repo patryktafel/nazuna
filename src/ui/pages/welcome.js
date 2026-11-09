@@ -35,10 +35,11 @@ const KROKI = [
     tytul: () => powitanieWgPory(),
     opis: 'Trzy małe kroki i Nazuna będzie Twoja. Wszystko da się później zmienić w ustawieniach.',
     tresc: () => {
-      const w = cfg.values.wyglad === 'klasyczny' ? 'klasyczny' : 'mgla';
+      const w = cfg.values.wyglad === 'klasyczny' || cfg.values.wyglad === 'washi' ? cfg.values.wyglad : 'mgla';
       return `<div class="pw-etykieta">Krok 1 · Wybierz wygląd</div>
-        <div class="pw-karty">
-          ${karta('wyglad:mgla', 'Lawendowa mgła', 'Nowy wygląd: miękkie kolory, szklany pasek', 'mgla', w === 'mgla')}
+        <div class="pw-karty trzy">
+          ${karta('wyglad:mgla', 'Lawendowa mgła', 'Miękkie kolory, szklany pasek', 'mgla', w === 'mgla')}
+          ${karta('wyglad:washi', 'Washi', 'Jasny japoński papier i czerwień pieczątki', 'washi', w === 'washi')}
           ${karta('wyglad:klasyczny', 'Klasyczny', 'Wygląd sprzed zmiany, jasny albo ciemny', 'klasyczny', w === 'klasyczny')}
         </div>`;
     }
@@ -47,10 +48,22 @@ const KROKI = [
     tytul: () => 'Dopasuj kolory',
     // Okno prywatne ma zawsze swoje nocne kolory (data-prywatne nadpisuje
     // zestaw tla), wiec obietnica "od razu" tu by nie byla prawdziwa.
-    opis: () => (cfg.prywatne && cfg.values.wyglad !== 'klasyczny'
+    opis: () => (cfg.values.wyglad === 'washi'
+      ? 'Washi ma jeden, papierowy zestaw kolorów. Wybierz, jak mają wyglądać strony internetowe.'
+      : cfg.prywatne && cfg.values.wyglad !== 'klasyczny'
       ? 'Wybierz nastrój. To okno prywatne ma zawsze swoje nocne kolory, więc zmianę zobaczysz w zwykłym oknie.'
       : 'Wybierz nastrój. Zobaczysz go od razu w całej przeglądarce.'),
     tresc: () => {
+      if (cfg.values.wyglad === 'washi') {
+        // Washi ma jeden, papierowy zestaw kolorow - tu wybor wygladu stron.
+        const m = cfg.values.motywStron === 'light' || cfg.values.motywStron === 'dark' ? cfg.values.motywStron : 'system';
+        return `<div class="pw-etykieta">Krok 2 · Wygląd stron</div>
+          <div class="pw-karty trzy">
+            ${karta('motywStron:system', 'Jak w Windows', 'Strony same wybierają jasny albo ciemny', 'system', m === 'system')}
+            ${karta('motywStron:light', 'Jasne', 'Pasują do papieru', 'jasny', m === 'light')}
+            ${karta('motywStron:dark', 'Ciemne', 'Strony z ciemnym trybem przełączą się same', 'ciemny', m === 'dark')}
+          </div>`;
+      }
       if (cfg.values.wyglad === 'klasyczny') {
         const t = cfg.values.theme === 'light' || cfg.values.theme === 'system' ? cfg.values.theme : 'dark';
         return `<div class="pw-etykieta">Krok 2 · Motyw</div>

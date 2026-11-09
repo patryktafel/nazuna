@@ -111,13 +111,14 @@ function render() {
       ${naglowek('flower', 'Wygląd')}
       <div class="row">
         <div class="body"><div class="title">Wygląd przeglądarki</div>
-          <div class="sub">Lawendowa mgła to nowy wygląd Nazuny. Klasyczny to wygląd sprzed zmiany</div></div>
+          <div class="sub">Lawendowa mgła to nowy wygląd Nazuny, Washi to jasny japoński papier. Klasyczny to wygląd sprzed zmiany</div></div>
         <div class="ctl"><select class="field" data-key="wyglad" style="width:170px">
-          <option value="mgla" ${v.wyglad !== 'klasyczny' ? 'selected' : ''}>Lawendowa mgła</option>
+          <option value="mgla" ${v.wyglad !== 'klasyczny' && v.wyglad !== 'washi' ? 'selected' : ''}>Lawendowa mgła</option>
+          <option value="washi" ${v.wyglad === 'washi' ? 'selected' : ''}>Washi</option>
           <option value="klasyczny" ${v.wyglad === 'klasyczny' ? 'selected' : ''}>Klasyczny</option>
         </select></div>
       </div>
-      ${v.wyglad !== 'klasyczny' ? `<div class="row">
+      ${v.wyglad !== 'klasyczny' && v.wyglad !== 'washi' ? `<div class="row">
         <div class="body"><div class="title">Kolory tła</div><div class="sub">Miękkie plamy koloru za paskiem i na nowej karcie</div></div>
         <div class="ctl">${KOLORY_MGLY.map(([id, nazwa, kolor]) => `
           <button class="accent-dot ust-mgla-kolor${(v.mglaKolory || 'lawenda') === id ? ' wybrana' : ''}" data-mgla-kolory="${id}" title="${nazwa}" aria-label="${nazwa}" aria-pressed="${(v.mglaKolory || 'lawenda') === id}" style="--kolor:${kolor}"></button>`).join('')}
@@ -132,7 +133,7 @@ function render() {
           <option value="system" ${v.theme === 'system' ? 'selected' : ''}>Jak w systemie</option>
         </select></div>
       </div>
-      <div class="row">
+      <div class="row" ${v.wyglad === 'washi' ? 'hidden' : ''}>
         <div class="body"><div class="title">Kolor akcentu</div><div class="sub">Wpływa na podświetlenia i aktywne elementy</div></div>
         <div class="ctl">${probkiAkcentow().map(([name, color]) => `
           <button class="accent-dot${v.accent === name ? ' wybrana' : ''}" data-accent="${name}" title="${NAZWY_AKCENTOW_PL[name] || name}" aria-label="${NAZWY_AKCENTOW_PL[name] || name}" aria-pressed="${v.accent === name}" style="--kolor:${color}"></button>`).join('')}

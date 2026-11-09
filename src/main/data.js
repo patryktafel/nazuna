@@ -49,7 +49,7 @@ const DEFAULT_SETTINGS = {
   theme: 'dark',            // dark | light | system (tylko dla wygladu Klasyczny)
   // Nowy wyglad (claude_nazuna.md sekcja 13). Osobny klucz, zeby zainstalowana
   // starsza Nazuna czytajaca ten sam settings.json dalej rozumiala 'theme'.
-  wyglad: 'mgla',           // mgla (Lawendowa mgla) | klasyczny
+  wyglad: 'mgla',           // mgla (Lawendowa mgla) | washi (papier) | klasyczny
   mglaKolory: 'lawenda',    // lawenda | roz | morski - plamy koloru w tle mgly
   // Jasny/ciemny tryb stron WWW (prefers-color-scheme), niezalezny od wygladu
   // Nazuny. Przycisk slonca/ksiezyca na pasku przelacza jasne <-> ciemne.
