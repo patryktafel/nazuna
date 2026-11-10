@@ -59,8 +59,11 @@ function safeFilename(raw) {
   return name.slice(0, 180);
 }
 
+// macOS: obrazy dyskow, instalatory, paczki aplikacji i skrypty AppleScript/Automatora.
+const RISKY_MAC = new Set(['.dmg', '.pkg', '.mpkg', '.app', '.command', '.workflow', '.scpt', '.scptd', '.applescript', '.webloc']);
 function isRisky(filename) {
-  return RISKY.has(path.extname(filename).toLowerCase());
+  const ext = path.extname(filename).toLowerCase();
+  return RISKY.has(ext) || (process.platform === 'darwin' && RISKY_MAC.has(ext));
 }
 
 /* Sciezki, ktore juz komus przydzielilismy w tym uruchomieniu, ale plik dla

@@ -19,7 +19,7 @@ const WLACZONY = '1'.charCodeAt(0);
   try {
     const wire = await getCurrentFuseWire(electron);
     if (wire[FuseV1Options.EnableCookieEncryption] !== WLACZONY) {
-      await flipFuses(electron, { version: FuseVersion.V1, [FuseV1Options.EnableCookieEncryption]: true });
+      await flipFuses(electron, { version: FuseVersion.V1, resetAdHocDarwinSignature: process.platform === 'darwin', [FuseV1Options.EnableCookieEncryption]: true });
       console.log('[start-dev] wlaczono szyfrowanie ciasteczek w Electronie z npm (jak w zainstalowanej Nazunie)');
     }
   } catch (err) {

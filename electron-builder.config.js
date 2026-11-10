@@ -175,6 +175,11 @@ module.exports = {
     hardenedRuntime: false,
     gatekeeperAssess: false,
     artifactName: 'Nazuna-${version}-Mac.${ext}',
+    /* Rejestracja w systemie jako przegladarka (adresy http/https) i program do
+       otwierania stron .html i plikow PDF - bez tego macOS nie pozwala wybrac
+       Nazuny jako domyslnej przegladarki. */
+    protocols: [{ name: 'Web', schemes: ['http', 'https'] }],
+    fileAssociations: [{ ext: ['html', 'htm', 'xhtml'], role: 'Viewer' }, { ext: 'pdf', role: 'Viewer' }],
     extendInfo: {
       NSHumanReadableCopyright: '',
       LSMinimumSystemVersion: '12.0',

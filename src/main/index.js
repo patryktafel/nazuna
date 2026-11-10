@@ -13,40 +13,9 @@ app.setName('Nazuna');
 
 // Wlasny pasek zakladek i przycisk menu zastepuja standardowe menu Electrona -
 // bez tego kazde okno mialoby jeszcze gorny pasek z File/Edit/View po angielsku.
-/* Wyjatek: macOS. Tam skroty edycji (Cmd+C, Cmd+V, Cmd+Z, Cmd+A) w polach
-   tekstowych i na stronach dzialaja tylko przez pozycje menu z rolami, a menu
-   programu stoi na gornym pasku systemu, nie w oknie. Bez roli "close" i bez
-   skrotow kart: Cmd+W, Cmd+T i reszta ida przez handleShortcut w window.js. */
-if (process.platform === 'darwin') {
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
-    { label: 'Nazuna', submenu: [
-      { role: 'about', label: 'O Nazunie' },
-      { type: 'separator' },
-      { role: 'hide', label: 'Ukryj Nazunę' },
-      { role: 'hideOthers', label: 'Ukryj pozostałe' },
-      { role: 'unhide', label: 'Pokaż wszystkie' },
-      { type: 'separator' },
-      { role: 'quit', label: 'Zakończ Nazunę' }
-    ] },
-    { label: 'Edycja', submenu: [
-      { role: 'undo', label: 'Cofnij' },
-      { role: 'redo', label: 'Ponów' },
-      { type: 'separator' },
-      { role: 'cut', label: 'Wytnij' },
-      { role: 'copy', label: 'Kopiuj' },
-      { role: 'paste', label: 'Wklej' },
-      { role: 'pasteAndMatchStyle', label: 'Wklej bez formatowania' },
-      { role: 'selectAll', label: 'Zaznacz wszystko' }
-    ] },
-    { label: 'Okno', submenu: [
-      { role: 'minimize', label: 'Minimalizuj' },
-      { role: 'zoom', label: 'Powiększ okno' },
-      { role: 'togglefullscreen', label: 'Pełny ekran' }
-    ] }
-  ]));
-} else {
-  Menu.setApplicationMenu(null);
-}
+/* macOS: menu programu na gornym pasku systemu (src/main/appMenu.js),
+   instalowane w whenReady. */
+if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
 
 /* Jeden podpis dla calego programu. Electron ma wlasny domyslny User-Agent z
    napisami "Nazuna/x.y" i "Electron/x.y", i wystarczy jeden kanal, ktoremu
@@ -160,6 +129,19 @@ if (!gotLock) {
      Do konca startu tylko zapamietujemy argumenty, a whenReady je obsluzy. */
   let startGotowy = false;
   const czekajaceUruchomienia = [];
+  /* macOS: Finder i system (Nazuna jako domyslna przegladarka, otwieranie
+     pliku .html/.pdf) nie podaja adresu w argv, tylko przez te zdarzenia.
+     Ta sama droga co drugie uruchomienie na Windows. */
+  const zSystemuMac = (event, wartosc) => {
+    event.preventDefault();
+    if (!argToStartUrl(wartosc)) return;
+    const argv = ['Nazuna', wartosc];
+    const katalog = process.cwd();
+    if (!startGotowy) czekajaceUruchomienia.push({ argv, katalog });
+    else obsluzDrugieUruchomienie(argv, katalog);
+  };
+  app.on('open-url', zSystemuMac);
+  app.on('open-file', zSystemuMac);
 
   function obsluzDrugieUruchomienie(argv, katalog) {
     /* Pozycje z menu ikony w pasku zadan (jumplist.js) przy dzialajacej juz
@@ -192,6 +174,7 @@ if (!gotLock) {
   });
 
   app.whenReady().then(async () => {
+    if (process.platform === 'darwin') require('./appMenu').install(W);
     starttrace.znacznik('app.whenReady');
     // Aktualizacje (tylko spakowana wersja dla Windows - patrz updater.js).
     // Tak jak Chrome: sprawdzamy zanim pokaze sie cokolwiek. Jesli jest nowa

@@ -935,6 +935,11 @@ class AppWindow {
       this.scheduleSync(); this.invalidateActiveTab();
     });
     this.win.on('restore', () => this.invalidateActiveTab());
+    // macOS: przesuniecie dwoma palcami po gladziku = wstecz / dalej.
+    this.win.on('swipe', (_event, kierunek) => {
+      if (kierunek === 'right') this.goBack();
+      else if (kierunek === 'left') this.goForward();
+    });
     this.win.on('show', () => this.invalidateActiveTab());
     this.win.on('close', (e) => {
       /* Ostatnie okno, a w tle trwa pobieranie: pytamy, jak Firefox. Po
@@ -1069,15 +1074,17 @@ class AppWindow {
      caly ekran, a pasek chowa sie i wysuwa NAD strone po najechaniu mysza na
      gorna krawedz ekranu (sledzKursorF11). Wczesniej F11 chowalo tylko pasek
      zadan Windows, a pasek Nazuny zostawal. */
+  /* macOS: pelny ekran systemowy (zielona kropka, Ctrl+Cmd+F) zostawia pasek
+     Nazuny widoczny, jak Safari; chowanie paska i sledzenie kursora tylko poza Makiem. */
   trybF11() {
-    return !this.contentFullScreen && !!this.win && !this.win.isDestroyed() && this.win.isFullScreen();
+    return process.platform !== 'darwin' && !this.contentFullScreen && !!this.win && !this.win.isDestroyed() && this.win.isFullScreen();
   }
 
   sledzKursorF11(wlacz) {
     clearInterval(this._f11Timer);
     this._f11Timer = null;
     this.pasekWysuniety = false;
-    if (!wlacz) return;
+    if (!wlacz || process.platform === 'darwin') return;
     this._f11Timer = setInterval(() => {
       if (!this.trybF11()) return;
       let kursor; let b;
@@ -1820,6 +1827,21 @@ class AppWindow {
     const alt = input.alt;
     const key = (input.key || '').toLowerCase();
     const stop = () => { event.preventDefault(); };
+    /* macOS: skroty systemowe i znane z Safari/Chrome na Maca. Cmd+Shift+[ i ]
+       daja w input.key "{" i "}" (klawisz z Shiftem). */
+    if (process.platform === 'darwin') {
+      if (input.meta && input.control && key === 'f') { this.toggleFullScreen(); return stop(); }
+      if (input.control && !input.meta && key === 'tab') { this.cycleTab(shift ? -1 : 1); return stop(); }
+      if (ctrl && !alt && !shift && key === 'q') { app.quit(); return stop(); }
+      if (ctrl && !alt && !shift && key === 'h') return; // systemowe "Ukryj"
+      if (ctrl && !alt && !shift && key === 'y') { this.newTab({ url: 'nazuna://history' }); return stop(); }
+      if (ctrl && !alt && !shift && key === ',') { this.newTab({ url: 'nazuna://settings' }); return stop(); }
+      if (ctrl && shift && key === 'w') { this.win.close(); return stop(); }
+      if (ctrl && !shift && key === '[') { this.goBack(); return stop(); }
+      if (ctrl && !shift && key === ']') { this.goForward(); return stop(); }
+      if (ctrl && (key === '{' || (shift && key === '['))) { this.cycleTab(-1); return stop(); }
+      if (ctrl && (key === '}' || (shift && key === ']'))) { this.cycleTab(1); return stop(); }
+    }
 
     if (key === 'escape') {
       if (fromChrome) {

@@ -165,7 +165,7 @@ function render() {
         <div class="body"><div class="title">Wygląd stron</div>
           <div class="sub">Strony, które mają ciemny tryb, przełączą się same. Szybko zmienisz to też przyciskiem słońca i księżyca na pasku</div></div>
         <div class="ctl"><select class="field" data-key="motywStron" style="width:170px">
-          <option value="system" ${v.motywStron !== 'light' && v.motywStron !== 'dark' ? 'selected' : ''}>Jak w Windows</option>
+          <option value="system" ${v.motywStron !== 'light' && v.motywStron !== 'dark' ? 'selected' : ''}>${window.nazuna && window.nazuna.platform === 'darwin' ? 'Jak w macOS' : 'Jak w Windows'}</option>
           <option value="light" ${v.motywStron === 'light' ? 'selected' : ''}>Jasne</option>
           <option value="dark" ${v.motywStron === 'dark' ? 'selected' : ''}>Ciemne</option>
         </select></div>
@@ -346,6 +346,7 @@ async function refreshTabSleepInfo() {
   node.textContent = `${st.sleeping} z ${st.total} otwartych kart śpi teraz w tle. Obecny próg bezczynności: ${progMin} min (wolnej pamięci w systemie: ${wolnegoProc}%).`;
 }
 
+const SYSTEM = window.nazuna && window.nazuna.platform === 'darwin' ? 'macOS' : 'Windows';
 async function refreshDefaultBrowserInfo() {
   const node = document.getElementById('defaultBrowserInfo');
   const card = document.getElementById('defaultBrowserCard');
@@ -353,8 +354,8 @@ async function refreshDefaultBrowserInfo() {
   const st = await api.invoke('app.defaultBrowserStatus').catch(() => null);
   if (!st || !st.obslugiwane) { card.style.display = 'none'; return; }
   node.textContent = st.domyslna
-    ? 'Nazuna jest już domyślną przeglądarką w Windows.'
-    : 'Ten przycisk ustawia Nazunę jako domyślną przeglądarkę w Windows.';
+    ? `Nazuna jest już domyślną przeglądarką w ${SYSTEM}.`
+    : `Ten przycisk ustawia Nazunę jako domyślną przeglądarkę w ${SYSTEM}.`;
 }
 
 async function save(patch) {

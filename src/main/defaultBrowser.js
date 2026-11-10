@@ -1,5 +1,5 @@
 'use strict';
-const { shell } = require('electron');
+const { shell, app } = require('electron');
 const { execFile } = require('child_process');
 
 /* Windows od 8. nie pozwala programom cicho, samodzielnie przejmowac wyboru
@@ -35,12 +35,18 @@ function odczytajProgId(klucz) {
 }
 
 async function status() {
+  // macOS: system sam pyta uzytkownika o zgode przy zmianie domyslnej przegladarki.
+  if (process.platform === 'darwin') return { obslugiwane: app.isPackaged, domyslna: app.isDefaultProtocolClient('http') && app.isDefaultProtocolClient('https') };
   if (process.platform !== 'win32') return { obslugiwane: false, domyslna: false };
   const progId = await odczytajProgId(KLUCZ_HTTP).catch(() => null);
   return { obslugiwane: true, domyslna: progId === PROG_ID };
 }
 
 function otworzUstawienia() {
+  if (process.platform === 'darwin') {
+    if (app.isPackaged) { app.setAsDefaultProtocolClient('http'); app.setAsDefaultProtocolClient('https'); }
+    return;
+  }
   if (process.platform !== 'win32') return;
   shell.openExternal(`ms-settings:defaultapps?registeredAppUser=${encodeURIComponent(NAZWA_REJESTRACJI)}`);
 }
