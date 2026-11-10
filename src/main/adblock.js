@@ -43,8 +43,26 @@ function siteAllowed(hostname) {
 
 /* ------------------------------------------------------------- wczytywanie */
 
+/* Tryb Agresywny: biblioteka wykonuje kazdy scriptlet osobno, ale wszystkie w
+   tym samym zakresie globalnym strony (webContents.executeJavaScript). Scriptlety
+   deklaruja pomocnikow o tych samych nazwach (np. proxyApplyFn), wiec kolejny
+   nadpisywal poprzedniego, a Proxy na Function.prototype.toString zaczynalo
+   wywolywac samo siebie: RangeError przy kazdym toString na kazdej stronie
+   (Netflix: blad NSES-UHX po wyborze profilu, YouTube: brakujace elementy).
+   Kazdy scriptlet dostaje wlasny zakres funkcji; zmiany w API strony, ktore
+   scriptlet ma wprowadzic, dzialaja tak samo. */
+function osobneZakresyScriptletow(engine) {
+  const oryginal = engine.getCosmeticsFilters.bind(engine);
+  engine.getCosmeticsFilters = function (...args) {
+    const wynik = oryginal(...args);
+    if (!wynik || !Array.isArray(wynik.scripts)) return wynik;
+    return { ...wynik, scripts: wynik.scripts.map((skrypt) => `(() => {\n${skrypt}\n})();`) };
+  };
+  return engine;
+}
+
 function deserialise(buffer) {
-  return ElectronBlocker.deserialize(new Uint8Array(buffer));
+  return osobneZakresyScriptletow(ElectronBlocker.deserialize(new Uint8Array(buffer)));
 }
 
 async function load() {
@@ -59,7 +77,7 @@ async function load() {
   }
   if (!blocker) {
     try {
-      blocker = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch);
+      blocker = osobneZakresyScriptletow(await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch));
       saveCache(blocker);
     } catch (err) {
       console.warn('[adblock] brak list filtrów (brak sieci?)', err.message);
@@ -93,7 +111,7 @@ async function refresh(force) {
   if (!force && Date.now() - updatedAt() < REFRESH_AFTER) return { ok: false, reason: 'listy są aktualne' };
   updating = true;
   try {
-    const fresh = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch);
+    const fresh = osobneZakresyScriptletow(await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch));
     saveCache(fresh);
     /* Sesje trybu Agresywnego odpinamy od STAREGO obiektu, zanim go podmienimy -
        odwrotna kolejnosc zostawiala stary wlaczony, a nowy sie nie wlaczal
