@@ -1,4 +1,5 @@
 'use strict';
+const podgladPdf = require('./podgladPdf');
 const path = require('path');
 const fs = require('fs');
 const { app, shell, dialog } = require('electron');
@@ -202,7 +203,6 @@ function ileAktywnych() { return active.size; }
 function attach(session) {
   oznaczPrzerwanePoRestarcie();
   session.on('will-download', (event, item, webContents) => {
-    setImmediate(() => { try { zamknijPustaKarte(webContents); } catch (_) {} });
     // Ten sam mechanizm co ostrzezenia przy nawigacji (security.js), tylko
     // bez pytania - plik z listy zlosliwych domen po prostu sie nie sciaga,
     // z krotkim powiadomieniem w rogu okna zamiast pelnoekranowego ostrzezenia
@@ -215,6 +215,13 @@ function attach(session) {
       broadcast('download-blocked', { filename: safeFilename(item.getFilename()), host });
       return;
     }
+
+    // PDF otwierany w podgladzie (podgladPdf.js): plik tymczasowy, bez listy
+    // pobran i bez zamykania karty - zaraz pokaze sie w niej podglad.
+    if (podgladPdf.przejmij(item, webContents, session, () => {
+      try { webContents.loadURL(`nazuna://pdf?src=${encodeURIComponent(zrodlo)}`); } catch (_) {}
+    })) return;
+    setImmediate(() => { try { zamknijPustaKarte(webContents); } catch (_) {} });
 
     const id = `d${Date.now().toString(36)}${nextId++}`;
     let prywatna = false;

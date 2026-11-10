@@ -1,4 +1,5 @@
 'use strict';
+const podgladPdf = require('./podgladPdf');
 const path = require('path');
 const fs = require('fs');
 const { ipcMain, app, shell, net, clipboard, dialog, session, nativeTheme } = require('electron');
@@ -533,6 +534,14 @@ const handlers = {
       }
     }
     if (!/^https?:\/\//i.test(url)) return { ok: false, error: 'Zły adres' };
+    // PDF juz pobrany przy otwieraniu (podgladPdf.js) - bez drugiego pobierania.
+    const zPliku = podgladPdf.plikDla(url, win.session);
+    if (zPliku) {
+      try {
+        const buf = await fs.promises.readFile(zPliku.sciezka);
+        return { ok: true, status: 200, contentType: 'application/pdf', bytes: new Uint8Array(buf) };
+      } catch (_) {}
+    }
     try {
       const resp = await win.session.fetch(url);
       const bytes = new Uint8Array(await resp.arrayBuffer());
@@ -556,6 +565,16 @@ const handlers = {
     if (url.startsWith('nazuna-local:')) {
       const sciezka = localFiles.pobierzSciezke(url.slice('nazuna-local:'.length));
       if (sciezka) shell.showItemInFolder(sciezka);
+      return;
+    }
+    // PDF juz na dysku (podgladPdf.js): kopiujemy go przez okno "Zapisz jako" -
+    // link jednorazowy nie dalby sie pobrac drugi raz.
+    const zPliku = /^https?:\/\//i.test(url) ? podgladPdf.plikDla(url, win.session) : null;
+    if (zPliku) {
+      const nazwa = String(zPliku.nazwa || 'dokument.pdf').replace(/[\\/:*?"<>|]/g, '_');
+      dialog.showSaveDialog(win.win, { title: 'Zapisz jako', defaultPath: path.join(downloads.defaultDir(), nazwa), filters: [{ name: 'PDF', extensions: ['pdf'] }] })
+        .then((w) => { if (!w.canceled && w.filePath) return fs.promises.copyFile(zPliku.sciezka, w.filePath); })
+        .catch(() => {});
       return;
     }
     // Tak jak viewer.fetch: tylko adresy z sieci (bez file:// i innych schematow).

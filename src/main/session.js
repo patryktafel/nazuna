@@ -1,4 +1,5 @@
 'use strict';
+const podgladPdf = require('./podgladPdf');
 const path = require('path');
 const { app, session, webContents, nativeTheme } = require('electron');
 const { chromeUserAgent, acceptLanguages, PRELOAD_DIR } = require('./constants');
@@ -262,6 +263,20 @@ function podmienNaPodglad(details, ses) {
   // czasem zamiast podgladu pliku zostawala strona bledu.
   doPodgladu.add(wc.id);
   setTimeout(() => doPodgladu.delete(wc.id), 5000);
+  // PDF w zwyklej (trwalej) sesji: bez drugiego pobierania - ta sama odpowiedz
+  // idzie do pliku tymczasowego, a podglad czyta plik (podgladPdf.js). Linki
+  // jednorazowe dzialaja. Okno prywatne nic nie zapisuje na dysk - tam po staremu.
+  let trwala = false;
+  try { trwala = ses.isPersistent(); } catch (_) {}
+  if (widok === 'pdf' && trwala) {
+    podgladPdf.oznacz(details.url, wc.id, ses);
+    const h = {};
+    for (const k of Object.keys(details.responseHeaders || {})) {
+      if (k.toLowerCase() !== 'content-disposition') h[k] = details.responseHeaders[k];
+    }
+    h['Content-Disposition'] = ['attachment'];
+    return { naglowki: h };
+  }
   // Nawigacja startuje dopiero po zakonczeniu tego callbacku (cancel:true) -
   // inaczej wchodzilibysmy w drugie zadanie sieciowe w trakcie obslugi
   // pierwszego.
@@ -363,7 +378,9 @@ function prepare(ses, efemeryczna) {
     // Ta sama zasada co wyzej w onBeforeSendHeaders - callback musi zostac
     // wywolany zawsze, inaczej to zadanie wisi w nieskonczonosc.
     try {
-      if (podmienNaPodglad(details, ses)) return callback({ cancel: true });
+      const podglad = podmienNaPodglad(details, ses);
+      if (podglad && podglad.naglowki) return callback({ responseHeaders: podglad.naglowki });
+      if (podglad) return callback({ cancel: true });
       if (!obceCiasteczka || !obce(ses, details)) return callback({});
       const h = details.responseHeaders;
       if (!h) return callback({});
