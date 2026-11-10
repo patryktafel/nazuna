@@ -1,6 +1,28 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.106 - 10 listopada 2026
+---------------------------
+
+Wersja na Maca (probna) i naprawa trybu Agresywnego
+
+- Bloker w trybie Agresywnym: skrypty blokujace (scriptlety) nadpisywaly sobie
+  nawzajem funkcje pomocnicze, przez co na kazdej stronie zapetlalo sie
+  Function.prototype.toString. Objawy: brakujace elementy na YouTube, blad
+  NSES-UHX na Netflixie po wyborze profilu. Kazdy scriptlet dziala teraz we
+  wlasnym zakresie. Tryb Bezpieczny bez zmian.
+- Paczka dla Macow z procesorem Apple (M1 i nowsze, macOS 12 lub nowszy):
+  Nazuna-wersja-Mac.dmg i .zip w kazdym wydaniu. Bez podpisu Apple: przy
+  pierwszym uruchomieniu Ustawienia systemowe > Prywatnosc i ochrona >
+  Otworz mimo to. Podpis VMP castLabs jak na Windows. Bez automatycznych
+  aktualizacji.
+- macOS: menu programu (Nazuna, Plik, Edycja, Widok, Historia, Zakladki,
+  Okno), skroty Command, gest wstecz i dalej na gladziku, kopiowanie i
+  wklejanie przez menu Edycja, otwieranie linkow z innych programow, Nazuna
+  jako domyslna przegladarka, ostrzezenia przed plikami .dmg, .pkg i .app,
+  przenoszenie zakladek z przegladarek zainstalowanych na Macu, odstep kart
+  od przyciskow okna we wszystkich wygladach.
+
 0.1.105 - 10 listopada 2026
 ---------------------------
 
