@@ -8,7 +8,7 @@ const https = require('https');
 const crypto = require('crypto');
 const { pipeline } = require('stream');
 
-const WERSJA = '43.8.3';
+const WERSJA = '44.10.1';
 
 /* Oczekiwane SHA-256 paczek dla WERSJA (z SHASUMS256.txt wydania castLabs,
    sprawdzone na pobranym pliku). Silnik wchodzi do podpisanego instalatora i
@@ -16,6 +16,11 @@ const WERSJA = '43.8.3';
    lezy w wydaniu na GitHubie. Przy zmianie WERSJA trzeba tu wpisac nowe sumy:
    bez nich skrypt przerwie, a w komunikacie poda sume pobranego pliku. */
 const SUMY = {
+  '44.10.1': {
+    'win32-x64': 'f118d8b611998270acfdc85872d12203035078f07252a761822e9324223302e6',
+    'darwin-arm64': '4eeca8c117a778b4bfaa2ab90c82b62d119b23bff172da382e14aa289c5ddf33',
+    'linux-x64': 'ee726ff1e8db21a1975b827063cb9d1f6fd024122d6ae07da4661451a00daa93'
+  },
   '43.8.3': {
     'win32-x64': '87fb77020834178ab6c6cbb8362b761eb287a21bacd669c5ad0eaa3078cff9e2',
     'darwin-arm64': '814b71cd20982363415c98bcb674ebe7dd38056b78178431777eb60e1c37d114',
