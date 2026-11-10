@@ -314,6 +314,53 @@ if (!internal) {
     }
   } catch (_) {}
 
+  /* --- 3b. klucze WLACZONE: bez okna Windows przy kazdym logowaniu ---------
+     Wiele stron (Google, Onet...) od razu po wejsciu na logowanie pyta "po
+     cichu" o klucz: navigator.credentials.get z mediation:'conditional'. Chrome
+     pokazuje wtedy klucze tylko w podpowiedziach pola logowania. Electron nie ma
+     tych podpowiedzi i od razu otwieral okno "Zabezpieczenia Windows" - takze
+     komus, kto na danej stronie zadnego klucza nie ma (zgloszenie 2026-11-10).
+     Mowimy wiec stronom, ze tryb warunkowy nie jest dostepny (wtedy pokazuja
+     przycisk "Zaloguj kluczem"), a gdyby i tak zapytaly - milczymy, tak jak
+     prawdziwa przegladarka, gdy nikt nie wybierze klucza z podpowiedzi. Zwykle
+     logowanie kluczem (klikniecie przycisku na stronie) dziala bez zmian. */
+  if (!BEZ_KLUCZY) try {
+    if (window.PublicKeyCredential) {
+      PublicKeyCredential.isConditionalMediationAvailable = () => Promise.resolve(false);
+      if (PublicKeyCredential.getClientCapabilities) {
+        const oCaps = PublicKeyCredential.getClientCapabilities.bind(PublicKeyCredential);
+        PublicKeyCredential.getClientCapabilities = () => oCaps().then(
+          (c) => Object.assign({}, c, { conditionalGet: false, conditionalCreate: false }),
+          () => ({ conditionalGet: false, conditionalCreate: false }));
+      }
+    }
+    if (window.CredentialsContainer && navigator.credentials) {
+      const proto = CredentialsContainer.prototype;
+      const oGet = proto.get;
+      const oCreate = proto.create;
+      Object.defineProperty(proto, 'get', {
+        configurable: true, writable: true,
+        value: function get(options) {
+          if (options && options.publicKey && options.mediation === 'conditional') {
+            // Polaczona prosba z haslami - hasla dalej musza dzialac, klucz nie.
+            if (options.password) { const o = Object.assign({}, options); delete o.publicKey; delete o.mediation; return oGet.call(this, o); }
+            return new Promise(() => {});
+          }
+          return oGet.call(this, options);
+        }
+      });
+      // "Ciche" tworzenie klucza po zalogowaniu haslem (conditionalCreate) tez
+      // otwieraloby okno Windows bez pytania - tylko na wyrazne klikniecie.
+      Object.defineProperty(proto, 'create', {
+        configurable: true, writable: true,
+        value: function create(options) {
+          if (options && options.publicKey && options.mediation === 'conditional') return new Promise(() => {});
+          return oCreate.call(this, options);
+        }
+      });
+    }
+  } catch (_) {}
+
   /* --- 4. domykanie odcisku przegladarki (fingerprinting) -----------------
      Trzy klasyczne zrodla, po ktorych skrypty sledzace rozpoznaja jedno
      konkretne urzadzenie miedzy stronami: to, co narysuje canvas, to, co
