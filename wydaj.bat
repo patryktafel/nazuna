@@ -24,12 +24,7 @@ set "GITHUB_TOKEN="
 
 where npm >nul 2>nul
 if errorlevel 1 (
-  echo   BLAD: nie znaleziono Node.js.
-  echo.
-  echo   Zainstaluj go ze strony https://nodejs.org
-  echo   Wybierz duzy zielony przycisk z napisem LTS.
-  echo   Podczas instalacji klikaj Dalej, nic nie zmieniaj.
-  echo   Potem zamknij to okno i uruchom wydaj.bat jeszcze raz.
+  echo   BLAD: nie znaleziono Node.js (https://nodejs.org, wersja LTS).
   echo.
   pause
   exit /b 1
@@ -38,10 +33,8 @@ if errorlevel 1 (
 if not exist "%~dp0github-token.txt" (
   echo   BLAD: brakuje pliku github-token.txt obok wydaj.bat.
   echo.
-  echo   Wklej do niego, w jednej linii, token GitHub z uprawnieniem
-  echo   do zapisu w repozytorium nazuna-updates - ten sam rodzaj
-  echo   tokenu, ktory wczesniej wygenerowales dla mnie. Ten plik
-  echo   nie trafia do repozytorium - zostaje tylko na tym komputerze.
+  echo   Plik ma zawierac (w jednej linii) token GitHub z prawem zapisu
+  echo   w repozytorium nazuna-updates. Jest w .gitignore.
   echo.
   pause
   exit /b 1
@@ -59,7 +52,7 @@ setlocal
 set "CSC_LINK="
 set "CSC_KEY_PASSWORD="
 
-echo   [1 z 3] Pobieram skladniki. Pierwszy raz potrwa kilka minut...
+echo   [1 z 3] npm ci...
 echo.
 call npm ci --no-audit --no-fund
 rem Bez goto: ten plik ma konce linii LF, a wtedy cmd potrafi nie znalezc etykiety
@@ -92,8 +85,7 @@ if not defined GH_TOKEN (
 )
 
 echo.
-echo   [3 z 3] Skladam instalator i publikuje wydanie na GitHubie...
-echo   To potrwa kilka minut, wliczajac wysylke pliku do internetu.
+echo   [3 z 3] electron-builder: instalator + publikacja na GitHubie...
 echo.
 call "%~dp0node_modules\.bin\electron-builder.cmd" --config electron-builder.config.js --win nsis --publish always
 if errorlevel 1 goto blad
@@ -129,10 +121,7 @@ exit /b 1
 set "GH_TOKEN="
 echo.
 echo   ============================================
-echo     Cos poszlo nie tak.
-echo.
-echo     Zrob zrzut ekranu tego okna razem z tekstem
-echo     powyzej i wyslij mi go.
+echo     Budowanie przerwane - szczegoly bledu powyzej.
 echo   ============================================
 echo.
 pause
