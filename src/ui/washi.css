@@ -48,7 +48,10 @@
   color-scheme: light;
 }
 /* faktura papieru: drobne wlokna (szum SVG) */
-:root[data-motyw="mgla"][data-washi] body,
+/* body:not(:has(> #chrome)) - tlo papieru tylko dla stron. Warstwa paska (shell.html,
+   <body> z #chrome) MUSI zostac przezroczysta: przy otwartym menu rozciaga sie na cale
+   okno i pelne tlo zaslanialo strone (blad z 0.1.102: "po kliknieciu menu znika okno"). */
+:root[data-motyw="mgla"][data-washi] body:not(:has(> #chrome)),
 :root[data-motyw="mgla"][data-washi] #chrome {
   background-color: var(--bg);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .36 0 0 0 0 .24 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -183,7 +186,7 @@
   --accent: #ff6f9f; --accent-strong: #ff9cbe; --accent-dim: rgba(255, 111, 159, .14); --accent-ring: rgba(255, 111, 159, .35);
   color-scheme: dark;
 }
-:root[data-motyw="mgla"][data-washi="noc"][data-washi] body, :root[data-motyw="mgla"][data-washi="noc"][data-washi] #chrome { background-color: var(--bg); background-image: none; }
+:root[data-motyw="mgla"][data-washi="noc"][data-washi] body:not(:has(> #chrome)), :root[data-motyw="mgla"][data-washi="noc"][data-washi] #chrome { background-color: var(--bg); background-image: none; }
 :root[data-motyw="mgla"][data-washi="noc"][data-washi] #chrome { background-color: var(--chrome-top); border-bottom-color: rgba(255, 140, 180, .06); box-shadow: none; }
 :root[data-motyw="mgla"][data-washi="noc"][data-washi] ::selection { background: rgba(255, 111, 159, .35); color: #ffffff; }
 :root[data-motyw="mgla"][data-washi="noc"][data-washi] .tab:hover { background: rgba(255, 200, 220, .05); }
