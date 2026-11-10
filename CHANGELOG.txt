@@ -1,6 +1,21 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.103 - 10 listopada 2026
+---------------------------
+
+Nowy silnik i poprawki
+
+- Silnik castLabs 44.10.1 (Chromium 152) - nowsze poprawki bezpieczenstwa.
+- Klucze dostepu (passkeys): okno "Zabezpieczenia Windows" nie wyskakuje juz
+  przy wejsciu na kazda strone logowania. Pojawia sie tylko po kliknieciu na
+  stronie np. "Zaloguj kluczem dostepu".
+- F11 dziala jak w Chrome i Firefoksie: pasek kart i adresu sie chowa, a po
+  najechaniu mysza na gorna krawedz ekranu wysuwa sie nad strone.
+- PDF-y z linkow jednorazowych (faktury, zalaczniki z poczty) otwieraja sie
+  w podgladzie - plik jest pobierany tylko raz.
+- Washi: po otwarciu menu strona nie znika juz pod tlem paska.
+
 0.1.102 - 10 listopada 2026
 ---------------------------
 
