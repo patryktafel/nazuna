@@ -17,7 +17,7 @@
 const { execFileSync } = require('child_process');
 
 function python(args) {
-  for (const exe of ['python', 'py']) {
+  for (const exe of ['python', 'python3', 'py']) {
     try {
       return execFileSync(exe, exe === 'py' ? ['-3', ...args] : args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 180000 });
     } catch (err) {
@@ -28,10 +28,10 @@ function python(args) {
   throw new Error('nie znaleziono Pythona');
 }
 
-exports.default = async function afterSign(context) {
-  if (context.electronPlatformName !== 'win32' && context.electronPlatformName !== 'darwin') return;
+/* Podpis VMP folderu z gotowym programem. Wolane z afterSign (Windows) i z
+   tools/after-pack.js (macOS, przed codesign). */
+function podpiszVmp(dir) {
   if (process.env.NAZUNA_BEZ_VMP) { console.log('  • podpis VMP pominiety (NAZUNA_BEZ_VMP)'); return; }
-  const dir = context.appOutDir;
   try {
     if (process.env.EVS_ACCOUNT_NAME && process.env.EVS_PASSWD) {
       python(['-m', 'castlabs_evs.account', '--no-ask', 'refresh']);
@@ -44,4 +44,11 @@ exports.default = async function afterSign(context) {
     const opis = String((err.stderr || '') + (err.stdout || '') || err.message).trim().split('\n').slice(-3).join(' | ');
     console.warn('  • UWAGA: podpis VMP castLabs NIE powstal:', opis);
   }
+}
+
+exports.podpiszVmp = podpiszVmp;
+
+exports.default = async function afterSign(context) {
+  if (context.electronPlatformName !== 'win32') return;
+  podpiszVmp(context.appOutDir);
 };

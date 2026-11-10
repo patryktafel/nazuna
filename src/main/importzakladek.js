@@ -16,20 +16,34 @@ const os = require('os');
 const path = require('path');
 const data = require('./data');
 
+const MAC = process.platform === 'darwin';
 const LOCAL = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
 const ROAMING = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+/* macOS: wszystkie przegladarki trzymaja profile w ~/Library/Application Support,
+   foldery profili (Default, Profile N) i pliki maja te same nazwy co w Windows. */
+const MAC_AS = path.join(os.homedir(), 'Library', 'Application Support');
 
-const CHROMIUMY = [
+const CHROMIUMY = MAC ? [
+  { klucz: 'chrome', nazwa: 'Chrome', dir: path.join(MAC_AS, 'Google', 'Chrome') },
+  { klucz: 'edge', nazwa: 'Edge', dir: path.join(MAC_AS, 'Microsoft Edge') },
+  { klucz: 'brave', nazwa: 'Brave', dir: path.join(MAC_AS, 'BraveSoftware', 'Brave-Browser') },
+  { klucz: 'vivaldi', nazwa: 'Vivaldi', dir: path.join(MAC_AS, 'Vivaldi') }
+] : [
   { klucz: 'chrome', nazwa: 'Chrome', dir: path.join(LOCAL, 'Google', 'Chrome', 'User Data') },
   { klucz: 'edge', nazwa: 'Edge', dir: path.join(LOCAL, 'Microsoft', 'Edge', 'User Data') },
   { klucz: 'brave', nazwa: 'Brave', dir: path.join(LOCAL, 'BraveSoftware', 'Brave-Browser', 'User Data') },
   { klucz: 'vivaldi', nazwa: 'Vivaldi', dir: path.join(LOCAL, 'Vivaldi', 'User Data') }
 ];
-const OPERY = [
+const OPERY = MAC ? [
+  { klucz: 'opera', nazwa: 'Opera', dir: path.join(MAC_AS, 'com.operasoftware.Opera') },
+  { klucz: 'operagx', nazwa: 'Opera GX', dir: path.join(MAC_AS, 'com.operasoftware.OperaGX') }
+] : [
   { klucz: 'opera', nazwa: 'Opera', dir: path.join(ROAMING, 'Opera Software', 'Opera Stable') },
   { klucz: 'operagx', nazwa: 'Opera GX', dir: path.join(ROAMING, 'Opera Software', 'Opera GX Stable') }
 ];
-const FIREFOX_PROFILE = path.join(ROAMING, 'Mozilla', 'Firefox', 'Profiles');
+const FIREFOX_PROFILE = MAC
+  ? path.join(MAC_AS, 'Firefox', 'Profiles')
+  : path.join(ROAMING, 'Mozilla', 'Firefox', 'Profiles');
 
 function dozwolonyAdres(url) {
   try { const u = new URL(String(url || '')); return u.protocol === 'http:' || u.protocol === 'https:'; } catch (_) { return false; }

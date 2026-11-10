@@ -3,10 +3,16 @@ name: Buduj i publikuj wydanie
 # Odpala sie tylko wtedy, gdy ktos wypcha znacznik w postaci "v0.1.25" -
 # czyli dokladnie wtedy, gdy naprawde chcemy wypuscic nowa wersje. Zwykle
 # commity (bez znacznika) nic nie budujA ani nie publikuja.
+#
+# Recznie (Actions > "Buduj i publikuj wydanie" > Run workflow) buduje sie tylko
+# paczka na Maca i trafia do osobnego wydania probnego "mac-test" w
+# nazuna-updates, oznaczonego jako prerelease. Aktualizacje na Windows i strona
+# z prezentacja czytaja tylko wydanie "latest", wiec go nie widza.
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 # GITHUB_TOKEN tylko do odczytu: to wystarcza do pobrania kodu, a publikacja
 # idzie osobnym tokenem RELEASE_TOKEN (nazuna-updates). Przejeta zaleznosc
@@ -19,6 +25,7 @@ jobs:
     # NSIS (instalator dla Windows) trzeba budowac na prawdziwym Windowsie -
     # electron-builder wywoluje przy tym signtool.exe, ktorego nie ma na
     # Linuksie ani Macu. windows-latest ma go wbudowanego.
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -70,3 +77,65 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.NAZUNA_CERT_PASSWORD }}
           EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
           EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
+
+  # Paczka na Maca (procesor Apple, arm64). Startuje po wydaniu na Windows i
+  # dolacza .dmg/.zip do tego samego wydania. Blad tutaj nie cofa ani nie
+  # blokuje wydania na Windows (osobne zadanie, uruchamiane po nim).
+  mac:
+    needs: build
+    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - name: Pobierz kod
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Ustaw Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      # Silnik z npm nie jest potrzebny (paczka powstaje z electron-wv-mac).
+      - name: Zainstaluj zaleznosci
+        run: npm ci --no-audit --no-fund
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      # Python z Homebrew nie pozwala instalowac pakietow globalnie, wiec
+      # klient castLabs EVS idzie do osobnego srodowiska dopisanego do PATH.
+      - name: Zainstaluj klienta castLabs EVS
+        run: |
+          python3 -m venv "$RUNNER_TEMP/evs"
+          "$RUNNER_TEMP/evs/bin/python" -m pip install --upgrade castlabs-evs
+          echo "$RUNNER_TEMP/evs/bin" >> "$GITHUB_PATH"
+
+      # Fuses, podpis VMP i podpis lokalny (ad-hoc): tools/after-pack.js.
+      - name: Zbuduj paczke na Maca
+        run: npm run dist:mac
+        env:
+          ELECTRON_OVERRIDE_DIST_PATH: ${{ github.workspace }}/electron-wv-mac
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
+          EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
+
+      - name: Dolacz paczke do wydania
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -e
+          REPO=patryktafel/nazuna-updates
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="$GITHUB_REF_NAME"
+          else
+            TAG=mac-test
+            gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 || \
+              gh release create "$TAG" -R "$REPO" --prerelease \
+                --title "Nazuna na Maca (wersja próbna)" \
+                --notes "Wersja próbna dla Maców z procesorem Apple (M1 i nowsze), macOS 12 lub nowszy. Bez podpisu Apple: przy pierwszym uruchomieniu Ustawienia systemowe > Prywatność i ochrona > Otwórz mimo to."
+          fi
+          ls -la dist
+          PLIKI=$(ls dist/*.dmg dist/*.zip dist/latest-mac.yml 2>/dev/null || true)
+          [ -n "$PLIKI" ] || { echo "Brak paczek w dist"; exit 1; }
+          gh release upload "$TAG" -R "$REPO" --clobber $PLIKI

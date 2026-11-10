@@ -49,7 +49,7 @@ module.exports = {
   appId: 'com.tafel.nazuna',
   /* Wydania (instalator + latest.yml) laduja na publicznym repo
      nazuna-updates - tylko stamtad electron-updater w main/updater.js
-     sprawdza nowe wersje. Kod zrodlowy zostaje osobno, w prywatnym repo
+     sprawdza nowe wersje. Kod zrodlowy zostaje osobno, w repo
      nazuna. "private: false" mowi electron-updaterowi, zeby przy
      sprawdzaniu i pobieraniu aktualizacji nie szukal tokenu GitHub -
      repo jest publiczne, wiec nie jest potrzebny. Samo budowanie
@@ -105,22 +105,13 @@ module.exports = {
        kluczem systemowym (Windows DPAPI), a nie trzymane plaskim tekstem -
        ktos z samym dostepem do plikow (bez uprawnien tego konta Windows)
        nie odczyta z nich sesji logowania. */
-  electronFuses: {
-    runAsNode: false,
-    enableNodeOptionsEnvironmentVariable: false,
-    enableNodeCliInspectArguments: false,
-    enableEmbeddedAsarIntegrityValidation: true,
-    onlyLoadAppFromAsar: true,
-    /* true (domyslne Electrona) od 0.1.104 - DECYZJA UZYTKOWNIKA 2026-11-10: podpis
-       VMP castLabs (Netflix, HBO Max, Disney+...) przyjmuje TYLKO ten zestaw fuses
-       (FAQ castLabs): runAsNode false, cookie encryption true, NODE_OPTIONS false,
-       inspect false, asar integrity true, only asar true, V8 snapshot false,
-       grantFileProtocolExtraPrivileges TRUE. Inny = "Binary signature denied".
-       Dotyczy tylko plikow HTML otwieranych z dysku (file://); pasek i strony
-       Nazuny ida przez nazuna://. */
-    grantFileProtocolExtraPrivileges: true,
-    enableCookieEncryption: true
-  },
+  /* Wartosci w tools/fuses.js. grantFileProtocolExtraPrivileges: true od 0.1.104,
+     bo podpis VMP castLabs (Netflix, HBO Max, Disney+...) przyjmuje tylko zestaw
+     fuses z FAQ castLabs. Dotyczy tylko plikow HTML otwieranych z dysku
+     (file://); pasek i strony Nazuny ida przez nazuna://.
+     macOS: fuses ustawia tools/after-pack.js, bo tam musza powstac przed
+     podpisem VMP, a electron-builder ustawia je dopiero po afterPack. */
+  electronFuses: NA_MACA ? undefined : require('./tools/fuses'),
   /* Sprawdzone pomiarem, zeby nikt nie probowal tego ponownie: przy tej
      zawartosci 'normal' i 'maximum' daja plik tej samej wielkosci (okolo
      92 MB), wiec i rozpakowuja sie tak samo dlugo. 'store' rozpakowuje sie
@@ -167,22 +158,35 @@ module.exports = {
     include: 'build/installer.nsh',
     artifactName: 'Nazuna-${version}-Instalator.${ext}'
   },
-  /* Na Macu nie ma czegos takiego jak jeden plik uruchamialny. Odpowiednikiem
-     jest paczka Nazuna.app, ktora pakujemy sami, zeby zachowac dowiazania
-     symboliczne w srodku. Aplikacji nie podpisujemy, bo podpis Apple jest
-     platny, wiec przy pierwszym uruchomieniu system poprosi o potwierdzenie. */
+  /* macOS (Mac z procesorem Apple). Bez platnego certyfikatu Apple: identity null
+     wylacza podpis electron-buildera, a tools/after-pack.js sklada wszystko w
+     wymaganej kolejnosci: fuses, podpis VMP castLabs, podpis lokalny (ad-hoc,
+     codesign -s -). Bez zadnego podpisu macOS na procesorach Apple w ogole nie
+     uruchamia programu. Pierwsze uruchomienie wymaga potwierdzenia w
+     Ustawieniach systemowych > Prywatnosc i ochrona > "Otworz mimo to".
+     .dmg do instalacji przeciagnieciem, .zip pod przyszle aktualizacje.
+     Electron 44 wymaga macOS 12 lub nowszego. */
   mac: {
-    target: [{ target: 'dir', arch: ['arm64'] }],
+    target: [{ target: 'dmg', arch: ['arm64'] }, { target: 'zip', arch: ['arm64'] }],
     icon: 'build/icon.png',
     category: 'public.app-category.productivity',
     darkModeSupport: true,
     identity: null,
     hardenedRuntime: false,
     gatekeeperAssess: false,
+    artifactName: 'Nazuna-${version}-Mac.${ext}',
     extendInfo: {
       NSHumanReadableCopyright: '',
-      LSMinimumSystemVersion: '11.0'
+      LSMinimumSystemVersion: '12.0',
+      /* Bez tych opisow macOS zamyka program, gdy strona poprosi o kamere albo
+         mikrofon (np. wideorozmowa). */
+      NSCameraUsageDescription: 'Strona internetowa prosi o dostęp do kamery.',
+      NSMicrophoneUsageDescription: 'Strona internetowa prosi o dostęp do mikrofonu.',
+      NSBluetoothAlwaysUsageDescription: 'Strona internetowa prosi o dostęp do urządzenia Bluetooth.'
     }
+  },
+  dmg: {
+    artifactName: 'Nazuna-${version}-Mac.${ext}'
   },
   /* Ubuntu i pochodne. Paczka .deb instaluje sie dwuklikiem i sama dodaje
      ikone do menu programow. Nie robimy AppImage, bo na nowszych Ubuntu wymaga

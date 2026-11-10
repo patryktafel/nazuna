@@ -13,7 +13,40 @@ app.setName('Nazuna');
 
 // Wlasny pasek zakladek i przycisk menu zastepuja standardowe menu Electrona -
 // bez tego kazde okno mialoby jeszcze gorny pasek z File/Edit/View po angielsku.
-Menu.setApplicationMenu(null);
+/* Wyjatek: macOS. Tam skroty edycji (Cmd+C, Cmd+V, Cmd+Z, Cmd+A) w polach
+   tekstowych i na stronach dzialaja tylko przez pozycje menu z rolami, a menu
+   programu stoi na gornym pasku systemu, nie w oknie. Bez roli "close" i bez
+   skrotow kart: Cmd+W, Cmd+T i reszta ida przez handleShortcut w window.js. */
+if (process.platform === 'darwin') {
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    { label: 'Nazuna', submenu: [
+      { role: 'about', label: 'O Nazunie' },
+      { type: 'separator' },
+      { role: 'hide', label: 'Ukryj Nazunę' },
+      { role: 'hideOthers', label: 'Ukryj pozostałe' },
+      { role: 'unhide', label: 'Pokaż wszystkie' },
+      { type: 'separator' },
+      { role: 'quit', label: 'Zakończ Nazunę' }
+    ] },
+    { label: 'Edycja', submenu: [
+      { role: 'undo', label: 'Cofnij' },
+      { role: 'redo', label: 'Ponów' },
+      { type: 'separator' },
+      { role: 'cut', label: 'Wytnij' },
+      { role: 'copy', label: 'Kopiuj' },
+      { role: 'paste', label: 'Wklej' },
+      { role: 'pasteAndMatchStyle', label: 'Wklej bez formatowania' },
+      { role: 'selectAll', label: 'Zaznacz wszystko' }
+    ] },
+    { label: 'Okno', submenu: [
+      { role: 'minimize', label: 'Minimalizuj' },
+      { role: 'zoom', label: 'Powiększ okno' },
+      { role: 'togglefullscreen', label: 'Pełny ekran' }
+    ] }
+  ]));
+} else {
+  Menu.setApplicationMenu(null);
+}
 
 /* Jeden podpis dla calego programu. Electron ma wlasny domyslny User-Agent z
    napisami "Nazuna/x.y" i "Electron/x.y", i wystarczy jeden kanal, ktoremu

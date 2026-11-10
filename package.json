@@ -13,7 +13,7 @@
     "dist:publish": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --win nsis --publish always",
     "dist:portable": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --win portable",
     "pobierz-silnik-mac": "node tools/pobierz-electron-wv.js --mac",
-    "dist:mac": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js --mac && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --mac dir",
+    "dist:mac": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js --mac && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --mac --publish never",
     "pobierz-silnik-linux": "node tools/pobierz-electron-wv.js --linux",
     "dist:linux": "node tools/build-adblock.js && node tools/pobierz-electron-wv.js --linux && node tools/generuj-notatki-wydania.js && electron-builder --config electron-builder.config.js --linux deb --x64"
   },
