@@ -47,7 +47,7 @@ const DEFAULT_SETTINGS = {
   extensionsEnabled: true,
   defaultZoom: 1,
   theme: 'dark',            // dark | light | system (tylko dla wygladu Klasyczny)
-  // Nowy wyglad (claude_nazuna.md sekcja 13). Osobny klucz, zeby zainstalowana
+  // Nowy wyglad (Lawendowa mgla, 0.1.99). Osobny klucz, zeby zainstalowana
   // starsza Nazuna czytajaca ten sam settings.json dalej rozumiala 'theme'.
   wyglad: 'mgla',           // mgla (Lawendowa mgla) | washi (papier) | klasyczny
   washiTryb: 'auto',        // Washi: dzien | noc | auto (razem ze sloncem/ksiezycem)

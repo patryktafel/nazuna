@@ -40,7 +40,7 @@ jobs:
 
       # Klient castLabs EVS do podpisu VMP (tools/after-sign.js) - darmowy podpis,
       # ktorego wymagaja serwisy z DRM (Netflix...). Konto: sekrety EVS_ACCOUNT_NAME
-      # i EVS_PASSWD (wpisuje je uzytkownik, nie Claude).
+      # i EVS_PASSWD (wpisuje je wlasciciel konta castLabs).
       - name: Zainstaluj klienta castLabs EVS
         run: python -m pip install --upgrade castlabs-evs
 

@@ -124,7 +124,7 @@
 :root[data-motyw="jasny"][data-accent="koralowy"] { --accent: #bf4633; --accent-strong: #b23f2d; --accent-dim: rgba(191,70,51,.13); --accent-ring: rgba(191,70,51,.26); }
 
 /* ------------------------------------------------- Lawendowa mgla (nowy wyglad)
-   Domyslny wyglad od wersji z nowym wygladem (claude_nazuna.md sekcja 13).
+   Domyslny wyglad od wersji 0.1.99 (Lawendowa mgla).
    Ciemna paleta lekko w strone fioletu, miekkie plamy koloru w tle (--aurora),
    wieksze zaokraglenia, czcionka Nunito. Wybor jasny/ciemny dotyczy tylko
    wygladu Klasyczny, wiec tu jest jedna paleta. */
