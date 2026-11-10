@@ -269,7 +269,10 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 /* macOS rysuje wlasne kropki okna w lewym gornym rogu, wiec nasze przyciski
    z prawej sa tam zbedne, a pasek kart musi zaczynac sie za kropkami. */
 html.mac .wincontrols { display: none; }
-html.mac .tabstrip { padding-left: 82px; }
+/* [data-motyw] podnosi wage reguly ponad ":root[data-motyw=...] .tabstrip" z
+   wygladow (Lawendowa mgla, Washi), ktore inaczej zjadaly miejsce na kropki. */
+html.mac .tabstrip,
+html.mac[data-motyw] .tabstrip { padding-left: 82px; }
 
 /* ----------------------------------------------------------------- toolbar */
 
