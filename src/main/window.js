@@ -912,8 +912,11 @@ class AppWindow {
     this.win.on('moved', () => this._zapamietajPozniej());
     this.win.on('maximize', () => { this._zmaksymalizowane = true; this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
     this.win.on('unmaximize', () => { this._zmaksymalizowane = false; this.layout(); this.scheduleSync(); this._zapamietajPozniej(); });
-    this.win.on('enter-full-screen', () => { this.layout(); this.scheduleSync(); });
+    this.win.on('enter-full-screen', () => { this.sledzKursorF11(true); this.layout(); this.scheduleSync(); });
+    // F11: skrot do paska adresu (Ctrl+L, Ctrl+T) albo klik w pasek - pasek ma byc widoczny.
+    this.shell.on('focus', () => { if (this.trybF11() && !this.pasekWysuniety) { this.pasekWysuniety = true; this.layout(); } });
     this.win.on('leave-full-screen', () => {
+      this.sledzKursorF11(false);
       // Okno wyszlo z pelnego ekranu (np. przez Windows), a strona dalej
       // jest w swoim - wyprowadzamy z niego i strone, inaczej zostaje bez paska.
       if (this.contentFullScreen) this.wyjdzZPelnegoEkranuStrony();
@@ -1054,8 +1057,48 @@ class AppWindow {
 
   /* --------------------------------------------------------------- layout */
 
+  /* Wysokosc paska (karty + adres + zakladki + szukanie), gdy jest widoczny. */
+  wysokoscPaska() {
+    let h = LAYOUT.tabStrip + LAYOUT.toolbar;
+    if (data.settings.get('showBookmarksBar', true)) h += LAYOUT.bookmarksBar;
+    if (this.findOpen) h += LAYOUT.findBar;
+    return h;
+  }
+
+  /* F11 (pelny ekran OKNA, nie filmu): jak w Chrome i Firefoksie strona zajmuje
+     caly ekran, a pasek chowa sie i wysuwa NAD strone po najechaniu mysza na
+     gorna krawedz ekranu (sledzKursorF11). Wczesniej F11 chowalo tylko pasek
+     zadan Windows, a pasek Nazuny zostawal. */
+  trybF11() {
+    return !this.contentFullScreen && !!this.win && !this.win.isDestroyed() && this.win.isFullScreen();
+  }
+
+  sledzKursorF11(wlacz) {
+    clearInterval(this._f11Timer);
+    this._f11Timer = null;
+    this.pasekWysuniety = false;
+    if (!wlacz) return;
+    this._f11Timer = setInterval(() => {
+      if (!this.trybF11()) return;
+      let kursor; let b;
+      try { kursor = screen.getCursorScreenPoint(); b = this.win.getContentBounds(); } catch (_) { return; }
+      const x = kursor.x - b.x; const y = kursor.y - b.y;
+      const wOknie = x >= 0 && x < b.width && y >= 0 && y < b.height;
+      let pokaz = this.pasekWysuniety;
+      if (wOknie && y <= 3) pokaz = true;
+      else if (pokaz) {
+        // Zostaje, dopoki mysz jest nad paskiem, otwarte jest menu/okienko albo
+        // ktos pisze w pasku adresu.
+        let piszeWPasku = false;
+        try { piszeWPasku = this.shell.isFocused(); } catch (_) {}
+        if (!this.expanded && !piszeWPasku && (!wOknie || y > this.wysokoscPaska() + 24)) pokaz = false;
+      }
+      if (pokaz !== this.pasekWysuniety) { this.pasekWysuniety = pokaz; this.layout(); }
+    }, 100);
+  }
+
   chromeHeight() {
-    if (this.contentFullScreen) return 0;
+    if (this.contentFullScreen || this.trybF11()) return 0;
     let h = LAYOUT.tabStrip + LAYOUT.toolbar;
     if (data.settings.get('showBookmarksBar', true)) h += LAYOUT.bookmarksBar;
     if (this.findOpen) h += LAYOUT.findBar;
@@ -1067,7 +1110,9 @@ class AppWindow {
     const { width, height } = this.win.getContentBounds();
     const top = this.chromeHeight();
     const hintVisible = !top && this.fullscreenHintUntil > Date.now();
-    const shellHeight = this.expanded ? height : (top || (hintVisible ? 96 : 0));
+    // F11: pasek wysuniety lezy NAD strona (strona dalej na calym ekranie).
+    const wysuniety = this.trybF11() && this.pasekWysuniety ? this.wysokoscPaska() : 0;
+    const shellHeight = this.expanded ? height : (top || wysuniety || (hintVisible ? 96 : 0));
     this.shellView.setBounds({ x: 0, y: 0, width: shellHeight ? width : 0, height: shellHeight });
     const active = this.activeTab();
     for (const tab of this.tabs) {
@@ -2013,6 +2058,7 @@ class AppWindow {
   }
 
   dispose() {
+    clearInterval(this._f11Timer);
     for (const [k, r] of this._wyborKontaResolvers) { this._wyborKontaResolvers.delete(k); r(null); }
     clearTimeout(this._zapisGranic);
     clearTimeout(this._licznikTimer);
