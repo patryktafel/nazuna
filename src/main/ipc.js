@@ -309,7 +309,7 @@ const handlers = {
         const { response } = await dialog.showMessageBox(win.win, {
           type: 'question', buttons: ['Zainstaluj', 'Anuluj'], defaultId: 1, cancelId: 1, noLink: true,
           title: 'Instalacja rozszerzenia',
-          message: `Zainstalować „${info.nazwa}”${info.wersja ? ' ' + info.wersja : ''}?`,
+          message: `Zainstalować "${info.nazwa}"${info.wersja ? ' ' + info.wersja : ''}?`,
           detail: info.linie && info.linie.length ? 'To rozszerzenie:\n• ' + info.linie.join('\n• ') : 'To rozszerzenie nie prosi o dostęp do stron ani danych.'
         });
         return response === 0;
@@ -334,7 +334,7 @@ const handlers = {
     const { response } = await dialog.showMessageBox(win.win, {
       type: 'question', buttons: ['Usuń', 'Anuluj'], defaultId: 1, cancelId: 1, noLink: true,
       title: 'Usuwanie rozszerzenia',
-      message: `Usunąć „${nazwa}”?`,
+      message: `Usunąć "${nazwa}"?`,
       detail: rec.unpacked ? 'Rozszerzenie zostanie odłączone. Pliki w jego folderze zostaną na dysku.' : ''
     });
     if (response !== 0) return extensions.list();

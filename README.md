@@ -16,7 +16,7 @@ Przeglądarka internetowa dla Windows, zbudowana na silniku Chromium (Electron o
 
 ## Gdzie są dane
 
-`%LOCALAPPDATA%\Nazuna` – zakładki, historia, ustawienia, ciasteczka i rozszerzenia. Folder otworzysz z poziomu przeglądarki: Ustawienia → Zaawansowane.
+`%LOCALAPPDATA%\Nazuna`: zakładki, historia, ustawienia, ciasteczka i rozszerzenia. Folder można otworzyć z poziomu przeglądarki (Ustawienia > Zaawansowane).
 
 Tryb przenośny: pusty plik `portable.txt` obok `Nazuna.exe` przenosi profil do folderu `Nazuna-Data` obok programu.
 
@@ -37,10 +37,10 @@ Wydania budują się automatycznie w GitHub Actions (`.github/workflows/release.
 
 ## Struktura
 
-- `src/main` – proces główny (okna, karty, sesje, bloker, aktualizacje, pobieranie, import zakładek)
-- `src/preload` – mostki do pasków i stron
-- `src/ui` – pasek przeglądarki, strony `nazuna://` i wyglądy
-- `tools` – skrypty budowania (silnik, lista blokera, ikona, podpisy)
-- `build` – zasoby instalatora
+- `src/main` - proces główny (okna, karty, sesje, bloker, aktualizacje, pobieranie, import zakładek)
+- `src/preload` - mostki do pasków i stron
+- `src/ui` - pasek przeglądarki, strony `nazuna://` i wyglądy
+- `tools` - skrypty budowania (silnik, lista blokera, ikona, podpisy)
+- `build` - zasoby instalatora
 
 Interfejs jest po polsku.

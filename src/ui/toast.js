@@ -72,9 +72,9 @@ api.on('update:status', (stan) => {
     if (odrzuconaWersja && odrzuconaWersja === stan.wersja) return;
     // Postep odswiezamy w miejscu, zeby karta nie migala przy kazdym procencie.
     const tytul = slot.querySelector('.update-toast[data-pobieranie] .title');
-    if (tytul) { tytul.textContent = `Pobieranie aktualizacji… ${stan.procent ?? 0}%`; return; }
+    if (tytul) { tytul.textContent = `Pobieranie aktualizacji... ${stan.procent ?? 0}%`; return; }
     const node = pokaz(`
-      <div class="row">${iconSvg('download')}<div class="title">Pobieranie aktualizacji… ${stan.procent ?? 0}%</div>${zamknij}</div>
+      <div class="row">${iconSvg('download')}<div class="title">Pobieranie aktualizacji... ${stan.procent ?? 0}%</div>${zamknij}</div>
       <div class="sub">Nazuna zainstaluje ją sama, gdy pobieranie się skończy.</div>`);
     node.dataset.pobieranie = '1';
   } else if (stan.status === 'pobrana') {

@@ -5,13 +5,13 @@ function opisAktualizacji(stan) {
     case 'niedostepna':
       return { tekst: 'Automatyczne aktualizacje działają tylko w zainstalowanej wersji dla Windows (nie w wersji przenośnej ani w tej kopii).', tag: ['brak', 'low'], przycisk: null };
     case 'sprawdzanie':
-      return { tekst: 'Sprawdzanie dostępności nowej wersji…', tag: ['sprawdzanie', 'warn'], przycisk: null };
+      return { tekst: 'Sprawdzanie dostępności nowej wersji...', tag: ['sprawdzanie', 'warn'], przycisk: null };
     case 'aktualna':
       return { tekst: 'Masz najnowszą wersję Nazuny.', tag: ['aktualna', 'ok'], przycisk: { id: 'updCheck', label: 'Sprawdź ponownie' } };
     case 'dostepna':
       return { tekst: `Dostępna nowa wersja ${esc(stan.wersja || '')} - Nazuna pobiera ją teraz sama, w tle.`, tag: ['dostępna', 'warn'], przycisk: null };
     case 'pobieranie':
-      return { tekst: `Pobieranie aktualizacji… ${stan.procent ?? 0}%`, tag: ['pobieranie', 'warn'], przycisk: null };
+      return { tekst: `Pobieranie aktualizacji... ${stan.procent ?? 0}%`, tag: ['pobieranie', 'warn'], przycisk: null };
     case 'pobrana':
       return { tekst: `Aktualizacja ${esc(stan.wersja || '')} pobrana. Zainstaluje się sama przy najbliższym zamknięciu Nazuny, albo od razu, jeśli klikniesz niżej.`, tag: ['pobrana', 'ok'], przycisk: { id: 'updInstall', label: 'Zainstaluj i uruchom ponownie' } };
     case 'blad':

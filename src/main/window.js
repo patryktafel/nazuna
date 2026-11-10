@@ -1712,7 +1712,7 @@ class AppWindow {
       noLink: true,
       title: 'Otworzyć w innej aplikacji?',
       message: `Ta strona chce otworzyć aplikację obsługującą adresy "${schemat}:".`,
-      detail: target.length > 200 ? `${target.slice(0, 200)}…` : target
+      detail: target.length > 200 ? `${target.slice(0, 200)}...` : target
     }).then((res) => {
       if (res.response === 0) shell.openExternal(target).catch(() => {});
       else this._protokolCiszaDo = Date.now() + 10000;

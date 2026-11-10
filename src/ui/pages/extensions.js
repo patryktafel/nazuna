@@ -22,7 +22,7 @@ function opisDostepu(e) {
     html += '<div class="sub ext-info ext-info-low"><span class="tag low">nie ma go już w sklepie</span> Sklep Chrome nie zna już tego rozszerzenia. Mogło zostać usunięte, także za szkodliwe działanie. Rozważ jego usunięcie.</div>';
   }
   if (e.wymagaZgody) {
-    html += `<div class="sub ext-info ext-info-warn"><span class="tag warn">aktualizacja v${esc(e.wymagaZgody.version)}</span> Nowa wersja chce więcej uprawnień: ${esc((e.wymagaZgody.linie || []).join('; '))}. Kliknij „Zaktualizuj”, jeśli się zgadzasz.</div>`;
+    html += `<div class="sub ext-info ext-info-warn"><span class="tag warn">aktualizacja v${esc(e.wymagaZgody.version)}</span> Nowa wersja chce więcej uprawnień: ${esc((e.wymagaZgody.linie || []).join('; '))}. Kliknij "Zaktualizuj", jeśli się zgadzasz.</div>`;
   } else if (e.oczekujacaWersja) {
     html += `<div class="sub ext-info ext-info-ok"><span class="tag ok">nowa wersja v${esc(e.oczekujacaWersja)}</span> Zostanie wczytana przy następnym uruchomieniu Nazuny.</div>`;
   }
