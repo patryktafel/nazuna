@@ -1,0 +1,315 @@
+NAZUNA — RAPORT ADAPTACJI macOS ARM64
+Data: 2026-11-10
+Repozytorium: .
+
+1. Wynik i granice
+Wprowadzono rzeczywiste zmiany w istniejącej architekturze Electron, wykonano
+pomiary przed/po, automatyczne testy w prawdziwym Electronie oraz interakcje GUI.
+Aplikacja jest lokalnym buildem deweloperskim, a nie notaryzowanym wydaniem.
+Nie deklaruję pełnej zgodności wszystkich serwisów DRM ani pomiaru czasu baterii.
+
+Dokładny wynik .app:
+./dist/mac-arm64/Nazuna.app
+Build po scaleniu zakończony kodem 0. DMG: hdiutil verify VALID.
+ZIP: CRC wszystkich wpisów poprawne, ASAR identyczny z .app.
+Sumy SHA256 i rozmiary: reports/artifact-verification.json.
+Dodatkowe paczki po integracji zmian właściciela: dist/Nazuna-0.1.105-Mac.dmg
+oraz dist/Nazuna-0.1.105-Mac.zip.
+
+2. Środowisko i Git
+Mac16,7, Apple Silicon arm64, 24 GiB RAM, macOS 27.2; lokalny Node 26.0.0.
+Electron npm i castLabs: 44.10.1. Architektura aplikacji: Mach-O arm64.
+Stan początkowy e861ed5, drzewo robocze czyste; nie znaleziono AGENTS.md.
+Na dodatkowe polecenie użytkownika pobrano i włączono fast-forwardem:
+- 3ab8c46: ujednolicenie typografii;
+- 5388aa4: macOS DMG/ZIP, GitHub Actions, VMP/codesign, menu i importer.
+Bazowy commit PR: 5388aa4. Konflikty w pięciu plikach rozwiązano, zachowując
+funkcjonalność upstream i opisane niżej zabezpieczenia. Zmiany przygotowano
+na gałęzi codex/macos-apple-silicon do zgłoszenia przez fork.
+
+3. Przegląd architektury i wykryte problemy
+- index.js uruchamia aplikację, profil i globalne zabezpieczenia.
+- window.js zarządza BaseWindow oraz WebContentsView powłoki, kart i popupów.
+  BaseWindow nie zwalnia automatycznie wszystkich podpiętych webContents.
+- session.js, protocol.js, urls.js, ipc.js i preloady tworzą granicę zaufania.
+  Znaleziono zbyt szeroki dobór uprawnień po hostname, możliwość wskazania
+  odziedziczonego handlera IPC i niejednolite kontrole schematów/nawigacji.
+- data/store/history/bookmarks/sessions utrwalają profil. Przy zamykaniu
+  potrzebne było jawne zakończenie zapisów i flush ciasteczek/storage.
+- Usypianie kart opierało się na zbyt ubogiej kontroli aktywności i wolnym RAM;
+  na macOS pamięć podręczna systemu nie oznacza presji pamięci.
+- Zapasowa karta, dekoracyjne animacje, timery diagnostyki i pełnego ekranu
+  generowały pracę, której można uniknąć bez ograniczenia aktywnej strony.
+- downloads.js zapisuje stan i postęp; częste zdarzenia powodowały dodatkowe
+  komunikaty i operacje zapisu. Brakowało macOS w liście ryzykownych plików.
+- extensions.js obsługuje CRX, uprawnienia, instalację oraz aktualizacje;
+  pobieranie zgłaszało Windows/x64 również na Macu. Poprawiono wybór platformy.
+  Zachowano walidację CRX i istniejące zgody na rozszerzanie uprawnień.
+- updater.js obsługuje instalator Windows. Mac pozostaje aktualizowany ręcznie;
+  dodanie paczki ZIP w CI samo nie uruchamia bezpiecznych autoaktualizacji.
+- CSP wewnętrznych stron dopuszcza własne skrypty, bez unsafe-eval oraz bez
+  inline JavaScript. Istniejące inline style pozostają potrzebne UI.
+  Protokół nazuna ma frame-ancestors 'none', nosniff i kontrolę ścieżek.
+- npm audit przed zmianami: 11 zgłoszeń (5 high, 6 moderate); po zmianach: 0.
+  Jest to stan bazy podatności npm w chwili kontroli, nie dowód braku błędów.
+
+4. Wprowadzone poprawki
+macOS:
+- Pełne polskie menu App/Plik/Edycja/Widok/Historia/Zakładki/Okno.
+- Skróty Command, zachowane systemowe Cmd+H, historia Cmd+Y, ustawienia Cmd+,.
+  Edycja i schowek kierowane do faktycznie aktywnego webContents.
+- Cmd+T/W/N, Ctrl+Tab, Cmd+[ / Cmd+], Ctrl+Cmd+F i opisy przycisków dla Maca.
+- Natywny fullscreen zachowuje pasek; usunięto z tej ścieżki polling kursora.
+- Natywne swipe back/forward, bez wymuszania liczby FPS czy zmiany skalowania.
+- Obsługa open-url i open-file, również zdarzeń przed gotowością aplikacji;
+  lokalny HTML może nawigować względnie, zdalna strona nie przechodzi do file://.
+- Rejestracja http/https, skojarzenia HTML/PDF, opisy kamery/mikrofonu/Bluetooth.
+- Importer używa Application Support; przy scaleniu zachowano równoważną
+  implementację właściciela. Nie importowano prywatnych danych użytkownika.
+- Zamykanie zwalnia widoki, popupy i timery oraz kończy zapisy profilu.
+
+Wydajność i energia:
+- power.js reaguje na baterię, AC, temperaturę, suspend/resume.
+- Sysctl odczytuje presję pamięci podczas istniejącego minutowego ticka;
+  nie powstał nowy szybki timer. Błąd odczytu nie udaje presji krytycznej.
+- Progi nieaktywności: normalnie 20 min, bateria/temperatura lub warning 10 min,
+  critical 3 min. Nie jest to bezwarunkowe zamykanie wszystkich starych kart.
+- tabSafety.js sprawdza wszystkie dostępne ramki, formularze, contenteditable,
+  multimedia, Web Locks, capture, DevTools; błędy lub timeout blokują uśpienie.
+- Chronione są rozmowy WebRTC, pobieranie, wysyłanie i ręczne wyjątki.
+  Ochrona po wykryciu rozmowy/wysyłania trwa do nawigacji (świadomie zachowawcza).
+- Przed uśpieniem ponownie sprawdzane są fokus, aktywność i ustawienia, żeby
+  asynchroniczna kontrola nie zamknęła karty, do której użytkownik właśnie wrócił.
+- Uśpienie zwalnia renderer; wznowienie przywraca historię wstecz/dalej.
+- Zapasowy renderer wyłączany na baterii, przy presji, temperaturze lub ukryciu;
+  nie powstaje przed pierwszym pokazaniem okna. Utrzymano płynność aktywnej karty.
+- Maintenance zatrzymuje się bez okien oraz podczas suspend.
+- Dekoracyjne animacje własnych stron zatrzymują się w trybie oszczędnym;
+  animacje wejścia nie blokują widoczności zawartości.
+- Nowa karta nie aktualizuje zegara/statystyk w ukryciu; rzadsze timery.
+- Diagnostyka zawieszonego ładowania używa timeoutu per nawigacja, nie pollingu.
+- Postęp pobierania jest grupowany co 500 ms dla UI i zapisów.
+
+Bezpieczeństwo i build:
+- Globalny sandbox; contextIsolation=true, nodeIntegration=false,
+  webSecurity=true; zachowana normalna weryfikacja TLS.
+- IPC przyjmuje własne handlery i poprawny obiekt; mostek powłoki wyłącznie
+  w jej głównej ramce. Powłoka nie może nawigować na obcą stronę.
+- URL jest parsowany i normalizowany; zdalna strona nie uzyskuje nazuna/file/
+  devtools/chrome ani javascript przez nawigację lub przekierowanie.
+- Uprawnienia przypisane do scheme+host+port; odrzucane nieznane opaque origins.
+  Poprawnie obsługiwane origins wewnętrzne i rozszerzeń.
+- Systemowy picker screen capture; nie przyznaje automatycznie całego ekranu.
+- Ryzykowne pobrania obejmują formaty wykonywalne/instalacyjne macOS.
+- Aktualizacja lockfile i zależności; precyzyjny override minimatch zachowuje
+  starsze API używane przez narzędzia. npm ls nie wykazuje błędnego drzewa.
+- Dev i build używają tej samej głównej wersji silnika. Na wcześniejszym npm
+  43.8.7 test ładowania timeoutował; na 44.10.1 zestaw integracyjny przechodzi.
+- Fuses: brak RunAsNode/NODE_OPTIONS/inspect, szyfrowanie cookies, integralność
+  ASAR i onlyLoadAppFromAsar; na macOS brak extra privileges dla file://.
+- ARM64 wskazane jawnie, publikacja lokalnego builda wyłączona.
+- Hardened runtime, ad-hoc i oddzielne entitlements dev/release. Dev potrzebuje
+  disable-library-validation dla frameworków; nie wyłączono sandboxu ani TLS.
+- Brak cichego fallbacku na inny silnik podczas publikacji/CI.
+- Zachowano DMG/ZIP i workflow właściciela. CI używa Node 24; macOS nie przekazuje
+  danych EVS, skoro VMP jest celowo pomijany. Workflow nie był uruchamiany zdalnie.
+
+5. DRM i podpis
+Widevine ładuje się (potwierdzenie w logach), ale ten build NIE ma ważnego produkcyjnego podpisu VMP.
+Darmowy castLabs EVS wymaga grantFileProtocolExtraPrivileges=true. Utrzymano
+false na macOS zgodnie z priorytetem bezpieczeństwa z zadania. Developer ID
+nie usuwa tego konfliktu. Nie potwierdzono Netflix/Disney+/innych płatnych usług.
+Windows zachowuje dotychczasowy zestaw fuses i ścieżkę VMP po Authenticode.
+
+Brak tożsamości Developer ID na tym komputerze. Podpis lokalny ad-hoc,
+hardened runtime; brak notaryzacji. codesign --verify --deep --strict
+sprawdza integralność lokalnej aplikacji; nie oznacza akceptacji przez Gatekeeper
+na cudzym komputerze. Nie wyłączano Gatekeepera i nie usuwano kwarantanny.
+
+6. Testy
+- Instalacja npm ci, audyt, rozwiązywanie zależności i build lokalny wykonane.
+- npm test: 17/17, w tym polityka energii, wyścigi usypiania, frame failure,
+  URL, origin uprawnień, store recovery, importer, platforma rozszerzeń, fallback.
+- npm run test:integration po scaleniu: 31/31 (29 + 2 po rzeczywistym restarcie).
+  Zapis wszystkich scenariuszy: integration-1.json i integration-2.json.
+  Prawdziwy Electron, osobne tymczasowe profile, lokalne HTTP/HTTPS fixtures,
+  zewnętrzne HTTPS, odrzucenie samopodpisanego TLS bez jego obchodzenia.
+  Sprawdzono sandbox/no Node, IPC, redirects, shell lockdown, port permissions,
+  MV3 content script bez file access, pobranie pliku, historię, zakładki,
+  klawiaturę, edytory, cichy WebRTC, wyciszone video, sleep/wake, fullscreen,
+  animacje baterii, disposal, prywatną sesję, open-url/open-file i restart.
+- Dodatkowo wcześniej 26 scenariuszy na npm Electron 44.10.1, z szyfrowaniem
+  cookies: integration-dev-*.json. To wcześniejszy podzbiór, nie drugi wynik 31/31.
+- GUI prawdziwego .app: strony HTTPS, nowe/zamykane karty, dwa okna, schowek
+  Cmd+A/C/V, historia, zakładki, ich odtworzenie, native fullscreen i powrót,
+  systemowy dialog drukowania (anulowany), natywne menu i zamknięcie.
+  Dodatkowy test po scaleniu wykrył niedziałający skrót Cmd+Q; dodano jawną
+  obsługę w before-input-event oraz test normalnego shutdown i restartu.
+  Ponowny test GUI potwierdził zakończenie finalnego .app przez Cmd+Q.
+- Szczegóły ostatniego builda, podpisu i zgodności ASAR w plikach raportowych.
+- git diff --check i kontrole składni JavaScript.
+
+7. Pomiary przed i po
+Ten sam Mac i castLabs 44.10.1 ARM64, osobne świeże profile, aktywny ekran,
+bez --no-sandbox, wyłączania TLS lub sztucznego limitowania aktywnej strony.
+Trzy przebiegi bazowe e861ed5 i trzy po głównych optymalizacjach (przed późniejszym
+scaleniem upstream). Pomiary bazowe wykonano przed implementacją. Mediany:
+
+Metryka                                         Przed         Po    Zmiana
+Start do widocznego okna, ms                   360.28     393.36     +9.2%
+Bezczynność: CPU, %                              3.11       3.71    +19.0%
+Bezczynność: suma working set, MiB             873.36     653.23    -25.2%
+Bezczynność: procesy                             6.00       5.00    -16.7%
+12 kart: CPU, %                                  0.59       0.49    -16.8%
+12 kart: suma working set, MiB                1998.94    2013.16     +0.7%
+12 kart: procesy                                18.00      18.00     +0.0%
+
+Metoda: startup od wejścia do głównego JS do widocznego okna, nie pełny czas
+od kliknięcia ikony do interaktywnej strony. CPU i working set przez
+app.getAppMetrics: 5 s rozgrzewki, 5 próbek co sekundę, suma procesów aplikacji.
+Working set może zliczać współdzielone strony więcej niż raz; to nie exclusive
+physical footprint. Krótkie próbki CPU są podatne na szum systemowy.
+12 lokalnych kart zawiera identyczne timery 100 ms i requestAnimationFrame.
+
+Wnioski: pamięć bezczynnej świeżej sesji spadła o około 25%, ubył jeden proces.
+Nie ma dowodu poprawy startu ani idle CPU na AC; mediany wzrosły. Dla 12 żywych
+kart pamięć praktycznie bez zmian. Spadek CPU 12 kart nie jest gwarancją
+identycznego efektu na dowolnej stronie. Nie ukryto regresji w tabeli.
+
+after-battery-final.json — pojedyncza próba ze zdarzeniem on-battery,
+przy fizycznie podłączonym zasilaniu (symulacja polityki, nie rozładowanie):
+- idle: CPU 1,277%, working set 632,95 MiB, 5 procesów;
+- 12 kart: CPU 0,454%, 1909,56 MiB, 17 procesów;
+- po ustawieniu 31 min nieaktywności i realnym przebiegu maintenance:
+  uśpiono 11 kart, CPU 0,379%, 903,86 MiB, 6 procesów (~53% mniej pamięci).
+Aktywna strona: około 1200 klatek/10 s, czyli zachowane odświeżanie ~120 Hz.
+Ukryte strony: 1 klatka rAF i ~10 ticków timera/10 s już przed zmianami;
+nie przypisuję istniejącego throttlingu Chromium nowej implementacji.
+Nie zmierzono watów, wakeup count ani godzin pracy baterii.
+
+8. Ograniczenia i dalsza walidacja
+- Nie wykonano fizycznej rozmowy z kamerą/mikrofonem, pełnego screen-share,
+  płatnego DRM ani testów wszystkich API rozszerzeń. MV3 fixture nie dowodzi
+  pełnej kompatybilności sklepu Chrome i Native Messaging.
+- Gest swipe ma obsługę kodową; nie wykonano fizycznego wielopalcowego testu
+  trackpada ani końcowego drag-and-drop. Retina/fullscreen oceniono w GUI,
+  RAF potwierdza wysokie odświeżanie, ale nie jest pomiarem opóźnień przewijania.
+- Zdarzenia baterii/temperatury/suspend symulowano; realnie odczytano kernelową
+  presję pamięci, ale nie wymuszano systemowego OOM ani przegrzania.
+- Automatyczna ochrona pracy jest zachowawcza i heurystyczna. Niewykryte
+  dowolne zadanie JS nie ma uniwersalnego sygnału „ważności”; dostępne są wyjątki.
+- Kontrola WebRTC/upload może zostawić kartę aktywną do nawigacji, nawet gdy
+  zadanie już zakończono. Chroni to dane kosztem części potencjalnych oszczędności.
+- Windows nie został uruchomiony na tym komputerze. Zachowano ścieżki platformy,
+  lecz pełna regresja instalatora i podpisu Windows wymaga maszyny Windows.
+- Mac auto-update, Developer ID/notaryzacja i zdalne CI nie były testowane.
+- Log uruchomienia zawiera sandbox_extension_issue_file (odmowa dostępu do
+  Resources helpera); w testach zdarzały się komunikaty GPU shared-image
+  podczas zamykania. Nie wystąpiło powiązane niepowodzenie scenariuszy.
+- Lokalne testy nie zastępują pełnego audytu penetracyjnego i długiego soak testu.
+
+9. Uruchomienie i odtwarzanie
+cd .
+open dist/mac-arm64/Nazuna.app
+
+Odtworzenie zależności, testów i paczek:
+npm ci
+npm test
+npm run test:integration
+npm run dist:mac
+
+Oddzielny profil dev (podaj własną nową ścieżkę):
+NAZUNA_PROFILE=/tmp/nazuna-moj-test npm start
+Zwykły profil: ~/Library/Application Support/Nazuna.
+Testy automatyczne same tworzą profile tymczasowe.
+
+Benchmark:
+NAZUNA_BENCH_LABEL=moja-proba npm run benchmark
+NAZUNA_BENCH_LABEL=bateria-proba NAZUNA_BENCH_BATTERY=1 NAZUNA_BENCH_DISCARD=1 npm run benchmark
+Nie nadpisuj before-*.json, jeśli chcesz zachować punkt odniesienia.
+
+10. Pliki i materiały dowodowe
+Pełna lista zmian: diff pull requestu względem 5388aa4.
+Nowe moduły: src/main/appMenu.js, power.js, tabSafety.js.
+Główne zmiany: index/window/ipc/urls/session, defaultBrowser, downloads,
+diagnostics, extensions, preloady, UI powłoki i stron, konfiguracja budowania,
+entitlements, tools/start-dev, tools/run-electron-test, after-pack/after-sign,
+fuses, workflow release, package.json/lock, README, tests/*.
+Importer pochodzi obecnie z nowego commita właściciela i przechodzi test macOS.
+Finalny ASAR: zgodne 27/27 zmienione/nowe pliki źródłowe względem e861ed5.
+Kontrola składni: 58 plików JS/CJS; YAML workflow poprawnie parsowany.
+Do PR dołączono raport, pomiary before/after, wynik symulacji baterii,
+wyniki integracji i kontroli artefaktów. Pozostałe wspomniane logi, raporty
+pomocnicze i profile testowe pozostały lokalnie; nie są częścią PR.
+
+Źródła dokumentacji użyte podczas analizy:
+https://www.electronjs.org/docs/latest/api/power-monitor/
+https://www.electronjs.org/docs/latest/api/web-contents
+https://www.electronjs.org/docs/latest/api/process
+https://www.electron.build/v26/docs/mac/
+https://packages.electronjs.org/fuses/v2.0.0/types/FuseV1Config.html
+https://github.com/castlabs/electron-releases/wiki/FAQ
+
+11. Poprawka po zgłoszeniu nakładania przycisków macOS
+Motyw Lawendowa mgła nadpisywał padding paska kart (82 -> 10 px), dlatego
+systemowe przyciski nachodziły na pierwszą kartę. src/ui/shell.css korzysta
+teraz ze wspólnej zmiennej --window-controls-inset. Mac zachowuje 82 px
+niezależnie od motywu; pozostałe platformy zachowują poprzednie 8/10 px.
+Test w prawdziwym rendererze sprawdza geometrię paska w motywach ciemnym,
+jasnym, mgła oraz Washi dzień/noc, z klasą mac i bez niej. Cały zestaw
+integracyjny po poprawce: 30/30. Przebudowano .app, DMG i ZIP.
+
+12. Netflix NSES-UHX po logowaniu / wyborze profilu
+Zdiagnozowano w konsoli działającej aplikacji RangeError: Maximum call stack
+size exceeded w proxyApplyFn, we wstrzykniętym skrypcie agresywnego blokera.
+Ghostery wykonuje kolejne scriptlety w globalnym zakresie strony. Wspólna nazwa
+proxyApplyFn zostaje nadpisana; stary proxy toString odwołuje się do nowego
+nativeToString, wskazującego ten sam proxy. Powstaje rekurencja.
+
+Nowy adblockScriptlets.js otacza każdy scriptlet osobną funkcją. adblock.js
+stosuje izolację do silnika z cache, zasobów, sieci oraz po aktualizacji list.
+Nie wyłączono blokera, sandboxu, TLS ani ochrony fingerprintingu.
+Unit test odtwarza przepełnienie stosu przed poprawką i poprawny wynik po niej.
+Test integracyjny wykonuje rzeczywiste filtry Netflix z adblock.bin w rendererze,
+sprawdza Function.toString, brak globalnego proxyApplyFn oraz dalsze usuwanie
+pól result.adverts i data.pinotPausedPlaybackPage z testowego JSON.
+Wynik: 17 testów jednostkowych, 31 scenariuszy integracyjnych, wszystkie PASS.
+
+GUI po przebudowie: zachowana sesja konta, poprawny ekran wyboru profilu
+i poprawna strona główna po wyborze profilu, brak ekranu NSES-UHX.
+Agresywny bloker pozostaje włączony. Nie odtwarzano filmu w tym teście;
+ograniczenia VMP z punktu 5 pozostają osobnym zagadnieniem.
+
+13. Netflix E100 przy uruchomieniu filmu — diagnoza, bez naprawy odtwarzania
+Test wykonano w gotowej dist/mac-arm64/Nazuna.app z sesją użytkownika.
+Po odświeżeniu strony filmu E100 powtarza się. Żądania licensedManifest,
+aleProvision oraz dwie próby license zwracają HTTP 200, nie są blokowane
+przez adblock. HTTP 200 nie oznacza zaakceptowania licencji przez DRM.
+Nie zapisano odpowiedzi licencyjnych, cookies ani identyfikatorów konta.
+
+W osobnej karcie uruchomiono oficjalny test castLabs Widevine VMP Lab,
+Tears of Steel / H264, backend UAT. Dokładny wynik widoczny w GUI:
+  >> SERVICE_CERTIFICATE_REQUEST
+  << SERVICE_CERTIFICATE
+  >> LICENSE_REQUEST | CDM 4.10.3112.0
+  << LICENSE | PLATFORM_TAMPERED
+Widevine, H.264, AAC, CENC, CBCS i licencje tymczasowe są dostępne.
+Test potwierdza nieprawidłowy VMP gotowej aplikacji; zgodnie z dokumentacją
+castLabs może to blokować produkcyjne odtwarzanie. Nie uzyskano wewnętrznego
+kodu odmowy Netflixa, więc nie dowodzi to braku innych przyczyn E100.
+
+Precyzowanie punktu 5: build nie ma WAŻNEGO produkcyjnego podpisu VMP.
+Pozostały podpis deweloperski silnika nie weryfikuje się po zmianach fuses.
+macOS pomija ponowne podpisywanie EVS, ponieważ użyte
+GrantFileProtocolExtraPrivileges=false nie jest akceptowane przez darmowe EVS.
+Przy zachowaniu tego ustawienia oficjalną ścieżką jest certyfikacja custom
+builda przez castLabs 3PL i odpowiednie uprawnienia do podpisywania.
+Zwykły certyfikat Apple ani ponowny ad-hoc codesign tego nie naprawiają.
+Nie włączono szerszych uprawnień file://, nie zmieniono zabezpieczeń ani konta.
+Nie przebudowywano niezmienionego kodu i nie oznaczono Netflix playback PASS.
+
+Źródła aktualnej diagnozy:
+https://castlabs.github.io/wv-vmp-lab/
+https://github.com/castlabs/electron-releases/wiki/VMP
+https://github.com/castlabs/electron-releases/wiki/FAQ
+https://github.com/castlabs/electron-releases/wiki/EVS

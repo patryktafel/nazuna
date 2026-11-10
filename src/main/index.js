@@ -13,40 +13,8 @@ app.setName('Nazuna');
 
 // Wlasny pasek zakladek i przycisk menu zastepuja standardowe menu Electrona -
 // bez tego kazde okno mialoby jeszcze gorny pasek z File/Edit/View po angielsku.
-/* Wyjatek: macOS. Tam skroty edycji (Cmd+C, Cmd+V, Cmd+Z, Cmd+A) w polach
-   tekstowych i na stronach dzialaja tylko przez pozycje menu z rolami, a menu
-   programu stoi na gornym pasku systemu, nie w oknie. Bez roli "close" i bez
-   skrotow kart: Cmd+W, Cmd+T i reszta ida przez handleShortcut w window.js. */
-if (process.platform === 'darwin') {
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
-    { label: 'Nazuna', submenu: [
-      { role: 'about', label: 'O Nazunie' },
-      { type: 'separator' },
-      { role: 'hide', label: 'Ukryj Nazunę' },
-      { role: 'hideOthers', label: 'Ukryj pozostałe' },
-      { role: 'unhide', label: 'Pokaż wszystkie' },
-      { type: 'separator' },
-      { role: 'quit', label: 'Zakończ Nazunę' }
-    ] },
-    { label: 'Edycja', submenu: [
-      { role: 'undo', label: 'Cofnij' },
-      { role: 'redo', label: 'Ponów' },
-      { type: 'separator' },
-      { role: 'cut', label: 'Wytnij' },
-      { role: 'copy', label: 'Kopiuj' },
-      { role: 'paste', label: 'Wklej' },
-      { role: 'pasteAndMatchStyle', label: 'Wklej bez formatowania' },
-      { role: 'selectAll', label: 'Zaznacz wszystko' }
-    ] },
-    { label: 'Okno', submenu: [
-      { role: 'minimize', label: 'Minimalizuj' },
-      { role: 'zoom', label: 'Powiększ okno' },
-      { role: 'togglefullscreen', label: 'Pełny ekran' }
-    ] }
-  ]));
-} else {
-  Menu.setApplicationMenu(null);
-}
+if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
+app.enableSandbox();
 
 /* Jeden podpis dla calego programu. Electron ma wlasny domyslny User-Agent z
    napisami "Nazuna/x.y" i "Electron/x.y", i wystarczy jeden kanal, ktoremu
@@ -60,6 +28,13 @@ app.userAgentFallback = require('./constants').chromeUserAgent();
    %LOCALAPPDATA%. Wrzucenie pliku portable.txt obok pliku wykonywalnego
    przenosi ten folder tuz obok niego - o to chodzi na pendrivie. */
 (function chooseProfileDir() {
+  // Explicit development/test profiles never touch the regular browser data.
+  if (process.env.NAZUNA_PROFILE) {
+    const dir = path.resolve(process.env.NAZUNA_PROFILE);
+    fs.mkdirSync(dir, { recursive: true });
+    app.setPath('userData', dir);
+    return;
+  }
   try {
     const exeDir = process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(app.getPath('exe'));
     const portableMarker = path.join(exeDir, 'portable.txt');
@@ -160,6 +135,16 @@ if (!gotLock) {
      Do konca startu tylko zapamietujemy argumenty, a whenReady je obsluzy. */
   let startGotowy = false;
   const czekajaceUruchomienia = [];
+  // Finder / Launch Services do not pass macOS URLs and files through argv.
+  const openFromSystem = (event, value) => {
+    event.preventDefault();
+    if (!argToStartUrl(value)) return;
+    const request = { argv: ['Nazuna', value], katalog: process.cwd() };
+    if (!startGotowy) czekajaceUruchomienia.push(request);
+    else obsluzDrugieUruchomienie(request.argv, request.katalog);
+  };
+  app.on('open-url', openFromSystem);
+  app.on('open-file', openFromSystem);
 
   function obsluzDrugieUruchomienie(argv, katalog) {
     /* Pozycje z menu ikony w pasku zadan (jumplist.js) przy dzialajacej juz
@@ -193,6 +178,7 @@ if (!gotLock) {
 
   app.whenReady().then(async () => {
     starttrace.znacznik('app.whenReady');
+    require('./appMenu').install(W);
     // Aktualizacje (tylko spakowana wersja dla Windows - patrz updater.js).
     // Tak jak Chrome: sprawdzamy zanim pokaze sie cokolwiek. Jesli jest nowa
     // wersja, pobieramy ja i instalujemy po cichu, zanim uzytkownik zobaczy
@@ -290,6 +276,7 @@ if (!gotLock) {
        tam tez) lapie wiekszosc takich przypadkow, ale nie ten, gdy Nazuna
        byla ostatnio aktywnym oknem PRZED usypieniem calego systemu -
        wtedy po powrocie okno nigdy na nowo nie dostaje zdarzenia "focus". */
+    powerMonitor.on('shutdown', (event) => { event.preventDefault(); app.quit(); });
     powerMonitor.on('resume', () => { for (const win of W.allWindows()) win.invalidateActiveTab(); });
     powerMonitor.on('unlock-screen', () => { for (const win of W.allWindows()) win.invalidateActiveTab(); });
     starttrace.znacznik('po ipc.register/sessions.forPartition/security.init/privacy/tabSleep');
@@ -449,7 +436,11 @@ if (!gotLock) {
       data.bookmarksStore.flush(),
       data.downloadsStore.flush(),
       data.siteStore.flush(),
-      data.extensionsStore.flush()
+      data.extensionsStore.flush(),
+      ...[...sessions.prepared].filter(ses => ses.isPersistent()).map(async ses => {
+        ses.flushStorageData();
+        await ses.cookies.flushStore();
+      })
     ]).finally(() => app.quit());
   });
 
@@ -458,16 +449,11 @@ if (!gotLock) {
   });
 
   app.on('web-contents-created', (_event, contents) => {
-    contents.on('will-navigate', (event, url) => {
-      if (contents.getType() !== 'window') return;
-      if (/^(javascript|file):/i.test(url)) { event.preventDefault(); return; }
-      /* Karty maja wlasnego straznika w Tab.wire(), ale okna popup (np. z
-         target="_blank") go nie maja - dostaja preload web.js, wiec strona
-         mogłaby probowac przejsc na nazuna:// i dostac most IPC do reszty
-         przegladarki. Ten sam warunek co przy zwyklej karcie zamyka i te
-         droge. */
-      if (/^nazuna:/i.test(url) && !/^nazuna:/i.test(contents.getURL())) event.preventDefault();
-    });
+    const guard = (event, target) => {
+      if (!require('./urls').dozwoloneZeStrony(target, contents.getURL())) event.preventDefault();
+    };
+    contents.on('will-navigate', guard);
+    contents.on('will-redirect', event => { if (event.isMainFrame) guard(event, event.url); });
   });
 
   process.on('uncaughtException', (err) => {

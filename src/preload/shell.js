@@ -7,7 +7,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 // off() dla pierwszego kanalu przestawaloby dzialac.
 const listeners = new Map();
 
-contextBridge.exposeInMainWorld('nazuna', {
+if (process.isMainFrame && location.protocol === 'nazuna:' && location.hostname === 'ui') contextBridge.exposeInMainWorld('nazuna', {
   invoke: (method, payload) => ipcRenderer.invoke('nazuna:invoke', method, payload),
   send: (method, payload) => ipcRenderer.send('nazuna:send', method, payload),
   on: (channel, callback) => {

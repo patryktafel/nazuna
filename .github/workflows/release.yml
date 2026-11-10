@@ -40,7 +40,7 @@ jobs:
       - name: Ustaw Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Zainstaluj zaleznosci
         run: npm ci --no-audit --no-fund
@@ -95,7 +95,7 @@ jobs:
       - name: Ustaw Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '20'
+          node-version: '24'
 
       # Silnik z npm nie jest potrzebny (paczka powstaje z electron-wv-mac).
       - name: Zainstaluj zaleznosci
@@ -103,22 +103,12 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
 
-      # Python z Homebrew nie pozwala instalowac pakietow globalnie, wiec
-      # klient castLabs EVS idzie do osobnego srodowiska dopisanego do PATH.
-      - name: Zainstaluj klienta castLabs EVS
-        run: |
-          python3 -m venv "$RUNNER_TEMP/evs"
-          "$RUNNER_TEMP/evs/bin/python" -m pip install --upgrade castlabs-evs
-          echo "$RUNNER_TEMP/evs/bin" >> "$GITHUB_PATH"
-
-      # Fuses, podpis VMP i podpis lokalny (ad-hoc): tools/after-pack.js.
+      # Fuses i hardened runtime: electron-builder; VMP macOS celowo pominiety.
       - name: Zbuduj paczke na Maca
         run: npm run dist:mac
         env:
           ELECTRON_OVERRIDE_DIST_PATH: ${{ github.workspace }}/electron-wv-mac
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
-          EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
 
       - name: Dolacz paczke do wydania
         env:
@@ -133,7 +123,7 @@ jobs:
             gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 || \
               gh release create "$TAG" -R "$REPO" --prerelease \
                 --title "Nazuna na Maca (wersja próbna)" \
-                --notes "Wersja próbna dla Maców z procesorem Apple (M1 i nowsze), macOS 12 lub nowszy. Bez podpisu Apple: przy pierwszym uruchomieniu Ustawienia systemowe > Prywatność i ochrona > Otwórz mimo to."
+                --notes "Wersja próbna dla Maców z procesorem Apple (M1 i nowsze), macOS 12 lub nowszy. Podpis lokalny ad-hoc, bez notaryzacji Apple i bez VMP. Dystrybucja zaufana przez Gatekeeper wymaga Developer ID i notaryzacji."
           fi
           ls -la dist
           PLIKI=$(ls dist/*.dmg dist/*.zip dist/latest-mac.yml 2>/dev/null || true)

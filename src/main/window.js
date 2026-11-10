@@ -1,5 +1,7 @@
 'use strict';
 const path = require('path');
+const power = require('./power');
+const tabSafety = require('./tabSafety');
 const crypto = require('crypto');
 const { app, BaseWindow, WebContentsView, BrowserWindow, shell, screen, clipboard, nativeImage, nativeTheme, net, dialog } = require('electron');
 const { LAYOUT, PRELOAD_DIR, ASSETS_DIR, APP_NAME, rozstrzygnijMotyw, zrodloMotywuStron, TLA } = require('./constants');
@@ -402,6 +404,7 @@ class Tab {
      kliknieciu (patrz wake() i AppWindow.selectTab). */
   sleep() {
     if (this.sleeping || !this.wc || this.wc.isDestroyed()) return;
+    try { this.savedNavigation = { entries: this.wc.navigationHistory.getAllEntries(), index: this.wc.navigationHistory.getActiveIndex() }; } catch (_) {}
     diagnostics.usypianie(this.id);
     try { this.owner.win.contentView.removeChildView(this.view); } catch (_) {}
     this.destroy();
@@ -425,7 +428,11 @@ class Tab {
     // zanim zdazyla usnac.
     if (this.muted) { try { this.wc.setAudioMuted(true); } catch (_) {} }
     this.owner.win.contentView.addChildView(this.view, 0);
-    this.otworz(this.url);
+    const history = this.savedNavigation;
+    this.savedNavigation = null;
+    if (history?.entries.length && !security.sprawdz(this.url)) {
+      this.wc.navigationHistory.restore(history).catch(() => { if (this.wc && !this.wc.isDestroyed()) this.otworz(this.url); });
+    } else this.otworz(this.url);
   }
 
   get displayUrl() { return this.errorUrl || this.warnUrl || this.url; }
@@ -526,7 +533,7 @@ class Tab {
     wc.on('before-mouse-event', (_e, mysz) => { if (mysz && mysz.type === 'mouseDown') this._pasekMaFokus = 0; });
     wc.on('did-start-navigation', (ev) => { if (ev.isMainFrame && !/^nazuna:\/\/newtab/i.test(ev.url)) this._pasekMaFokus = 0; });
     wc.on('will-navigate', (event, target) => {
-      if (/^nazuna:/i.test(target) && !/^nazuna:/i.test(wc.getURL())) { event.preventDefault(); return; }
+      if (!urls.dozwoloneZeStrony(target, wc.getURL())) { event.preventDefault(); return; }
       if (urls.zewnetrznyProtokol(target)) { event.preventDefault(); this.owner.handleExternalProtocol(target); return; }
       const zagrozenie = security.sprawdz(target);
       if (zagrozenie) {
@@ -541,6 +548,7 @@ class Tab {
     // nawigacji, tylko zanim przekierowanie zdazy sie dokonac.
     wc.on('will-redirect', (event) => {
       if (!event.isMainFrame) return;
+      if (!urls.dozwoloneZeStrony(event.url, wc.getURL())) { event.preventDefault(); return; }
       if (urls.zewnetrznyProtokol(event.url)) { event.preventDefault(); this.owner.handleExternalProtocol(event.url); return; }
       const zagrozenie = security.sprawdz(event.url);
       if (zagrozenie) {
@@ -551,6 +559,7 @@ class Tab {
     });
     wc.on('did-start-navigation', (event) => {
       if (!event.isMainFrame) return;
+      if (!event.isSameDocument) { this.preventSleep = false; this.hadAudio = false; }
       // Zerujemy adres pokazywany zamiast strony wewnetrznej TYLKO, gdy ta
       // nawigacja nie jest naszym wlasnym przekierowaniem na nazuna://error
       // albo nazuna://warning - inaczej ta sama nawigacja, ktora go ustawila
@@ -666,6 +675,8 @@ class Tab {
               preload: path.join(PRELOAD_DIR, 'web.js'),
               contextIsolation: true,
               sandbox: true,
+              nodeIntegration: false,
+              webSecurity: true,
               nodeIntegrationInSubFrames: true,
               additionalArguments: pageFlags(this.owner.partition),
               partition: this.owner.partition
@@ -690,6 +701,7 @@ class Tab {
          grozny adres trafia do zwyklej karty, ktora pokaze ostrzezenie,
          a okienko sie zamyka. Zwykle logowanie (https) idzie bez zmian. */
       const strazOkienka = (event, cel) => {
+        if (!urls.dozwoloneZeStrony(cel, child.webContents.getURL())) { event.preventDefault(); return; }
         if (urls.zewnetrznyProtokol(cel)) { event.preventDefault(); this.owner.handleExternalProtocol(cel); return; }
         if (!security.sprawdz(cel)) return;
         event.preventDefault();
@@ -899,6 +911,8 @@ class AppWindow {
     const shellParams = new URLSearchParams({ win: String(this.id), private: String(isPrivate) });
     this.shell.loadURL(`nazuna://ui/shell.html?${shellParams.toString()}`);
 
+    this.shell.on('will-navigate', event => event.preventDefault());
+    this.shell.on('will-redirect', event => event.preventDefault());
     this.shell.on('before-input-event', (event, input) => this.handleShortcut(event, input, true));
     przyciskiWsteczDalej(this.shell, () => this);
 
@@ -934,7 +948,9 @@ class AppWindow {
       ostatnioAktywneOkno = this;
       this.scheduleSync(); this.invalidateActiveTab();
     });
-    this.win.on('restore', () => this.invalidateActiveTab());
+    this.win.on('restore', () => { this.invalidateActiveTab(); this._prepareSpare(); });
+    this.win.on('minimize', () => { if (this._spareTab) { this._spareTab.destroy(); this._spareTab = null; } });
+    this.win.on('swipe', (_event, direction) => { if (direction === 'right') this.goBack(); else if (direction === 'left') this.goForward(); });
     this.win.on('show', () => this.invalidateActiveTab());
     this.win.on('close', (e) => {
       /* Ostatnie okno, a w tle trwa pobieranie: pytamy, jak Firefox. Po
@@ -989,6 +1005,7 @@ class AppWindow {
     });
 
     windows.add(this);
+    scheduleTabMaintenance();
 
     this.shell.once('did-finish-load', () => {
       // Okno "puste" powstaje po to, zeby przyjac karte wyrwana z innego okna.
@@ -1070,16 +1087,16 @@ class AppWindow {
      gorna krawedz ekranu (sledzKursorF11). Wczesniej F11 chowalo tylko pasek
      zadan Windows, a pasek Nazuny zostawal. */
   trybF11() {
-    return !this.contentFullScreen && !!this.win && !this.win.isDestroyed() && this.win.isFullScreen();
+    return process.platform !== 'darwin' && !this.contentFullScreen && !!this.win && !this.win.isDestroyed() && this.win.isFullScreen();
   }
 
   sledzKursorF11(wlacz) {
     clearInterval(this._f11Timer);
     this._f11Timer = null;
     this.pasekWysuniety = false;
-    if (!wlacz) return;
+    if (!wlacz || process.platform === 'darwin') return;
     this._f11Timer = setInterval(() => {
-      if (!this.trybF11()) return;
+      if (!this.trybF11() || !this.win.isFocused() || power.state.suspended) return;
       let kursor; let b;
       try { kursor = screen.getCursorScreenPoint(); b = this.win.getContentBounds(); } catch (_) { return; }
       const x = kursor.x - b.x; const y = kursor.y - b.y;
@@ -1211,8 +1228,10 @@ class AppWindow {
      oszczedzac pamiec, wylacza to w Ustawieniach (tabPrewarmEnabled). */
   _prepareSpare() {
     if (this._spareTab || this.win.isDestroyed()) return;
-    if (!data.settings.get('tabPrewarmEnabled', true)) return;
+    if (!data.settings.get('tabPrewarmEnabled', true) || power.saving() || power.state.suspended || !this.win.isVisible()) return;
+    if (process.platform === 'darwin' && power.state.memoryPressure !== 'normal') return;
     this._spareTab = new Tab(this, { url: NEW_TAB });
+    this._spareTab.view.setVisible(false);
   }
 
   newTab({ url = NEW_TAB, background = false, index = null, lazy = false, bezWyboru = false } = {}) {
@@ -1234,6 +1253,7 @@ class AppWindow {
       // juz procesie zamiast budowac wszystko od zera.
       tab = this._spareTab;
       this._spareTab = null;
+      tab.view.setVisible(true);
       tab.lastActiveAt = Date.now();
       if (resolved !== NEW_TAB) { tab.url = resolved; tab.otworz(resolved); }
     } else {
@@ -1820,6 +1840,17 @@ class AppWindow {
     const alt = input.alt;
     const key = (input.key || '').toLowerCase();
     const stop = () => { event.preventDefault(); };
+    if (process.platform === 'darwin') {
+      if (input.meta && input.control && key === 'f') { this.toggleFullScreen(); return stop(); }
+      if (input.control && !input.meta && key === 'tab') { this.cycleTab(shift ? -1 : 1); return stop(); }
+      if (ctrl && !alt && !shift && key === 'q') { app.quit(); return stop(); }
+      if (ctrl && !alt && !shift && key === 'h') return; // native Hide
+      if (ctrl && !alt && !shift && key === 'y') { this.newTab({ url: 'nazuna://history' }); return stop(); }
+      if (ctrl && !alt && !shift && key === ',') { this.newTab({ url: 'nazuna://settings' }); return stop(); }
+      if (ctrl && shift && key === 'w') { this.win.close(); return stop(); }
+      if (ctrl && key === '[') { if (shift) this.cycleTab(-1); else this.goBack(); return stop(); }
+      if (ctrl && key === ']') { if (shift) this.cycleTab(1); else this.goForward(); return stop(); }
+    }
 
     if (key === 'escape') {
       if (fromChrome) {
@@ -2058,6 +2089,9 @@ class AppWindow {
   }
 
   dispose() {
+    this.closeExtensionPopup();
+    clearTimeout(this._fsTimer);
+    try { if (!this.shell.isDestroyed()) this.shell.close(); } catch (_) {}
     clearInterval(this._f11Timer);
     for (const [k, r] of this._wyborKontaResolvers) { this._wyborKontaResolvers.delete(k); r(null); }
     clearTimeout(this._zapisGranic);
@@ -2079,6 +2113,7 @@ class AppWindow {
         .then(() => ses.clearAuthCache && ses.clearAuthCache())
         .catch(() => {});
     }
+    scheduleTabMaintenance();
     if (this.isPrivate && ![...windows].some((w) => w.isPrivate)) data.wyczyscPrywatneStrony();
   }
 }
@@ -2444,15 +2479,6 @@ function createWindow(opts = {}) {
 // pod dostatkiem, nie ma po co ruszac kart wczesniej niz trzeba - kazde
 // usniecie to pelne przeladowanie strony przy powrocie.
 const TAB_SLEEP_CHECK_MS = 60 * 1000;
-const TAB_SLEEP_TIERS = [
-  // Mniej niz 15% wolnej pamieci - realna presja, usypiaj agresywnie.
-  { wolnegoNiezej: 0.15, poMs: 3 * 60 * 1000 },
-  // Mniej niz 35% wolnej - umiarkowana presja, posredni prog.
-  { wolnegoNiezej: 0.35, poMs: 10 * 60 * 1000 },
-  // Pamieci pod dostatkiem - dotychczasowy, spokojny prog.
-  { wolnegoNiezej: 1, poMs: 20 * 60 * 1000 }
-];
-
 /* Ulamek wolnej pamieci fizycznej w systemie (0-1). process.getSystemMemoryInfo()
    liczy w KB i jest dostepne tylko w procesie glownym - dokladnie tu, gdzie
    trzeba. Gdy sie nie uda (np. platforma tego nie wspiera), zwracamy 1, czyli
@@ -2467,77 +2493,55 @@ function wolnaPamiecUlamek() {
 }
 
 function progUsypiania() {
-  const wolnego = wolnaPamiecUlamek();
-  for (const tier of TAB_SLEEP_TIERS) {
-    if (wolnego <= tier.wolnegoNiezej) return tier.poMs;
-  }
-  return TAB_SLEEP_TIERS[TAB_SLEEP_TIERS.length - 1].poMs;
+  return power.sleepDelay(power.state, wolnaPamiecUlamek());
 }
 
-function usypianieCheck() {
-  if (!data.settings.get('tabSleepEnabled', true)) return;
+async function usypianieCheck() {
+  if (power.state.suspended || !windows.size) return;
+  await power.sampleMemoryPressure();
+  updatePowerPolicy();
+  if (!data.settings.get('tabSleepEnabled', true) || downloads.ileAktywnych() > 0) return;
   const now = Date.now();
   const prog = progUsypiania();
-  for (const win of windows) {
-    if (win.tabs.length <= 1) continue;
-    for (const tab of win.tabs) {
-      if (tab.sleeping || tab.id === win.activeTabId || tab.audible || tab.loading) continue;
-      // Karta, ktora choc raz odtworzyla dzwiek (film, muzyka), zostaje
-      // wylaczona z usypiania na dobre, nawet gdy w danej chwili jest tylko
-      // zapauzowana - to wlasnie taka karta ("obejrze to pozniej") najbardziej
-      // chcemy zostawic w spokoju, a usniecie oznacza dla niej pelne
-      // przeladowanie i zgubienie miejsca w odtwarzaczu (patrz hadAudio wyzej).
-      if (tab.hadAudio) continue;
-      // Strony nazuna:// (nowa karta, historia, ustawienia...) same w sobie
-      // sa tanie - nie ma czego tu oszczedzac, a usypianie panelu, ktory
-      // zyje z odswiezania na biezaco (np. pobrane), tylko by przeszkadzalo.
-      if (/^nazuna:/.test(tab.url)) continue;
-      // Strony reczne wylaczone z usypiania (patrz data.isSleepExempt) -
-      // uzytkownik sam zdecydowal, ze ta karta ma zyc dalej w tle.
-      if (data.isSleepExempt(urls.hostOf(tab.url))) continue;
-      if (now - tab.lastActiveAt < prog) continue;
-      uspijJesliBezFormularza(tab);
+  const checks = [];
+  for (const win of windows) for (const tab of win.tabs) {
+    if (!tabSafety.eligible(tab) || /^nazuna:/.test(tab.url)) continue;
+    if (data.isSleepExempt(urls.hostOf(tab.url)) || now - tab.lastActiveAt < prog) continue;
+    checks.push(tabSafety.sleepIfSafe(tab, () => !power.state.suspended &&
+      data.settings.get('tabSleepEnabled', true) && downloads.ileAktywnych() === 0 &&
+      !data.isSleepExempt(urls.hostOf(tab.url))));
+  }
+  await Promise.all(checks);
+}
+
+let tabMaintenanceTimer = null;
+let tabMaintenanceStarted = false;
+function scheduleTabMaintenance() {
+  clearTimeout(tabMaintenanceTimer);
+  tabMaintenanceTimer = null;
+  if (!tabMaintenanceStarted || power.state.suspended || !windows.size) return;
+  tabMaintenanceTimer = setTimeout(async () => {
+    try { await usypianieCheck(); } finally { scheduleTabMaintenance(); }
+  }, TAB_SLEEP_CHECK_MS);
+  tabMaintenanceTimer.unref();
+}
+function updatePowerPolicy() {
+  for (const w of windows) {
+    if (power.saving() || power.state.suspended || power.state.memoryPressure !== 'normal') {
+      if (w._spareTab) { w._spareTab.destroy(); w._spareTab = null; }
+    }
+    w.send('power:changed', { saving: power.saving() || power.state.suspended });
+    for (const t of w.tabs) {
+      if (t.wc && !t.wc.isDestroyed() && /^nazuna:/.test(t.url)) t.wc.send('power:changed', { saving: power.saving() || power.state.suspended });
     }
   }
 }
-
-/* Uspienie = przeladowanie strony po powrocie, wiec tekst wpisany w
-   formularz (komentarz, mail, ogloszenie) by przepadl. Jak Chrome Memory
-   Saver: karta z wypelnionym polem albo edytowanym tekstem nie zasypia.
-   Sprawdzamy wszystkie ramki (formularze bywaja w iframe). Jak sie nie da
-   sprawdzic - na wszelki wypadek nie usypiamy. */
-const SKRYPT_FORMULARZA = `(() => {
-  try {
-    for (const el of document.querySelectorAll('input, textarea')) {
-      const t = (el.type || '').toLowerCase();
-      if (['hidden', 'submit', 'button', 'image', 'reset', 'file'].includes(t)) continue;
-      if (t === 'checkbox' || t === 'radio') { if (el.checked !== el.defaultChecked) return true; continue; }
-      if (el.value !== el.defaultValue) return true;
-    }
-    for (const el of document.querySelectorAll('select')) {
-      for (const o of el.options) if (o.selected !== o.defaultSelected) return true;
-    }
-    const ed = document.activeElement;
-    if (ed && ed.isContentEditable && (ed.textContent || '').trim()) return true;
-  } catch (_) {}
-  return false;
-})()`;
-function uspijJesliBezFormularza(tab) {
-  const wc = tab.wc;
-  if (!wc || wc.isDestroyed()) return;
-  let ramki = [];
-  try { ramki = wc.mainFrame.framesInSubtree; } catch (_) { return; }
-  Promise.all(ramki.map((f) => f.executeJavaScript(SKRYPT_FORMULARZA).catch(() => false)))
-    .then((wyniki) => {
-      if (wyniki.some(Boolean)) return;
-      if (tab.sleeping || tab.wc !== wc || !tab.owner || tab.id === tab.owner.activeTabId) return;
-      tab.sleep();
-    })
-    .catch(() => {});
-}
-
 function startTabSleep() {
-  setInterval(usypianieCheck, TAB_SLEEP_CHECK_MS);
+  if (tabMaintenanceStarted) return;
+  tabMaintenanceStarted = true;
+  power.start(() => { updatePowerPolicy(); scheduleTabMaintenance(); });
+  power.sampleMemoryPressure().then(updatePowerPolicy);
+  scheduleTabMaintenance();
 }
 
 /* Odpala watchdog diagnostyczny (patrz diagnostics.js) - osobno od reszty
@@ -2602,7 +2606,7 @@ function tabSleepStatus() {
       if (tab.sleeping) sleeping++;
     }
   }
-  return { sleeping, total, progMs: progUsypiania(), wolnaPamiecUlamek: wolnaPamiecUlamek() };
+  return { sleeping, total, power: { ...power.state }, progMs: progUsypiania(), wolnaPamiecUlamek: wolnaPamiecUlamek() };
 }
 
 /* Jasny/ciemny tryb dla stron (patrz zrodloMotywuStron w constants.js).
@@ -2685,4 +2689,4 @@ function broadcastAll(channel, payload, filtr = null) {
   }
 }
 
-module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, przeladujPoZmianieMotywuStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory, washiNoc };
+module.exports = { usypianieCheck, AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, przeladujPoZmianieMotywuStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory, washiNoc };

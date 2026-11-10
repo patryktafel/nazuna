@@ -1,7 +1,6 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
 
 /* Windows: build castLabs niesie podpis VMP w pliku obok pliku wykonywalnego.
    Po zmianie nazwy electron.exe na Nazuna.exe podpis musi nazywac sie tak samo,
@@ -21,27 +20,13 @@ function przemianujPodpisWindows(context) {
   }
 }
 
-/* macOS: kolejnosc wymagana przez castLabs i macOS:
-   1. fuses (zmieniaja plik Electron Framework, wiec musza byc przed podpisami),
-   2. podpis VMP castLabs (na Macu PRZED codesign, odwrotnie niz na Windows),
-   3. podpis lokalny ad-hoc (codesign -s -), bez ktorego macOS na procesorach
-      Apple nie uruchamia programu.
-   electron-builder ustawia fuses dopiero po afterPack, dlatego w konfiguracji
-   electronFuses dla Maca jest wylaczone, a wszystko dzieje sie tutaj. */
-async function mac(context) {
-  const app = path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`);
-  const fuses = await context.packager.generateFuseConfig(require('./fuses'));
-  await context.packager.addElectronFuses(context, fuses);
-  console.log('  • fuses ustawione (macOS)');
-
-  require('./after-sign').podpiszVmp(context.appOutDir);
-
-  execFileSync('codesign', ['--force', '--deep', '--sign', '-', app], { stdio: 'inherit' });
-  execFileSync('codesign', ['--verify', '--deep', '--strict', app], { stdio: 'inherit' });
-  console.log('  • podpis lokalny (ad-hoc) gotowy');
-}
-
+/* macOS: bez podpisu VMP wymagajacego dodatkowych uprawnien file://.
+   electron-builder ustawia fuses, nastepnie podpisuje app i helpery
+   z hardened runtime oraz odpowiednimi entitlements. */
 exports.default = async function afterPack(context) {
-  if (context.electronPlatformName === 'darwin') return mac(context);
+  if (context.electronPlatformName === 'darwin') {
+    console.log('  • VMP macOS pominięty: zachowana izolacja file://; podpis lokalny wykona electron-builder.');
+    return;
+  }
   if (context.electronPlatformName === 'win32') przemianujPodpisWindows(context);
 };

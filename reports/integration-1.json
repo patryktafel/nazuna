@@ -1,0 +1,121 @@
+{
+  "phase": "1",
+  "results": [
+    {
+      "name": "native application menu and renderer IPC",
+      "status": "pass"
+    },
+    {
+      "name": "all themes reserve macOS window controls space without shifting other platforms",
+      "status": "pass"
+    },
+    {
+      "name": "local page, sandbox, isolation, no Node or privileged bridge",
+      "status": "pass"
+    },
+    {
+      "name": "navigation back/forward",
+      "status": "pass"
+    },
+    {
+      "name": "Netflix scriptlets keep native toString callable and still prune ad fields",
+      "status": "pass"
+    },
+    {
+      "name": "IPC rejects prototype methods and malformed payloads",
+      "status": "pass"
+    },
+    {
+      "name": "remote navigation and redirects cannot acquire internal privileges",
+      "status": "pass"
+    },
+    {
+      "name": "shell cannot navigate to remote content",
+      "status": "pass"
+    },
+    {
+      "name": "permissions are scoped to scheme, host and port",
+      "status": "pass"
+    },
+    {
+      "name": "extension content script works in sandboxed tabs without file access",
+      "status": "pass"
+    },
+    {
+      "name": "download completes to selected directory",
+      "status": "pass"
+    },
+    {
+      "name": "history and bookmark operations",
+      "status": "pass"
+    },
+    {
+      "name": "keyboard creates, cycles and closes tabs",
+      "status": "pass"
+    },
+    {
+      "name": "dirty form and unfocused editor are not discarded",
+      "status": "pass"
+    },
+    {
+      "name": "WebRTC protects a silent call from discard",
+      "status": "pass"
+    },
+    {
+      "name": "muted video stream is protected from automatic discard",
+      "status": "pass"
+    },
+    {
+      "name": "sleep/wake releases renderer and preserves navigation history",
+      "status": "pass"
+    },
+    {
+      "name": "battery, suspend and AC events adjust policy and remove prewarm",
+      "status": "pass"
+    },
+    {
+      "name": "automatic maintenance sleeps aged tabs but preserves edited forms",
+      "status": "pass"
+    },
+    {
+      "name": "native fullscreen preserves toolbar and uses no cursor polling",
+      "status": "pass"
+    },
+    {
+      "name": "battery pauses decorative animation while keeping page content visible",
+      "status": "pass"
+    },
+    {
+      "name": "macOS kernel memory pressure is sampled",
+      "status": "pass"
+    },
+    {
+      "name": "window disposal releases owned WebContentsViews",
+      "status": "pass"
+    },
+    {
+      "name": "private cookies/history do not leak into regular session",
+      "status": "pass"
+    },
+    {
+      "name": "HTTPS works with normal certificate validation",
+      "status": "pass"
+    },
+    {
+      "name": "invalid TLS certificate is rejected",
+      "status": "pass"
+    },
+    {
+      "name": "Launch Services URL event opens in normal window",
+      "status": "pass"
+    },
+    {
+      "name": "system open-file handles local HTML and relative navigation",
+      "status": "pass"
+    },
+    {
+      "name": "Command+Q reaches normal shutdown and persistence",
+      "status": "pass"
+    }
+  ]
+}

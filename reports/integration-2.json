@@ -1,0 +1,13 @@
+{
+  "phase": "2",
+  "results": [
+    {
+      "name": "session restored after process restart with lazy background tabs",
+      "status": "pass"
+    },
+    {
+      "name": "bookmarks, history and cookies persist after restart",
+      "status": "pass"
+    }
+  ]
+}

@@ -78,7 +78,7 @@ const KROKI = [
           <div class="pw-karty trzy">
             ${karta('theme:dark', 'Ciemny', 'Spokojny dla oczu wieczorem', 'ciemny', t === 'dark')}
             ${karta('theme:light', 'Jasny', 'Jak biała kartka', 'jasny', t === 'light')}
-            ${karta('theme:system', 'Jak w Windows', 'Przełącza się razem z systemem', 'system', t === 'system')}
+            ${karta('theme:system', 'Jak w systemie', 'Przełącza się razem z systemem', 'system', t === 'system')}
           </div>`;
       }
       const k = cfg.values.mglaKolory || 'lawenda';

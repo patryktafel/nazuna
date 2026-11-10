@@ -43,6 +43,7 @@ function defaultDir() {
    a obrazy dyskow (.iso, .vhd) i pomoc .chm przemycaja w srodku skrypty.
    Wpisy malymi literami - isRisky porownuje rozszerzenie po toLowerCase. */
 const RISKY = new Set([
+  '.dmg', '.pkg', '.mpkg', '.app', '.command', '.workflow', '.scpt', '.scptd', '.applescript', '.webloc',
   '.exe', '.msi', '.msix', '.appx', '.bat', '.cmd', '.com', '.scr', '.pif', '.hta',
   '.ps1', '.psm1', '.vbs', '.vbe', '.js', '.jse', '.wsf', '.wsh', '.jar', '.reg',
   '.lnk', '.dll', '.cpl', '.msc', '.msp', '.gadget', '.apk', '.sh',
@@ -292,6 +293,7 @@ function attach(session) {
 
     let lastBytes = 0;
     let lastTime = Date.now();
+    let lastUpdate = 0;
 
     item.on('updated', (_e, state) => {
       record.savePath = item.getSavePath();
@@ -306,6 +308,8 @@ function attach(session) {
         lastBytes = record.received;
         lastTime = now;
       }
+      if (now - lastUpdate < 500 && state !== 'interrupted' && !record.paused) return;
+      lastUpdate = now;
       zapisz(false);
       broadcast('download-updated', serialise(item, record));
     });

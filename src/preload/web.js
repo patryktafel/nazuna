@@ -14,6 +14,14 @@ try {
 }
 
 if (internal) {
+  let saving = false;
+  const updateMotion = () => document.documentElement?.classList.toggle('energy-saving', saving || document.hidden);
+  ipcRenderer.on('power:changed', (_event, state) => { saving = !!state?.saving; updateMotion(); });
+  document.addEventListener('visibilitychange', updateMotion);
+  document.addEventListener('DOMContentLoaded', () => {
+    updateMotion();
+    ipcRenderer.invoke('nazuna:invoke', 'app.power').then(state => { saving = !!state?.saving; updateMotion(); }).catch(() => {});
+  }, { once: true });
   contextBridge.exposeInMainWorld('nazuna', {
     invoke: (method, payload) => ipcRenderer.invoke('nazuna:invoke', method, payload),
     send: (method, payload) => ipcRenderer.send('nazuna:send', method, payload),
@@ -51,6 +59,41 @@ try {
     ipcRenderer.send('nazuna:send', 'link.middleClick', { url: href });
   }, true);
 } catch (_) {}
+
+/* Conservative activity protection lasts until navigation. A page may opt itself
+   out of discarding, but this channel exposes no privileged browser operations. */
+let protectedActivity = false;
+function protectActivity() {
+  if (protectedActivity) return;
+  protectedActivity = true;
+  ipcRenderer.send('nazuna:send', 'tab.keepAwake');
+}
+document.addEventListener('nazuna:active-task', protectActivity, { once: true });
+document.addEventListener('input', event => {
+  if (event.isTrusted && event.target?.isContentEditable) protectActivity();
+}, true);
+webFrame.executeJavaScript(`(() => {
+  const protect = () => document.dispatchEvent(new Event('nazuna:active-task'));
+  if (window.RTCPeerConnection) {
+    window.RTCPeerConnection = new Proxy(window.RTCPeerConnection, {
+      construct(target, args, newTarget) { const result = Reflect.construct(target, args, newTarget); protect(); return result; }
+    });
+  }
+  for (const name of ['getUserMedia', 'getDisplayMedia']) {
+    const media = navigator.mediaDevices;
+    if (media && media[name]) {
+      const original = media[name];
+      media[name] = function(...args) { protect(); return Reflect.apply(original, this, args); };
+    }
+  }
+  const send = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.send = function(body) { if (body != null) protect(); return Reflect.apply(send, this, arguments); };
+  const fetchOriginal = window.fetch;
+  window.fetch = function(input, init) {
+    if ((init && init.body != null) || (input instanceof Request && !['GET','HEAD'].includes(input.method))) protect();
+    return Reflect.apply(fetchOriginal, this, arguments);
+  };
+})()`).catch(() => {});
 
 /* ------------------------------------------------------------------ tozsamosc
    Nazuna jest przegladarka zbudowana na Chromium i tak sie przedstawia. Problem

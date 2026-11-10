@@ -1,0 +1,115 @@
+{
+  "head": "5388aa46b8866f814ef5b48fad1ee6ea75ff13c6",
+  "architecture": "dist/mac-arm64/Nazuna.app/Contents/MacOS/Nazuna: Mach-O 64-bit executable arm64",
+  "asarSHA256": "29938af51af40078b7884b83eba3a7f037985adce724d4fc195dd6c719954efc",
+  "matches": [
+    {
+      "file": "src/main/adblock.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/defaultBrowser.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/diagnostics.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/downloads.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/extensions.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/importzakladek.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/index.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/ipc.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/session.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/urls.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/window.js",
+      "matches": true
+    },
+    {
+      "file": "src/preload/shell.js",
+      "matches": true
+    },
+    {
+      "file": "src/preload/web.js",
+      "matches": true
+    },
+    {
+      "file": "src/ui/pages.css",
+      "matches": true
+    },
+    {
+      "file": "src/ui/pages/about.js",
+      "matches": true
+    },
+    {
+      "file": "src/ui/pages/error.js",
+      "matches": true
+    },
+    {
+      "file": "src/ui/pages/extensions.js",
+      "matches": true
+    },
+    {
+      "file": "src/ui/pages/newtab.js",
+      "matches": true
+    },
+    {
+      "file": "src/ui/pages/settings.js",
+      "matches": true
+    },
+    {
+      "file": "src/ui/pages/welcome.js",
+      "matches": true
+    },
+    {
+      "file": "src/ui/shell.css",
+      "matches": true
+    },
+    {
+      "file": "src/ui/shell.js",
+      "matches": true
+    },
+    {
+      "file": "src/ui/toast.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/adblockScriptlets.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/appMenu.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/power.js",
+      "matches": true
+    },
+    {
+      "file": "src/main/tabSafety.js",
+      "matches": true
+    }
+  ]
+}

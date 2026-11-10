@@ -1,0 +1,18 @@
+{
+  "buildExitCode": 0,
+  "zipCRC": "pass",
+  "zipAsarMatchesApp": true,
+  "dmgChecksum": "pass",
+  "artifacts": [
+    {
+      "path": "dist/Nazuna-0.1.105-Mac.zip",
+      "bytes": 129756458,
+      "sha256": "bc238d0d3113e5556d87f69d101e9bfff2c1a77bc8a467ac1be14d6c88123ed5"
+    },
+    {
+      "path": "dist/Nazuna-0.1.105-Mac.dmg",
+      "bytes": 123234074,
+      "sha256": "1e4a5d10c47ddf0997627acaf3125aec4677c37d0cea3596ce0d5e7c783026b0"
+    }
+  ]
+}

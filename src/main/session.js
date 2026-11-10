@@ -9,6 +9,7 @@ const downloads = require('./downloads');
 const data = require('./data');
 const { getDomain } = require('tldts-experimental');
 const extensions = require('./extensions');
+const { permissionOrigin } = require('./urls');
 
 const prepared = new Set();
 
@@ -48,7 +49,7 @@ function patchHint(value, version) {
   return out;
 }
 // keyboardLock celowo poza lista: pozwala stronie przejac Escape w pelnym ekranie.
-const AUTO_ALLOW = new Set(['fullscreen', 'clipboard-sanitized-write', 'background-sync', 'pointerLock', 'accessibility-events', 'top-level-storage-access']);
+const AUTO_ALLOW = new Set(['mediaKeySystem', 'fullscreen', 'clipboard-sanitized-write', 'background-sync', 'pointerLock', 'accessibility-events', 'top-level-storage-access']);
 // window-management/window-placement (getScreenDetails - uklad wszystkich monitorow, nie
 // tylko jednego ekranu) to realny sygnal do rozpoznawania urzadzenia - prawdziwy Chrome
 // tez o to pyta, wiec u nas rowniez idzie przez ASK, a nie ciche przyznanie.
@@ -399,9 +400,10 @@ function prepare(ses, efemeryczna) {
 
   ses.setPermissionRequestHandler(async (webContents, permission, callback, details) => {
     const origin = (() => {
-      try { return new URL(details && details.requestingUrl ? details.requestingUrl : webContents.getURL()).hostname; }
+      try { return permissionOrigin(details && details.requestingUrl ? details.requestingUrl : webContents.getURL()); }
       catch (_) { return ''; }
     })();
+    if (!origin || origin === 'null') return callback(false);
     if (AUTO_ALLOW.has(permission)) return callback(true);
     if (!ASK.has(permission)) return callback(false);
 
@@ -451,10 +453,16 @@ function prepare(ses, efemeryczna) {
     } catch (_) { callback(false); }
   });
 
+  if (process.platform === 'darwin') {
+    ses.setDisplayMediaRequestHandler((_request, callback) => callback({}), { useSystemPicker: true });
+  }
+
   ses.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
-    if (AUTO_ALLOW.has(permission)) return true;
     let host = '';
-    try { host = new URL(requestingOrigin).hostname; } catch (_) {}
+    try { host = permissionOrigin(requestingOrigin); } catch (_) {}
+    if (!host || host === 'null') return false;
+    if (AUTO_ALLOW.has(permission)) return true;
+    if (!ASK.has(permission)) return false;
     return zgodaZapamietana(ses, efemeryczna, host, permission) === 'allow';
   });
 

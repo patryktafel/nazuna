@@ -30,17 +30,14 @@ const { app } = require('electron');
    konca. */
 
 const PROG_ZAWIESZENIA_MS = 20000;
-const SPRAWDZAJ_CO_MS = 5000;
+
 const PIERSCIEN_LIMIT = 400;
 const ZACHOWAJ_DUMPOW = 30;
 
 const pierscien = [];
 let dumpDir = null;
-let watchdogTimer = null;
-// Karty, dla ktorych juz zrzucilismy stan przy TYM konkretnym (wciaz
-// trwajacym) ladowaniu - zeby nie zrzucac tego samego zawieszenia co
-// SPRAWDZAJ_CO_MS w kolko, dopoki sie nie skonczy.
-const zrzuconeDlaLadowania = new Set();
+const loadingTimers = new Map();
+let getWindows = () => [];
 
 function folder() {
   if (!dumpDir) dumpDir = path.join(app.getPath('userData'), 'diagnostyka');
@@ -161,11 +158,28 @@ function sledzKarte(tab) {
     zdarzenie(typ, wpis);
   };
 
-  wc.on('did-start-loading', () => { tab._ladowanieOd = Date.now(); znacznik('start-ladowania'); });
+  const clearLoading = () => {
+    clearTimeout(loadingTimers.get(wc));
+    loadingTimers.delete(wc);
+  };
+  wc.on('did-start-loading', () => {
+    clearLoading();
+    tab._ladowanieOd = Date.now();
+    znacznik('start-ladowania');
+    const timer = setTimeout(() => {
+      loadingTimers.delete(wc);
+      if (wc.isDestroyed() || tab.sleeping || !tab._ladowanieOd) return;
+      znacznik('podejrzenie-zawieszenia', { trwaMs: Date.now() - tab._ladowanieOd });
+      zrzuc('stuck-loading', getWindows());
+    }, PROG_ZAWIESZENIA_MS);
+    timer.unref();
+    loadingTimers.set(wc, timer);
+  });
+  wc.once('destroyed', clearLoading);
   wc.on('did-stop-loading', () => {
+    clearLoading();
     if (tab._ladowanieOd) znacznik('koniec-ladowania', { trwaloMs: Date.now() - tab._ladowanieOd });
     tab._ladowanieOd = null;
-    zrzuconeDlaLadowania.delete(tab.id);
   });
   wc.on('did-navigate', (_e, url) => znacznik('nawigacja', { url }));
   wc.on('did-navigate-in-page', (_e, url) => znacznik('nawigacja-w-stronie', { url }));
@@ -190,32 +204,8 @@ function przelaczenieKarty(win, tabId) {
 function usypianie(tabId) { zdarzenie('usypianie-karty', { tabId }); }
 function budzenie(tabId) { zdarzenie('budzenie-karty', { tabId }); }
 
-/* Watchdog - co SPRAWDZAJ_CO_MS przeglada wszystkie karty ze wszystkich
-   okien i szuka takiej, ktora "laduje sie" dluzej niz PROG_ZAWIESZENIA_MS.
-   Dostaje zywa liste okien z zewnatrz jako funkcje (a nie przez import), bo
-   window.js i tak importuje ten modul - zwykly import w druga strone
-   zrobilby z tego zaleznosc cykliczna. */
-function start(pobierzOkna) {
-  if (watchdogTimer) return;
-  watchdogTimer = setInterval(() => {
-    let windows;
-    try { windows = pobierzOkna(); } catch (_) { return; }
-    for (const w of windows) {
-      for (const t of w.tabs) {
-        if (!t._ladowanieOd || t.sleeping) continue;
-        const trwa = Date.now() - t._ladowanieOd;
-        if (trwa > PROG_ZAWIESZENIA_MS && !zrzuconeDlaLadowania.has(t.id)) {
-          zrzuconeDlaLadowania.add(t.id);
-          zdarzenie('podejrzenie-zawieszenia', { tabId: t.id, url: w.isPrivate ? UKRYTE : skrocAdres(t.url), trwaMs: trwa });
-          zrzuc('stuck-loading', windows);
-        }
-      }
-    }
-  }, SPRAWDZAJ_CO_MS);
-  // Watchdog nie moze sam trzymac aplikacji przy zyciu (np. przy probie
-  // zamkniecia w tle) - to zwykly interwal porzadkowy, nie funkcja programu.
-  if (watchdogTimer.unref) watchdogTimer.unref();
-}
+/* Jeden deadline tylko podczas ładowania; bez wybudzania bezczynnej aplikacji. */
+function start(pobierzOkna) { getWindows = pobierzOkna; }
 
 /* "Wyczysc historie" ma nie zostawiac adresow w zrzutach: kasujemy pliki
    .json z diagnostyka/ (zrzuty zawieszen i klikania) i pierscien w pamieci. */

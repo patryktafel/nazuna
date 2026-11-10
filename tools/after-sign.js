@@ -17,7 +17,7 @@
 const { execFileSync } = require('child_process');
 
 function python(args) {
-  for (const exe of ['python', 'python3', 'py']) {
+  for (const exe of ['python3', 'python', 'py']) {
     try {
       return execFileSync(exe, exe === 'py' ? ['-3', ...args] : args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 180000 });
     } catch (err) {
@@ -28,8 +28,8 @@ function python(args) {
   throw new Error('nie znaleziono Pythona');
 }
 
-/* Podpis VMP folderu z gotowym programem. Wolane z afterSign (Windows) i z
-   tools/after-pack.js (macOS, przed codesign). */
+/* Podpis VMP folderu z gotowym programem, wolany z afterSign na Windows.
+   macOS zachowuje izolacje file:// i nie korzysta z darmowego EVS. */
 function podpiszVmp(dir) {
   if (process.env.NAZUNA_BEZ_VMP) { console.log('  • podpis VMP pominiety (NAZUNA_BEZ_VMP)'); return; }
   try {

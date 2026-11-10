@@ -182,7 +182,10 @@ const POWITANIA_JP = [
   [5, 10, 'おはよう · ohayō'], [10, 17, 'こんにちは · konnichiwa'],
   [17, 22, 'こんばんは · konbanwa'], [22, 24, 'おやすみ · oyasumi'], [0, 5, 'おやすみ · oyasumi']
 ];
+let clockTimer;
 function odswiezZegar() {
+  clearTimeout(clockTimer);
+  if (document.hidden) return;
   const teraz = new Date();
   document.getElementById('czas').textContent =
     `${String(teraz.getHours()).padStart(2, '0')}:${String(teraz.getMinutes()).padStart(2, '0')}`;
@@ -194,9 +197,10 @@ function odswiezZegar() {
   const pj = POWITANIA_JP.find(([od, do_]) => h >= od && h < do_);
   document.getElementById('jpPowitanie').textContent = pj ? pj[2] : '';
   // Nastepne odswiezenie rowno z poczatkiem kolejnej minuty.
-  setTimeout(odswiezZegar, 60000 - (teraz.getSeconds() * 1000 + teraz.getMilliseconds()) + 50);
+  clockTimer = setTimeout(odswiezZegar, 60000 - (teraz.getSeconds() * 1000 + teraz.getMilliseconds()) + 50);
 }
 odswiezZegar();
+document.addEventListener('visibilitychange', odswiezZegar);
 
 // 1 element, 2-4 elementy, 5+ elementow (ale 12-14 elementow).
 function elementy(n) {
@@ -214,6 +218,12 @@ async function odswiezLicznik() {
     `Dziś Nazuna zatrzymała ${w.ile.toLocaleString('pl-PL')} ${elementy(w.ile)}`;
   el.hidden = false;
 }
-odswiezLicznik();
-setInterval(() => { if (!document.hidden) odswiezLicznik(); }, 5000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) odswiezLicznik(); });
+let counterTimer;
+function scheduleCounter() {
+  clearTimeout(counterTimer);
+  if (document.hidden) return;
+  odswiezLicznik();
+  counterTimer = setTimeout(scheduleCounter, 30000);
+}
+scheduleCounter();
+document.addEventListener('visibilitychange', scheduleCounter);

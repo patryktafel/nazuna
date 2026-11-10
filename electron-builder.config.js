@@ -11,15 +11,20 @@ const NA_MACA = process.argv.includes('--mac');
 const NA_LINUKSA = process.argv.includes('--linux');
 
 function electronDist() {
+  const publishing = process.argv.includes('--publish') && process.argv[process.argv.indexOf('--publish') + 1] !== 'never';
+  const fallback = () => {
+    if (publishing || process.env.CI) throw new Error('Brak zweryfikowanego silnika castLabs. Uruchom pobierz-silnik dla platformy docelowej.');
+    return 'node_modules/electron/dist';
+  };
   if (NA_MACA) {
     const mac = path.join(__dirname, 'electron-wv-mac');
     if (fs.existsSync(path.join(mac, 'Electron.app'))) return 'electron-wv-mac';
-    return 'node_modules/electron/dist';
+    return fallback();
   }
   if (NA_LINUKSA) {
     const lin = path.join(__dirname, 'electron-wv-linux');
     if (fs.existsSync(path.join(lin, 'electron'))) return 'electron-wv-linux';
-    return 'node_modules/electron/dist';
+    return fallback();
   }
   const local = path.join(__dirname, 'electron-wv');
   if (fs.existsSync(path.join(local, 'electron.exe'))) return 'electron-wv';
@@ -105,13 +110,10 @@ module.exports = {
        kluczem systemowym (Windows DPAPI), a nie trzymane plaskim tekstem -
        ktos z samym dostepem do plikow (bez uprawnien tego konta Windows)
        nie odczyta z nich sesji logowania. */
-  /* Wartosci w tools/fuses.js. grantFileProtocolExtraPrivileges: true od 0.1.104,
-     bo podpis VMP castLabs (Netflix, HBO Max, Disney+...) przyjmuje tylko zestaw
-     fuses z FAQ castLabs. Dotyczy tylko plikow HTML otwieranych z dysku
-     (file://); pasek i strony Nazuny ida przez nazuna://.
-     macOS: fuses ustawia tools/after-pack.js, bo tam musza powstac przed
-     podpisem VMP, a electron-builder ustawia je dopiero po afterPack. */
-  electronFuses: NA_MACA ? undefined : require('./tools/fuses'),
+  /* Wspolny zestaw upstream; macOS zachowuje izolacje file://.
+     Fuses ustawia electron-builder przed podpisaniem hardened runtime.
+     VMP wymagajacy szerszych uprawnien file:// jest na macOS pomijany. */
+  electronFuses: { ...require('./tools/fuses'), grantFileProtocolExtraPrivileges: !NA_MACA },
   /* Sprawdzone pomiarem, zeby nikt nie probowal tego ponownie: przy tej
      zawartosci 'normal' i 'maximum' daja plik tej samej wielkosci (okolo
      92 MB), wiec i rozpakowuja sie tak samo dlugo. 'store' rozpakowuje sie
@@ -158,21 +160,18 @@ module.exports = {
     include: 'build/installer.nsh',
     artifactName: 'Nazuna-${version}-Instalator.${ext}'
   },
-  /* macOS (Mac z procesorem Apple). Bez platnego certyfikatu Apple: identity null
-     wylacza podpis electron-buildera, a tools/after-pack.js sklada wszystko w
-     wymaganej kolejnosci: fuses, podpis VMP castLabs, podpis lokalny (ad-hoc,
-     codesign -s -). Bez zadnego podpisu macOS na procesorach Apple w ogole nie
-     uruchamia programu. Pierwsze uruchomienie wymaga potwierdzenia w
-     Ustawieniach systemowych > Prywatnosc i ochrona > "Otworz mimo to".
-     .dmg do instalacji przeciagnieciem, .zip pod przyszle aktualizacje.
-     Electron 44 wymaga macOS 12 lub nowszego. */
+  /* Lokalny build macOS ma podpis ad-hoc. CSC_NAME wybiera certyfikat Developer ID. */
   mac: {
     target: [{ target: 'dmg', arch: ['arm64'] }, { target: 'zip', arch: ['arm64'] }],
     icon: 'build/icon.png',
     category: 'public.app-category.productivity',
     darkModeSupport: true,
-    identity: null,
-    hardenedRuntime: false,
+    identity: process.env.CSC_NAME || '-',
+    hardenedRuntime: true,
+    entitlements: process.env.CSC_NAME ? 'build/entitlements.mac.plist' : 'build/entitlements.mac.dev.plist',
+    entitlementsInherit: process.env.CSC_NAME ? 'build/entitlements.mac.plist' : 'build/entitlements.mac.dev.plist',
+    protocols: [{ name: 'Web', schemes: ['http', 'https'] }],
+    fileAssociations: [{ ext: ['html', 'htm', 'xhtml'], role: 'Viewer' }, { ext: 'pdf', role: 'Viewer' }],
     gatekeeperAssess: false,
     artifactName: 'Nazuna-${version}-Mac.${ext}',
     extendInfo: {

@@ -1,0 +1,29 @@
+{
+  "mode": "native macOS UI via CUA",
+  "checks": [
+    {
+      "name": "HTTPS page restored after restart",
+      "status": "pass"
+    },
+    {
+      "name": "Command+T creates tab",
+      "status": "pass"
+    },
+    {
+      "name": "Command+W closes tab",
+      "status": "pass"
+    },
+    {
+      "name": "reload tooltip shows Command+R",
+      "status": "pass"
+    },
+    {
+      "name": "native application menu",
+      "status": "pass"
+    },
+    {
+      "name": "Command+Q closes final merged app",
+      "status": "pass"
+    }
+  ]
+}

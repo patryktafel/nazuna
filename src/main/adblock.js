@@ -5,6 +5,7 @@ const { app, ipcMain, webContents } = require('electron');
 const { ElectronBlocker, Request, fromElectronDetails } = require('@ghostery/adblocker-electron');
 const { resourcesDir } = require('./constants');
 const data = require('./data');
+const { isolateScriptlets } = require('./adblockScriptlets');
 
 let blocker = null;
 let ready = false;
@@ -44,7 +45,7 @@ function siteAllowed(hostname) {
 /* ------------------------------------------------------------- wczytywanie */
 
 function deserialise(buffer) {
-  return ElectronBlocker.deserialize(new Uint8Array(buffer));
+  return isolateScriptlets(ElectronBlocker.deserialize(new Uint8Array(buffer)));
 }
 
 async function load() {
@@ -59,7 +60,7 @@ async function load() {
   }
   if (!blocker) {
     try {
-      blocker = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch);
+      blocker = isolateScriptlets(await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch));
       saveCache(blocker);
     } catch (err) {
       console.warn('[adblock] brak list filtrów (brak sieci?)', err.message);
@@ -93,7 +94,7 @@ async function refresh(force) {
   if (!force && Date.now() - updatedAt() < REFRESH_AFTER) return { ok: false, reason: 'listy są aktualne' };
   updating = true;
   try {
-    const fresh = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch);
+    const fresh = isolateScriptlets(await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch));
     saveCache(fresh);
     /* Sesje trybu Agresywnego odpinamy od STAREGO obiektu, zanim go podmienimy -
        odwrotna kolejnosc zostawiala stary wlaczony, a nowy sie nie wlaczal

@@ -128,13 +128,26 @@ function zewnetrznyProtokol(url) {
    will-navigate tego nie widzi, a karta z nazuna:// dostaje most do
    przegladarki - wiec strony wewnetrzne, pliki lokalne i adresy Chromium
    moze otwierac tylko inna strona nazuna://. */
-const ZAKAZANE_ZE_STRONY = /^\s*(nazuna|file|chrome|chrome-extension|devtools|view-source|javascript):/i;
+const PRIVILEGED_SCHEMES = new Set(['nazuna:', 'file:', 'chrome:', 'chrome-extension:', 'devtools:', 'view-source:', 'javascript:']);
 function dozwoloneZeStrony(cel, zrodlo) {
-  cel = String(cel || ''); zrodlo = String(zrodlo || '');
-  if (!ZAKAZANE_ZE_STRONY.test(cel)) return true;
-  if (/^nazuna:/i.test(zrodlo)) return true;
-  // Rozszerzenie otwierajace wlasne strony (np. opcje) z karty rozszerzenia.
-  return /^chrome-extension:/i.test(zrodlo) && /^\s*chrome-extension:/i.test(cel);
+  try {
+    const target = new URL(String(cel || ''));
+    if (!PRIVILEGED_SCHEMES.has(target.protocol)) return true;
+    const source = new URL(String(zrodlo || ''));
+    if (source.protocol === 'nazuna:') return true;
+    if (source.protocol === 'file:' && target.protocol === 'file:') return true;
+    return source.protocol === 'chrome-extension:' && target.protocol === source.protocol && target.hostname === source.hostname;
+  } catch (_) { return false; }
 }
 
-module.exports = { dozwoloneZeStrony, resolve, searchUrl, looksLikeUrl, prettyHost, hostOf, engine, bezpieczneZewnetrzne, zewnetrznyProtokol };
+// WHATWG URL.origin returns "null" for Electron's custom secure schemes.
+function permissionOrigin(value) {
+  try {
+    const u = new URL(value);
+    if (u.origin !== 'null') return u.origin;
+    if (['nazuna:', 'chrome-extension:'].includes(u.protocol) && u.hostname) return `${u.protocol}//${u.host}`;
+  } catch (_) {}
+  return '';
+}
+
+module.exports = { permissionOrigin, dozwoloneZeStrony, resolve, searchUrl, looksLikeUrl, prettyHost, hostOf, engine, bezpieczneZewnetrzne, zewnetrznyProtokol };

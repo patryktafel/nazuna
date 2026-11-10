@@ -145,6 +145,11 @@ const handlers = {
   // Srodkowy przycisk myszy na linku (patrz auxclick w preload/web.js) -
   // nowa karta w tle, bez przelaczania sie na nia, tak jak w kazdej innej
   // przegladarce.
+  // A page can only protect its own tab, never control another tab or wake one.
+  'tab.keepAwake': (win, _p, sender) => {
+    const tab = win.tabs.find(t => t.wc === sender);
+    if (tab) tab.preventSleep = true;
+  },
   'link.middleClick': (win, p) => {
     const url = String((p && p.url) || '');
     if (/^https?:\/\//i.test(url)) win.newTab({ url, background: true });
@@ -469,6 +474,7 @@ const handlers = {
 
   /* ----------------------------------------------------------------- app */
   'app.state': (win) => win.state(),
+  'app.power': () => ({ saving: require('./power').saving() }),
   'app.suggest': (win, p) => suggest(p.query),
   'app.openExternal': (win, p) => { if (urls.bezpieczneZewnetrzne(p.url)) shell.openExternal(p.url); },
   'app.copy': (win, p) => clipboard.writeText(p.text || ''),
@@ -684,9 +690,12 @@ async function reloadExtensions() {
    po prawdziwej ramce nadawcy, ktorej strona nie podrobi. Pasek przegladarki
    (shell) przechodzi zawsze, a z dowolnej strony tylko srodkowy klik w link
    (patrz auxclick w preload/web.js). */
-const Z_KAZDEJ_STRONY = new Set(['link.middleClick']);
+const Z_KAZDEJ_STRONY = new Set(['link.middleClick', 'tab.keepAwake']);
 function nadawcaDozwolony(event, win, method) {
-  if (win.shell === event.sender) return true;
+  if (win.shell === event.sender) {
+    try { return event.senderFrame === event.sender.mainFrame && /^nazuna:\/\/ui\/shell\.html(?:[?#]|$)/.test(event.senderFrame.url); }
+    catch (_) { return false; }
+  }
   if (Z_KAZDEJ_STRONY.has(method)) return true;
   try {
     const ramka = event.senderFrame;
@@ -697,19 +706,21 @@ function nadawcaDozwolony(event, win, method) {
 function register() {
   ipcMain.handle('nazuna:invoke', async (event, method, payload) => {
     const win = ownerOf(event.sender);
-    const handler = handlers[method];
+    const handler = typeof method === 'string' && Object.hasOwn(handlers, method) ? handlers[method] : null;
     if (!handler) throw new Error(`Nieznana metoda: ${method}`);
     // Bez okna wiekszosc handlerow siega po jego pola i by sie wysypala - a
     // brak jakiegokolwiek okna znaczy, ze i tak nie ma gdzie pokazac wyniku.
     if (!win) return null;
     if (!nadawcaDozwolony(event, win, method)) return null;
+    if (payload != null && (typeof payload !== 'object' || Array.isArray(payload))) throw new Error('Nieprawidłowy komunikat');
     return handler(win, payload || {}, event.sender);
   });
 
   ipcMain.on('nazuna:send', (event, method, payload) => {
     const win = ownerOf(event.sender);
-    const handler = handlers[method];
+    const handler = typeof method === 'string' && Object.hasOwn(handlers, method) ? handlers[method] : null;
     if (!handler || !win || !nadawcaDozwolony(event, win, method)) return;
+    if (payload != null && (typeof payload !== 'object' || Array.isArray(payload))) return;
     try {
       // Handler moze byc async - jego odrzucona obietnica nie ma prawa
       // wywrocic procesu glownego jako nieobsluzony wyjatek.

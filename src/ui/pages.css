@@ -625,3 +625,7 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
   background: rgba(79, 201, 196, 0.14);
   box-shadow: inset 0 0 0 1px rgba(143, 230, 225, 0.28);
 }
+
+/* Hidden pages and battery mode keep artwork static without changing layout. */
+.energy-saving .aurora::before, .energy-saving .aurora::after,
+.energy-saving .aurora i, .energy-saving .empty .icon { animation-play-state: paused !important; }

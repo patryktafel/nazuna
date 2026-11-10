@@ -1,9 +1,16 @@
 'use strict';
 const api = window.nazuna;
+const shortcutLabel = value => api?.platform === 'darwin' ? String(value || '').replace('Ctrl+H', '⌘Y').replace('Ctrl+', '⌘').replace('Shift+', '⇧').replace('Alt+', '⌥').replace('F11', '⌃⌘F') : value;
 const $ = (sel) => document.querySelector(sel);
 
 // macOS rysuje wlasne przyciski okna, wiec interfejs musi im ustapic miejsca.
-if (api && api.platform === 'darwin') document.documentElement.classList.add('mac');
+if (api && api.platform === 'darwin') {
+  document.documentElement.classList.add('mac');
+  for (const button of document.querySelectorAll('[title]')) button.title = shortcutLabel(button.title);
+  document.getElementById('back').title = 'Wstecz (⌘[)';
+  document.getElementById('forward').title = 'Dalej (⌘])';
+  document.getElementById('reload').title = 'Odśwież (⌘R)';
+}
 
 let state = null;
 let popover = null;            // { name, el }
@@ -308,7 +315,7 @@ function menuHtml(items) {
     return `<div class="${cls.join(' ')}" data-id="${item.id}">
       ${item.icon ? iconSvg(item.icon) : '<span style="width:16px"></span>'}
       <span>${escapeHtml(item.label)}</span>
-      ${item.accel ? `<span class="accel">${escapeHtml(item.accel)}</span>` : ''}
+      ${item.accel ? `<span class="accel">${escapeHtml(shortcutLabel(item.accel))}</span>` : ''}
     </div>`;
   }).join('');
 }
@@ -386,7 +393,7 @@ window.addEventListener('resize', () => {
 
 /* Wspolne dla kart i paska zakladek: strzalki w poziomie, Home i End. */
 function strzalkiPoziomo(e, lista) {
-  if (e.altKey || e.ctrlKey || !lista.length) return;
+  if (e.altKey || e.ctrlKey || e.metaKey || !lista.length) return;
   const i = lista.indexOf(e.target);
   let cel = -1;
   if (e.key === 'ArrowRight') cel = (i + 1) % lista.length;
@@ -782,7 +789,7 @@ function renderToolbar() {
   $('#back').setAttribute('aria-disabled', state.canGoBack ? 'false' : 'true');
   $('#forward').setAttribute('aria-disabled', state.canGoForward ? 'false' : 'true');
   setIcon($('#reload'), state.loading ? 'stop' : 'reload');
-  $('#reload').title = state.loading ? 'Zatrzymaj (Esc)' : 'Odśwież (F5)';
+  $('#reload').title = state.loading ? 'Zatrzymaj (Esc)' : (api?.platform === 'darwin' ? 'Odśwież (⌘R)' : 'Odśwież (F5)');
   updateLoadbar();
 
   el.omnibox.classList.toggle('secure', !!state.secure);
@@ -859,7 +866,7 @@ function renderToolbar() {
     if (b.dataset.icon !== ikona) { b.dataset.icon = ikona; setIcon(b, ikona); }
     const tryb = (state.settings && state.settings.motywStron) || 'system';
     const teraz = state.ciemneStrony ? 'ciemne' : 'jasne';
-    b.title = `Strony: ${teraz}${tryb === 'system' ? ' (jak w Windows)' : ''} · kliknij, aby ${state.ciemneStrony ? 'jasne' : 'ciemne'}`;
+    b.title = `Strony: ${teraz}${tryb === 'system' ? ' (jak w systemie)' : ''} · kliknij, aby ${state.ciemneStrony ? 'jasne' : 'ciemne'}`;
     b.setAttribute('aria-label', b.title);
   }
   document.body.classList.toggle('content-fullscreen', !!state.contentFullScreen);
@@ -1638,7 +1645,7 @@ function bookmarksPanel() {
   const node = panel(`<div class="bm-panel">
     <div class="bm-head"><b>Zakładki</b><button class="btn ghost" data-manager>Menedżer</button></div>
     ${body}
-    <div class="bm-foot"><div class="menu-item" data-add>${iconSvg('star')}<span>${state.bookmarked ? 'Usuń tę stronę z menu' : 'Dodaj tę stronę'}</span><span class="accel">Ctrl+D</span></div></div>
+    <div class="bm-foot"><div class="menu-item" data-add>${iconSvg('star')}<span>${state.bookmarked ? 'Usuń tę stronę z menu' : 'Dodaj tę stronę'}</span><span class="accel">${shortcutLabel("Ctrl+D")}</span></div></div>
   </div>`);
   openPanel('bookmarks', node, $('#bookmarksBtn').getBoundingClientRect());
   attachFavicons(node);

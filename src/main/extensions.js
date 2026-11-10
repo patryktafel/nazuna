@@ -20,14 +20,15 @@ function parseIdOrUrl(input) {
   return m ? m[1] : null;
 }
 
-function downloadUrl(id) {
+function downloadUrl(id, platform = process.platform, architecture = process.arch) {
   const version = process.versions.chrome || '120.0.0.0';
+  const arch = ({ arm64: 'arm64', arm: 'arm', ia32: 'x86', x64: 'x86-64' })[architecture] || architecture;
   const params = new URLSearchParams({
     response: 'redirect',
-    os: 'win',
-    arch: 'x86-64',
-    os_arch: 'x86_64',
-    nacl_arch: 'x86-64',
+    os: ({ darwin: 'mac', win32: 'win', linux: 'linux' })[platform] || platform,
+    arch,
+    os_arch: arch === 'x86-64' ? 'x86_64' : arch,
+    nacl_arch: arch,
     prod: 'chromiumcrx',
     prodchannel: 'unknown',
     prodversion: version,
@@ -545,6 +546,6 @@ async function installFromFolder(dir) {
 
 module.exports = {
   install, installFromFolder, list, records, describe, setEnabled, remove,
-  extensionsDir, parseIdOrUrl, readManifest, iconDataUrl,
+  extensionsDir, parseIdOrUrl, downloadUrl, readManifest, iconDataUrl,
   uprawnienia, tekstUprawnien, sprawdzAktualizacje, zastosujAktualizacje
 };

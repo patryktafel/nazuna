@@ -1,7 +1,8 @@
 'use strict';
-/* Electron Fuses Nazuny - wspolne dla electron-builder.config.js (Windows,
-   Linux) i tools/after-pack.js (macOS, gdzie kolejnosc trzeba ustawic recznie:
-   fuses -> podpis VMP -> codesign). Opis kazdego przelacznika: komentarz przy
+/* Electron Fuses Nazuny - wspolne dla electron-builder.config.js.
+   Konfiguracja macOS nadpisuje grantFileProtocolExtraPrivileges na false
+   i pomija VMP; podpis hardened runtime wykonuje electron-builder.
+   Opis kazdego przelacznika: komentarz przy
    electronFuses w electron-builder.config.js.
 
    Zestaw jest zgodny z wymaganiami podpisu VMP castLabs (FAQ castLabs):

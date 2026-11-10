@@ -95,7 +95,7 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 
 .tabstrip {
   height: 44px; display: flex; align-items: flex-end; gap: 2px;
-  padding: 0 0 0 8px; -webkit-app-region: drag;
+  padding: 0 0 0 var(--window-controls-inset, 8px); -webkit-app-region: drag;
   transition: background .12s var(--ease);
 }
 .tabstrip { position: relative; }
@@ -269,7 +269,7 @@ body.content-fullscreen:not(.expanded) { pointer-events: none; }
 /* macOS rysuje wlasne kropki okna w lewym gornym rogu, wiec nasze przyciski
    z prawej sa tam zbedne, a pasek kart musi zaczynac sie za kropkami. */
 html.mac .wincontrols { display: none; }
-html.mac .tabstrip { padding-left: 82px; }
+html.mac { --window-controls-inset: 82px; }
 
 /* ----------------------------------------------------------------- toolbar */
 
@@ -593,7 +593,7 @@ body:not(.expanded) #layer { pointer-events: none; }
 }
 
 /* Karty jako zaokraglone pigulki, bez "zakladki" laczacej sie ze strona. */
-:root[data-motyw="mgla"] .tabstrip { padding-left: 10px; }
+:root[data-motyw="mgla"] .tabstrip { padding-left: var(--window-controls-inset, 10px); }
 :root[data-motyw="mgla"] .tab {
   height: 32px; margin-bottom: 5px; border-radius: 12px;
   color: var(--text-dim);

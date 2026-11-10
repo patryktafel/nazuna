@@ -1,0 +1,78 @@
+{
+  "electron": "44.10.1",
+  "arch": "arm64",
+  "simulatedBattery": false,
+  "startupMs": 343.38533400000006,
+  "idle": {
+    "cpu": 3.7062767349935286,
+    "rssMiB": 635.11875,
+    "processes": 5
+  },
+  "manyTabs": {
+    "cpu": 0.46387043208307777,
+    "rssMiB": 2013.1625,
+    "processes": 18
+  },
+  "visibility": [
+    {
+      "hidden": true,
+      "ticks": 11,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 11,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 11,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 10,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 11,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 10,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 11,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 10,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 11,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 10,
+      "frames": 1
+    },
+    {
+      "hidden": true,
+      "ticks": 10,
+      "frames": 1
+    },
+    {
+      "hidden": false,
+      "ticks": 102,
+      "frames": 1217
+    }
+  ]
+}
