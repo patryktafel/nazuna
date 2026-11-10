@@ -793,7 +793,12 @@ function renderToolbar() {
   if (!addressDirty && document.activeElement !== el.address) el.address.value = adresDoPokazania();
   odswiezWidokAdresu();
 
-  el.star.innerHTML = iconSvg(state.bookmarked ? 'starFilled' : 'star');
+  // Ikone podmieniamy TYLKO przy zmianie. Wczesniej nowe <svg> wstawialo sie przy
+  // kazdym odswiezeniu stanu, a klasa .bump zostawala na przycisku - wiec
+  // animacja odbicia odpalala sie od nowa przy kazdej zmianie strony (Netflix
+  // zmienia tytul co chwile: "gwiazdka pulsuje co jakis czas", 2026-11-10).
+  const ikonaGwiazdki = state.bookmarked ? 'starFilled' : 'star';
+  if (el.star.dataset.icon !== ikonaGwiazdki) { el.star.dataset.icon = ikonaGwiazdki; el.star.innerHTML = iconSvg(ikonaGwiazdki); }
   el.star.classList.toggle('active', !!state.bookmarked);
   el.star.setAttribute('aria-pressed', state.bookmarked ? 'true' : 'false');
   // Male "odbicie" gwiazdki przy dodaniu/usunieciu zakladki (patrz .bump w
@@ -804,6 +809,8 @@ function renderToolbar() {
     el.star.classList.remove('bump');
     void el.star.offsetWidth; // wymus przeliczenie stylow, zeby animacja odpalila sie od nowa
     el.star.classList.add('bump');
+    // Jedno odbicie i koniec - klasa nie moze zostac na przycisku.
+    el.star.addEventListener('animationend', () => el.star.classList.remove('bump'), { once: true });
   }
   prevBookmarked = !!state.bookmarked;
   prevBookmarkedTabId = state.activeTabId;
