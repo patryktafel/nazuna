@@ -1,6 +1,15 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.105 - 10 listopada 2026
+---------------------------
+
+Gwiazdka zakladek nie pulsuje
+
+- Gwiazdka "Dodaj do zakladek" w pasku adresu podskakiwala co chwile na
+  stronach, ktore czesto sie zmieniaja (np. Netflix). Teraz podskakuje raz,
+  tylko po dodaniu albo usunieciu zakladki.
+
 0.1.104 - 10 listopada 2026
 ---------------------------
 
