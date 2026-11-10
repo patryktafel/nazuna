@@ -38,6 +38,12 @@ jobs:
       - name: Zainstaluj zaleznosci
         run: npm ci --no-audit --no-fund
 
+      # Klient castLabs EVS do podpisu VMP (tools/after-sign.js) - darmowy podpis,
+      # ktorego wymagaja serwisy z DRM (Netflix...). Konto: sekrety EVS_ACCOUNT_NAME
+      # i EVS_PASSWD (wpisuje je uzytkownik, nie Claude).
+      - name: Zainstaluj klienta castLabs EVS
+        run: python -m pip install --upgrade castlabs-evs
+
       # Te same kroki co w wydaj.bat (droga awaryjna): buduje liste blokera, pobiera silnik
       # z obsluga DRM, sklada instalator i publikuje go na nazuna-updates.
       # RELEASE_TOKEN to sekret repozytorium (Settings -> Secrets and
@@ -62,3 +68,5 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           CSC_LINK: ${{ secrets.NAZUNA_CERT_PFX_BASE64 }}
           CSC_KEY_PASSWORD: ${{ secrets.NAZUNA_CERT_PASSWORD }}
+          EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
+          EVS_PASSWD: ${{ secrets.EVS_PASSWD }}

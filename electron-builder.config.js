@@ -111,7 +111,14 @@ module.exports = {
     enableNodeCliInspectArguments: false,
     enableEmbeddedAsarIntegrityValidation: true,
     onlyLoadAppFromAsar: true,
-    grantFileProtocolExtraPrivileges: false,
+    /* true (domyslne Electrona) od 0.1.104 - DECYZJA UZYTKOWNIKA 2026-11-10: podpis
+       VMP castLabs (Netflix, HBO Max, Disney+...) przyjmuje TYLKO ten zestaw fuses
+       (FAQ castLabs): runAsNode false, cookie encryption true, NODE_OPTIONS false,
+       inspect false, asar integrity true, only asar true, V8 snapshot false,
+       grantFileProtocolExtraPrivileges TRUE. Inny = "Binary signature denied".
+       Dotyczy tylko plikow HTML otwieranych z dysku (file://); pasek i strony
+       Nazuny ida przez nazuna://. */
+    grantFileProtocolExtraPrivileges: true,
     enableCookieEncryption: true
   },
   /* Sprawdzone pomiarem, zeby nikt nie probowal tego ponownie: przy tej
@@ -124,6 +131,8 @@ module.exports = {
   electronDist: electronDist(),
   electronVersion: electronVersion(),
   afterPack: 'tools/after-pack.js',
+  // Podpis VMP castLabs (Netflix i inne DRM) - PO podpisie Authenticode, patrz tools/after-sign.js.
+  afterSign: 'tools/after-sign.js',
   directories: { output: 'dist', buildResources: 'build' },
   files: ['src/**/*', 'package.json', '!**/*.map'],
   extraResources: [{ from: 'resources', to: '.' }],
