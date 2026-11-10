@@ -1,6 +1,19 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.104 - 10 listopada 2026
+---------------------------
+
+Podpis castLabs dla serwisow z DRM
+
+- Nazuna jest teraz podpisana przez castLabs (podpis VMP). Tego wymagaja
+  serwisy z zabezpieczonym wideo - Netflix, HBO Max, Disney+, Prime Video,
+  Spotify Web - zeby uznac przegladarke za zaufana. Kazdy serwis sam decyduje
+  o jakosci obrazu (np. Netflix w przegladarkach innych niz Chrome i Edge
+  potrafi ograniczac do 720p).
+- Pliki HTML otwierane z dysku (file://) maja znow domyslne uprawnienia
+  Electrona - wymog castLabs do podpisu. Stron z internetu to nie dotyczy.
+
 0.1.103 - 10 listopada 2026
 ---------------------------
 
