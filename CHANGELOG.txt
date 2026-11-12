@@ -1,6 +1,22 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.109 - 12 listopada 2026
+---------------------------
+
+Nowy wyglad: Satoyama
+
+- Piaty wyglad przegladarki: Satoyama, czyli wioska u stop gory Fuji. Na nowej
+  karcie obraz wioski z tradycyjnymi domami (ciemne drewno, papierowe drzwi,
+  dachy ze slomy i dachowki), polami ryzowymi, brama torii i Fuji w tle.
+- Dwie pory: dzien (klucz zurawi, proporce w ksztalcie karpi, jasny pasek z
+  czerwonym akcentem) i noc (wieczorny festyn: wieza z bebnem, sznury
+  lampionow, stragany, fajerwerki nad Fuji, granatowy pasek). Ustawienie "Pora
+  Satoyamy": Dzien, Noc albo Automatycznie, razem ze sloncem i ksiezycem na
+  pasku.
+- Satoyame wybiera sie w Ustawieniach (Wyglad) albo w kreatorze powitalnym,
+  ktory pokazuje teraz piec wygladow. Okno prywatne zostaje bez zmian.
+
 0.1.108 - 12 listopada 2026
 ---------------------------
 
