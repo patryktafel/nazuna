@@ -7,7 +7,7 @@
    data-engawa NIE jest ustawiane - okno prywatne zostaje noc + turkus.
    Dzien: kremowy papier i jasne drewno (akcent braz). Noc: granatowa czern,
    cieplo tylko ze swiatel (akcent bursztyn).
-   Obrazy ogrodu: engawa-ogrod-dzien.svg / engawa-ogrod-noc.svg. */
+   Obrazy ogrodu: engawa-ogrod-dzien.webp / engawa-ogrod-noc.webp. */
 
 /* =================================================================== DZIEN */
 :root[data-motyw="mgla"][data-engawa="dzien"] {
@@ -146,7 +146,7 @@
 :root[data-motyw="mgla"][data-engawa="dzien"] body:not(:has(> #chrome)), :root[data-motyw="mgla"][data-engawa="dzien"] #chrome { background-image: none; }
 :root[data-motyw="mgla"][data-engawa="dzien"] .omnibox input { background-color: transparent; border-color: transparent; }
 /* ---- dzien, nowa karta: ogrod w sloncu, pola jak jasne matowe szklo */
-:root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora { background: #cfe6f2 url("engawa-ogrod-dzien.svg") no-repeat center bottom / cover; }
+:root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora { background: #cfe6f2 url("engawa-ogrod-dzien.webp") no-repeat center bottom / cover; }
 :root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora::before, :root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora::after, :root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora i { display: none; }
 :root[data-motyw="mgla"][data-engawa="dzien"] .nt-czas { font-weight: 200; color: #241c14; text-shadow: 0 1px 18px rgba(255, 255, 255, .7); }
 :root[data-motyw="mgla"][data-engawa="dzien"] .nt-powitanie { color: #3a2e22; text-shadow: 0 1px 10px rgba(255, 255, 255, .8); }
@@ -247,7 +247,7 @@
 :root[data-motyw="mgla"][data-engawa="noc"] #hasloPole { background: #09090f; border-color: rgba(255, 200, 140, .14); color: #f6f1ea; }
 
 /* ---- noc, nowa karta: ogrod przy ksiezycu, pola jak ciemne matowe szklo */
-:root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora { background: #08080f url("engawa-ogrod-noc.svg") no-repeat center bottom / cover; }
+:root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora { background: #08080f url("engawa-ogrod-noc.webp") no-repeat center bottom / cover; }
 :root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora::before, :root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora::after, :root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora i { display: none; }
 :root[data-motyw="mgla"][data-engawa="noc"] .nt-czas { font-weight: 200; text-shadow: 0 2px 26px rgba(0, 0, 0, .9); }
 :root[data-motyw="mgla"][data-engawa="noc"] .nt-powitanie { color: #f6f1ea; opacity: .88; text-shadow: 0 1px 10px #000; }
