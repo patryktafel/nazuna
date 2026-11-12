@@ -1,6 +1,24 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.108 - 12 listopada 2026
+---------------------------
+
+Nowy wyglad: Engawa
+
+- Czwarty wyglad przegladarki: Engawa, czyli japonski ogrod widziany z
+  drewnianej werandy. Na nowej karcie obraz ogrodu (staw z karpiami koi, klon,
+  kamienna latarnia, lampion z napisem Nazuna), a zegar, wyszukiwarka i
+  kafelki leza na matowym szkle.
+- Dwie pory: dzien (ogrod w sloncu, kremowy pasek, jasne drewno) i noc (ksiezyc,
+  swietliki, granatowa czern z bursztynowym akcentem). Ustawienie "Pora
+  Engawy": Dzien, Noc albo Automatycznie, razem ze sloncem i ksiezycem na
+  pasku.
+- Engawe wybiera sie w Ustawieniach (Wyglad) albo w kreatorze powitalnym,
+  ktory pokazuje teraz cztery wyglady. Okno prywatne zostaje bez zmian.
+- Wydania: paczka na Maca nie buduje sie juz przy kazdym wydaniu, tylko po
+  recznym uruchomieniu budowania.
+
 0.1.107 - 12 listopada 2026
 ---------------------------
 
