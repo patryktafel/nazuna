@@ -90,6 +90,12 @@ async function sprawdzPodpis(wystawcy, plik) {
     if (dane.Status !== 0 && !(niezaufanyKorzen && naszCertyfikat)) {
       return `podpis instalatora jest nieprawidlowy (Status ${dane.Status})`;
     }
+    /* Odcisk jest wymagany zawsze, takze gdy Windows uznaje podpis za zaufany.
+       Sama nazwa podmiotu (CN=Nazuna) nie wystarcza: certyfikat o tej samej
+       nazwie, ktoremu ufa dany komputer, przechodzilby kontrole. */
+    if (!naszCertyfikat) {
+      return `instalator podpisany certyfikatem o innym odcisku (${odcisk || 'brak'})`;
+    }
     if (dane.Status !== 0) log('info', `sprawdzPodpis: Status ${dane.Status}, ale odcisk zgadza sie z certyfikatem Nazuny`);
     if (dane.Path && path.normalize(dane.Path) !== path.normalize(plik)) return 'sprawdzono inny plik niz pobrany';
     const podmiot = parseDn((dane.SignerCertificate && dane.SignerCertificate.Subject) || '');
