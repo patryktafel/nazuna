@@ -49,7 +49,8 @@ const DEFAULT_SETTINGS = {
   theme: 'dark',            // dark | light | system (tylko dla wygladu Klasyczny)
   // Nowy wyglad (Lawendowa mgla, 0.1.99). Osobny klucz, zeby zainstalowana
   // starsza Nazuna czytajaca ten sam settings.json dalej rozumiala 'theme'.
-  wyglad: 'mgla',           // mgla (Lawendowa mgla) | washi (papier) | engawa (nocny ogrod) | klasyczny
+  wyglad: 'mgla',           // mgla (Lawendowa mgla) | washi (papier) | engawa (ogrod z werandy) | satoyama (wioska pod Fuji) | klasyczny
+  satoyamaTryb: 'auto',     // Satoyama: dzien | noc | auto (razem ze sloncem/ksiezycem)
   engawaTryb: 'auto',       // Engawa: dzien | noc | auto (razem ze sloncem/ksiezycem)
   washiTryb: 'auto',        // Washi: dzien | noc | auto (razem ze sloncem/ksiezycem)
   mglaKolory: 'lawenda',    // lawenda | roz | morski - plamy koloru w tle mgly

@@ -129,11 +129,12 @@ function render() {
       ${naglowek('flower', 'Wygląd')}
       <div class="row">
         <div class="body"><div class="title">Wygląd przeglądarki</div>
-          <div class="sub">Lawendowa mgła to nowy wygląd Nazuny, Washi to japoński ogród sakury za dnia i nocą, Engawa to ogród widziany z werandy, też za dnia i nocą. Klasyczny to wygląd sprzed zmiany</div></div>
+          <div class="sub">Lawendowa mgła to nowy wygląd Nazuny, Washi to japoński ogród sakury za dnia i nocą, Engawa to ogród widziany z werandy, też za dnia i nocą. Satoyama to wioska pod górą Fuji: dzień i wieczorny festyn. Klasyczny to wygląd sprzed zmiany</div></div>
         <div class="ctl"><select class="field" data-key="wyglad" style="width:170px">
-          <option value="mgla" ${v.wyglad !== 'klasyczny' && v.wyglad !== 'washi' && v.wyglad !== 'engawa' ? 'selected' : ''}>Lawendowa mgła</option>
+          <option value="mgla" ${v.wyglad !== 'klasyczny' && v.wyglad !== 'washi' && v.wyglad !== 'engawa' && v.wyglad !== 'satoyama' ? 'selected' : ''}>Lawendowa mgła</option>
           <option value="washi" ${v.wyglad === 'washi' ? 'selected' : ''}>Washi</option>
           <option value="engawa" ${v.wyglad === 'engawa' ? 'selected' : ''}>Engawa</option>
+          <option value="satoyama" ${v.wyglad === 'satoyama' ? 'selected' : ''}>Satoyama</option>
           <option value="klasyczny" ${v.wyglad === 'klasyczny' ? 'selected' : ''}>Klasyczny</option>
         </select></div>
       </div>
@@ -145,6 +146,14 @@ function render() {
           <option value="noc" ${v.washiTryb === 'noc' ? 'selected' : ''}>Noc</option>
         </select></div>
       </div>` : ''}
+      ${v.wyglad === 'satoyama' ? `<div class="row">
+        <div class="body"><div class="title">Pora Satoyamy</div><div class="sub">Dzień to wioska w słońcu, noc to wieczorny festyn z lampionami. Automatycznie przełącza się razem ze słońcem i księżycem na pasku</div></div>
+        <div class="ctl"><select class="field" data-key="satoyamaTryb" style="width:170px">
+          <option value="auto" ${v.satoyamaTryb !== 'dzien' && v.satoyamaTryb !== 'noc' ? 'selected' : ''}>Automatycznie</option>
+          <option value="dzien" ${v.satoyamaTryb === 'dzien' ? 'selected' : ''}>Dzień</option>
+          <option value="noc" ${v.satoyamaTryb === 'noc' ? 'selected' : ''}>Noc</option>
+        </select></div>
+      </div>` : ''}
       ${v.wyglad === 'engawa' ? `<div class="row">
         <div class="body"><div class="title">Pora Engawy</div><div class="sub">Dzień to ogród w słońcu, noc to ogród przy księżycu. Automatycznie przełącza się razem ze słońcem i księżycem na pasku</div></div>
         <div class="ctl"><select class="field" data-key="engawaTryb" style="width:170px">
@@ -153,7 +162,7 @@ function render() {
           <option value="noc" ${v.engawaTryb === 'noc' ? 'selected' : ''}>Noc</option>
         </select></div>
       </div>` : ''}
-      ${v.wyglad !== 'klasyczny' && v.wyglad !== 'washi' && v.wyglad !== 'engawa' ? `<div class="row">
+      ${v.wyglad !== 'klasyczny' && v.wyglad !== 'washi' && v.wyglad !== 'engawa' && v.wyglad !== 'satoyama' ? `<div class="row">
         <div class="body"><div class="title">Kolory tła</div><div class="sub">Miękkie plamy koloru za paskiem i na nowej karcie</div></div>
         <div class="ctl">${KOLORY_MGLY.map(([id, nazwa, kolor]) => `
           <button class="accent-dot ust-mgla-kolor${(v.mglaKolory || 'lawenda') === id ? ' wybrana' : ''}" data-mgla-kolory="${id}" title="${nazwa}" aria-label="${nazwa}" aria-pressed="${(v.mglaKolory || 'lawenda') === id}" style="--kolor:${kolor}"></button>`).join('')}

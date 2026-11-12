@@ -84,6 +84,14 @@ function engawaNoc() {
   try { return nativeTheme.shouldUseDarkColors; } catch (_) { return false; }
 }
 
+/* Satoyama: noc czy dzien, tak samo jak Washi (ustawienie satoyamaTryb). */
+function satoyamaNoc() {
+  const t = data.settings.get('satoyamaTryb', 'auto');
+  if (t === 'noc') return true;
+  if (t === 'dzien') return false;
+  try { return nativeTheme.shouldUseDarkColors; } catch (_) { return false; }
+}
+
 function motywTeraz() {
   return rozstrzygnijMotyw(data.settings.get('theme', 'dark'), data.settings.get('wyglad', 'mgla'));
 }
@@ -104,6 +112,7 @@ function tloOkna(prywatne = false) {
   // Washi = uklad mgly z papierowymi kolorami (washi.css).
   if (motyw === 'mgla' && data.settings.get('wyglad', 'mgla') === 'washi') return washiNoc() ? TLA.washiNoc.okno : TLA.washi.okno;
   if (motyw === 'mgla' && data.settings.get('wyglad', 'mgla') === 'engawa') return engawaNoc() ? TLA.engawaNoc.okno : TLA.engawa.okno;
+  if (motyw === 'mgla' && data.settings.get('wyglad', 'mgla') === 'satoyama') return satoyamaNoc() ? TLA.satoyamaNoc.okno : TLA.satoyama.okno;
   return TLA[motyw].okno;
 }
 
@@ -2066,6 +2075,7 @@ class AppWindow {
       ciemneStrony: (() => { try { return nativeTheme.shouldUseDarkColors; } catch (_) { return false; } })(),
       washiNoc: washiNoc(),
       engawaNoc: engawaNoc(),
+      satoyamaNoc: satoyamaNoc(),
       przeciaganie: !!this.przeciaganieKarty,
       zeton: ZETON,
       viewport: { width: bounds.width, height: bounds.height },
@@ -2681,7 +2691,8 @@ try {
     // 'jak w Windows' (ikona slonca/ksiezyca na pasku).
     const washiAuto = data.settings.get('wyglad', 'mgla') === 'washi' && data.settings.get('washiTryb', 'auto') === 'auto';
     const engawaAuto = data.settings.get('wyglad', 'mgla') === 'engawa' && data.settings.get('engawaTryb', 'auto') === 'auto';
-    if (!washiAuto && !engawaAuto && data.settings.get('theme', 'dark') !== 'system' && data.settings.get('motywStron', 'system') !== 'system') return;
+    const satoyamaAuto = data.settings.get('wyglad', 'mgla') === 'satoyama' && data.settings.get('satoyamaTryb', 'auto') === 'auto';
+    if (!washiAuto && !engawaAuto && !satoyamaAuto && data.settings.get('theme', 'dark') !== 'system' && data.settings.get('motywStron', 'system') !== 'system') return;
     repaintTheme();
     for (const w of windows) w.scheduleSync();
     broadcastAll('settings:changed');
@@ -2718,4 +2729,4 @@ function broadcastAll(channel, payload, filtr = null) {
   }
 }
 
-module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, przeladujPoZmianieMotywuStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory, washiNoc, engawaNoc };
+module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, przeladujPoZmianieMotywuStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory, washiNoc, engawaNoc, satoyamaNoc };

@@ -43,12 +43,13 @@ const KROKI = [
     tytul: () => powitanieWgPory(),
     opis: 'Kilka małych kroków i Nazuna będzie Twoja. Wszystko da się później zmienić w ustawieniach.',
     tresc: (n) => {
-      const w = ['klasyczny', 'washi', 'engawa'].includes(cfg.values.wyglad) ? cfg.values.wyglad : 'mgla';
+      const w = ['klasyczny', 'washi', 'engawa', 'satoyama'].includes(cfg.values.wyglad) ? cfg.values.wyglad : 'mgla';
       return `<div class="pw-etykieta">Krok ${n} · Wybierz wygląd</div>
-        <div class="pw-karty cztery">
+        <div class="pw-karty piec">
           ${karta('wyglad:mgla', 'Lawendowa mgła', 'Miękkie kolory, szklany pasek', 'zdjecie mgla', w === 'mgla')}
-          ${karta('wyglad:washi', 'Washi', 'Japoński ogród sakury, za dnia i nocą', 'zdjecie washi', w === 'washi')}
-          ${karta('wyglad:engawa', 'Engawa', 'Japoński ogród widziany z werandy, za dnia i nocą', 'zdjecie engawa', w === 'engawa')}
+          ${karta('wyglad:washi', 'Washi', 'Japoński ogród sakury, dzień i noc', 'zdjecie washi', w === 'washi')}
+          ${karta('wyglad:engawa', 'Engawa', 'Ogród widziany z werandy, dzień i noc', 'zdjecie engawa', w === 'engawa')}
+          ${karta('wyglad:satoyama', 'Satoyama', 'Wioska pod górą Fuji, dzień i festyn', 'zdjecie satoyama', w === 'satoyama')}
           ${karta('wyglad:klasyczny', 'Klasyczny', 'Wygląd sprzed zmiany, jasny albo ciemny', 'zdjecie klasyczny', w === 'klasyczny')}
         </div>`;
     }
@@ -57,7 +58,9 @@ const KROKI = [
     tytul: () => 'Dopasuj kolory',
     // Okno prywatne ma zawsze swoje nocne kolory (data-prywatne nadpisuje
     // zestaw tla), wiec obietnica "od razu" tu by nie byla prawdziwa.
-    opis: () => (cfg.values.wyglad === 'engawa'
+    opis: () => (cfg.values.wyglad === 'satoyama'
+      ? 'Satoyama ma dwie pory: wioskę w słońcu za dnia i wieczorny festyn z lampionami. Automatycznie przełącza się razem ze słońcem i księżycem na pasku.'
+      : cfg.values.wyglad === 'engawa'
       ? 'Engawa ma dwie pory: ogród w słońcu za dnia i przy księżycu nocą. Automatycznie przełącza się razem ze słońcem i księżycem na pasku.'
       : cfg.values.wyglad === 'washi'
       ? 'Washi ma dwie pory: jasny papier za dnia i świecącą sakurę nocą. Automatycznie przełącza się razem ze słońcem i księżycem na pasku.'
@@ -73,6 +76,15 @@ const KROKI = [
             ${karta('washiTryb:dzien', 'Dzień', 'Kremowy papier i pastelowa sakura', 'zdjecie washi-dzien', t === 'dzien')}
             ${karta('washiTryb:noc', 'Noc', 'Głęboka czerń i świecąca sakura', 'zdjecie washi-noc', t === 'noc')}
             ${karta('washiTryb:auto', 'Automatycznie', 'Razem ze słońcem i księżycem na pasku', 'zdjecie washi', t === 'auto')}
+          </div>`;
+      }
+      if (cfg.values.wyglad === 'satoyama') {
+        const t = cfg.values.satoyamaTryb === 'dzien' || cfg.values.satoyamaTryb === 'noc' ? cfg.values.satoyamaTryb : 'auto';
+        return `<div class="pw-etykieta">Krok ${n} · Pora dnia</div>
+          <div class="pw-karty trzy">
+            ${karta('satoyamaTryb:dzien', 'Dzień', 'Wioska w słońcu, żurawie nad polami', 'zdjecie satoyama-dzien', t === 'dzien')}
+            ${karta('satoyamaTryb:noc', 'Noc', 'Festyn, lampiony i fajerwerki', 'zdjecie satoyama-noc', t === 'noc')}
+            ${karta('satoyamaTryb:auto', 'Automatycznie', 'Razem ze słońcem i księżycem na pasku', 'zdjecie satoyama', t === 'auto')}
           </div>`;
       }
       if (cfg.values.wyglad === 'engawa') {

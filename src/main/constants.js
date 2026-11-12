@@ -76,7 +76,8 @@ const SEARCH_ENGINES = {
 /* Motyw, ktory faktycznie widac. Lawendowa mgla ma jedna, ciemna palete,
    wiec ustawienie jasny/ciemny/system dotyczy tylko wygladu Klasyczny.
    Washi zwraca 'mgla' (ten sam uklad), papierowe kolory daje data-washi.
-   Engawa tak samo: uklad mgly, kolory dnia albo nocy daje data-engawa. */
+   Engawa i Satoyama tak samo: uklad mgly, kolory dnia albo nocy daje
+   data-engawa albo data-satoyama. */
 function rozstrzygnijMotyw(ustawienie, wyglad = 'mgla') {
   if (wyglad !== 'klasyczny') return 'mgla';
   if (ustawienie === 'light') return 'jasny';
@@ -101,7 +102,9 @@ const TLA = {
   washi:  { okno: '#f6f1e7', wewnetrzne: '#f6f1e7' },
   washiNoc: { okno: '#08070a', wewnetrzne: '#08070a' },
   engawa: { okno: '#f4ecdd', wewnetrzne: '#f4ecdd' },
-  engawaNoc: { okno: '#08080f', wewnetrzne: '#08080f' }
+  engawaNoc: { okno: '#08080f', wewnetrzne: '#08080f' },
+  satoyama: { okno: '#f3efe6', wewnetrzne: '#f3efe6' },
+  satoyamaNoc: { okno: '#0b0a1a', wewnetrzne: '#0b0a1a' }
 };
 
 function resourcesDir() {

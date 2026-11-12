@@ -864,6 +864,7 @@ function renderToolbar() {
   if (state.settings && state.settings.wyglad === 'washi' && !state.isPrivate) document.documentElement.dataset.washi = state.washiNoc ? 'noc' : 'dzien';
   else delete document.documentElement.dataset.washi;
   if (state.settings && state.settings.wyglad === 'engawa' && !state.isPrivate) document.documentElement.dataset.engawa = state.engawaNoc ? 'noc' : 'dzien'; else delete document.documentElement.dataset.engawa;
+  if (state.settings && state.settings.wyglad === 'satoyama' && !state.isPrivate) document.documentElement.dataset.satoyama = state.satoyamaNoc ? 'noc' : 'dzien'; else delete document.documentElement.dataset.satoyama;
   {
     const b = $('#motywStron');
     const ikona = state.ciemneStrony ? 'moon' : 'sun';

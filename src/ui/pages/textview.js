@@ -32,11 +32,13 @@ function zastosujWyglad(s) {
     root.dataset.accent = (s.values && s.values.accent) || 'violet';
     if (s.values && s.values.wyglad === 'washi' && !s.prywatne) root.dataset.washi = s.washiNoc ? 'noc' : 'dzien'; else delete root.dataset.washi;
     if (s.values && s.values.wyglad === 'engawa' && !s.prywatne) root.dataset.engawa = s.engawaNoc ? 'noc' : 'dzien'; else delete root.dataset.engawa;
+    if (s.values && s.values.wyglad === 'satoyama' && !s.prywatne) root.dataset.satoyama = s.satoyamaNoc ? 'noc' : 'dzien'; else delete root.dataset.satoyama;
   } else {
     delete root.dataset.motyw;
     delete root.dataset.mgla;
     delete root.dataset.washi;
     delete root.dataset.engawa;
+    delete root.dataset.satoyama;
     root.dataset.accent = 'violet';
   }
   // Okno prywatne: nocna paleta z turkusem jak na innych stronach (pagekit.js).
