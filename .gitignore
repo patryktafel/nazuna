@@ -18,5 +18,5 @@ build/nsis-work/
 .DS_Store
 Thumbs.db
 
-# token GitHub do publikowania wydan (wydaj.bat) - tylko na tym komputerze
+# token GitHub - nigdy do repozytorium
 github-token.txt

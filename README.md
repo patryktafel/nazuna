@@ -31,7 +31,7 @@ npm start                # uruchomienie z kodu
 npx electron-builder --config electron-builder.config.js --win nsis --publish never
 ```
 
-Instalator trafia do folderu `dist`. Skrót: `zbuduj.bat`.
+Instalator trafia do folderu `dist`.
 
 Wydania budują się automatycznie w GitHub Actions (`.github/workflows/release.yml`) po wypchnięciu znacznika wersji `vX.Y.Z`: podpis Authenticode, podpis VMP castLabs i publikacja w repozytorium `nazuna-updates`. Historia zmian: [CHANGELOG.txt](CHANGELOG.txt).
 

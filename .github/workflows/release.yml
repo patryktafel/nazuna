@@ -51,7 +51,7 @@ jobs:
       - name: Zainstaluj klienta castLabs EVS
         run: python -m pip install --upgrade castlabs-evs
 
-      # Te same kroki co w wydaj.bat (droga awaryjna): buduje liste blokera, pobiera silnik
+      # Buduje liste blokera, pobiera silnik
       # z obsluga DRM, sklada instalator i publikuje go na nazuna-updates.
       # RELEASE_TOKEN to sekret repozytorium (Settings -> Secrets and
       # variables -> Actions) z dostepem do zapisu w nazuna-updates.

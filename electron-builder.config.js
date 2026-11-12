@@ -23,7 +23,7 @@ function electronDist() {
   }
   const local = path.join(__dirname, 'electron-wv');
   if (fs.existsSync(path.join(local, 'electron.exe'))) return 'electron-wv';
-  /* Przy publikowaniu (wydaj.bat, npm run dist:publish, CI) nie wolno po cichu
+  /* Przy publikowaniu (npm run dist:publish, CI) nie wolno po cichu
      brac starszego Electrona z node_modules - auto-update rozeslalby go
      wszystkim. Lokalny build testowy dalej moze. */
   const iPub = process.argv.indexOf('--publish');
@@ -54,7 +54,7 @@ module.exports = {
      sprawdzaniu i pobieraniu aktualizacji nie szukal tokenu GitHub -
      repo jest publiczne, wiec nie jest potrzebny. Samo budowanie
      (npm run dist) nigdy nie publikuje samo z siebie - publikuje tylko
-     "npm run dist:publish" (czyli wydaj.bat), i to od razu jako gotowe
+     "npm run dist:publish" (GitHub Actions), i to od razu jako gotowe
      wydanie: domyslnie electron-builder tworzylby szkic (releaseType
      "draft"), ktorego autoUpdater by nie widzial, wiec wymuszamy
      "release". */
