@@ -1,6 +1,15 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.107 - 12 listopada 2026
+---------------------------
+
+Scislejsze sprawdzanie podpisu aktualizacji
+
+- Pobrana aktualizacja jest przyjmowana tylko wtedy, gdy odcisk certyfikatu
+  podpisu zgadza sie z odciskiem certyfikatu Nazuny. Wczesniej, gdy Windows
+  uznawal podpis za zaufany, porownywana byla tylko nazwa wydawcy.
+
 0.1.106 - 10 listopada 2026
 ---------------------------
 
