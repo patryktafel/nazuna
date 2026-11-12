@@ -9,6 +9,7 @@
     root.dataset.motyw = s.motyw || 'ciemny';
     root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
     if (s.values && s.values.wyglad === 'washi' && !s.prywatne) root.dataset.washi = s.washiNoc ? 'noc' : 'dzien'; else delete root.dataset.washi;
+    if (s.values && s.values.wyglad === 'engawa' && !s.prywatne) root.dataset.engawa = s.engawaNoc ? 'noc' : 'dzien'; else delete root.dataset.engawa;
     if (s.prywatne) root.dataset.prywatne = '1'; else delete root.dataset.prywatne;
     const info = document.getElementById('prywatneInfo');
     if (info) info.hidden = !s.prywatne;

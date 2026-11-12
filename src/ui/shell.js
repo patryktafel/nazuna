@@ -863,6 +863,7 @@ function renderToolbar() {
   // Washi (washi.css) - nie w oknie prywatnym, ono zostaje noc + turkus.
   if (state.settings && state.settings.wyglad === 'washi' && !state.isPrivate) document.documentElement.dataset.washi = state.washiNoc ? 'noc' : 'dzien';
   else delete document.documentElement.dataset.washi;
+  if (state.settings && state.settings.wyglad === 'engawa' && !state.isPrivate) document.documentElement.dataset.engawa = state.engawaNoc ? 'noc' : 'dzien'; else delete document.documentElement.dataset.engawa;
   {
     const b = $('#motywStron');
     const ikona = state.ciemneStrony ? 'moon' : 'sun';

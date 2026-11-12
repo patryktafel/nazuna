@@ -4,10 +4,12 @@ name: Buduj i publikuj wydanie
 # czyli dokladnie wtedy, gdy naprawde chcemy wypuscic nowa wersje. Zwykle
 # commity (bez znacznika) nic nie budujA ani nie publikuja.
 #
-# Recznie (Actions > "Buduj i publikuj wydanie" > Run workflow) buduje sie tylko
-# paczka na Maca i trafia do osobnego wydania probnego "mac-test" w
-# nazuna-updates, oznaczonego jako prerelease. Aktualizacje na Windows i strona
-# z prezentacja czytaja tylko wydanie "latest", wiec go nie widza.
+# Znacznik buduje tylko wydanie na Windows. Paczka na Maca powstaje wylacznie
+# recznie (Actions > "Buduj i publikuj wydanie" > Run workflow): uruchomiona ze
+# znacznika wersji dolacza .dmg/.zip do tego wydania, a uruchomiona z galezi
+# trafia do osobnego wydania probnego "mac-test" w nazuna-updates, oznaczonego
+# jako prerelease. Aktualizacje na Windows i strona z prezentacja czytaja tylko
+# wydanie "latest", wiec wydania probnego nie widza.
 on:
   push:
     tags:
@@ -25,7 +27,7 @@ jobs:
     # NSIS (instalator dla Windows) trzeba budowac na prawdziwym Windowsie -
     # electron-builder wywoluje przy tym signtool.exe, ktorego nie ma na
     # Linuksie ani Macu. windows-latest ma go wbudowanego.
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -78,12 +80,11 @@ jobs:
           EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
           EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
 
-  # Paczka na Maca (procesor Apple, arm64). Startuje po wydaniu na Windows i
-  # dolacza .dmg/.zip do tego samego wydania. Blad tutaj nie cofa ani nie
-  # blokuje wydania na Windows (osobne zadanie, uruchamiane po nim).
+  # Paczka na Maca (procesor Apple, arm64). Tylko po recznym uruchomieniu;
+  # zwykle wydanie (wypchniety znacznik) jej nie buduje.
   mac:
     needs: build
-    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    if: always() && github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
     timeout-minutes: 40
     steps:

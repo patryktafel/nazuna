@@ -1,0 +1,279 @@
+/* Wyglad "Engawa" - japonski ogrod widziany z drewnianej werandy, DZIEN i NOC.
+   Zbudowany NA Lawendowej mgle (ten sam uklad: zegar, pigulki, karty), tylko inne
+   kolory i obraz ogrodu na nowej karcie. Dziala, gdy <html> ma data-motyw="mgla"
+   i data-engawa="dzien" albo "noc" (ustawiaja shell.js, pagekit.js, newtab.js,
+   toast.js, pdf.js, textview.js, gdy wyglad === 'engawa'; pora z ustawienia
+   engawaTryb: dzien | noc | auto = razem ze sloncem/ksiezycem). W oknie prywatnym
+   data-engawa NIE jest ustawiane - okno prywatne zostaje noc + turkus.
+   Dzien: kremowy papier i jasne drewno (akcent braz). Noc: granatowa czern,
+   cieplo tylko ze swiatel (akcent bursztyn).
+   Obrazy ogrodu: engawa-ogrod-dzien.svg / engawa-ogrod-noc.svg. */
+
+/* =================================================================== DZIEN */
+:root[data-motyw="mgla"][data-engawa="dzien"] {
+  --bg:            #f4ecdd;
+  --bg-raised:     #fbf8f1;
+  --chrome-top:    #e9dfcc;
+  --chrome-bottom: #efe6d6;
+  --surface:       #fffdf8;
+  --surface-2:     #f3ecdf;
+  --surface-3:     #e9dfcd;
+  --border:        rgba(38, 34, 29, 0.10);
+  --border-strong: rgba(38, 34, 29, 0.18);
+  --text:          #26221d;
+  --text-dim:      #5a5246;
+  --text-faint:    #8a7f6e;
+  --danger:        #b3261e;
+  --ok:            #6b7d2a;
+  --warn:          #a8620c;
+  --on-accent:     #fffdf8;
+  --sel-text:      #26221d;
+  --tint: 38, 34, 29;
+  --sink: 255, 253, 248;
+  --chrome-line:   rgba(120, 95, 60, 0.18);
+  --chrome-glow:   rgba(120, 95, 60, 0.10);
+  --shadow-float:  0 1px 0 #e3d9c7, 0 16px 36px rgba(80, 60, 30, .10);
+  --shadow-panel:  0 1px 0 #e3d9c7, 0 22px 50px rgba(80, 60, 30, .16);
+  --aurora-1:      rgba(232, 214, 186, .55);
+  --aurora-2:      rgba(240, 222, 205, .45);
+  --aurora-3:      rgba(226, 200, 180, .35);
+  --aurora-opacity: .7;
+  --aurora-opacity-3: .5;
+  --glass:      rgba(255, 253, 248, 0.94);
+  --glass-soft: rgba(255, 253, 248, 0.80);
+  --accent:        #b5652a;
+  --accent-strong: #8a4a1c;
+  --accent-dim:    rgba(181, 101, 42, 0.12);
+  --accent-ring:   rgba(181, 101, 42, 0.28);
+  --radius-sm: 8px;
+  --radius:    10px;
+  --radius-lg: 14px;
+  color-scheme: light;
+}
+/* body:not(:has(> #chrome)) - pelne tlo tylko dla stron. Warstwa paska (shell.html,
+   <body> z #chrome) MUSI zostac przezroczysta: przy otwartym menu rozciaga sie na cale
+   okno i pelne tlo zaslanialo strone. */
+:root[data-motyw="mgla"][data-engawa="dzien"] body:not(:has(> #chrome)),
+:root[data-motyw="mgla"][data-engawa="dzien"] #chrome {
+  background-color: var(--bg);
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] #chrome { background-color: var(--chrome-top); }
+:root[data-motyw="mgla"][data-engawa="dzien"] ::selection { background: rgba(181, 101, 42, .2); color: #26221d; }
+
+/* ---- pasek: papierowe karty i pole adresu (zamiast ciemnego szkla) */
+:root[data-motyw="mgla"][data-engawa="dzien"] #chrome { border-bottom: 1px solid #e3d9c7; box-shadow: 0 8px 22px -20px rgba(80, 60, 30, .6); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tab:hover { background: rgba(38, 34, 29, 0.05); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tab.active { background: #fffdf8; box-shadow: 0 1px 0 #e3d9c7, 0 6px 16px -10px rgba(80, 60, 30, .45); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tabs.przewijane .tab-add { background: var(--chrome-top); box-shadow: -10px 0 10px -4px var(--chrome-top); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .toolbar { background: rgba(255, 253, 248, 0.6); box-shadow: inset 0 0 0 1px #e3d9c7; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tool:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .omnibox { background: #fffdf8; border-color: #e3d9c7; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .omnibox:hover { background: #fffdf8; border-color: #d3c6af; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .omnibox:focus-within { background: #fffdf8; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .bm:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .panel { background: rgba(255, 253, 248, 0.98); border-color: #e3d9c7; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .menu-item:hover, :root[data-motyw="mgla"][data-engawa="dzien"] .menu-item.hover { background: rgba(181, 101, 42, 0.08); }
+
+/* ---- strony nazuna:// : jasne karty */
+:root[data-motyw="mgla"][data-engawa="dzien"] .page-head { background: linear-gradient(180deg, rgba(244, 236, 221, .92), rgba(244, 236, 221, .7)); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .page-head h1 .icon,
+:root[data-motyw="mgla"][data-engawa="dzien"] .card > h2 > .ust-ikona { box-shadow: inset 0 0 0 1px rgba(181, 101, 42, .18); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .card {
+  background: #fffdf8; border-color: #e3d9c7;
+  box-shadow: 0 1px 0 #e3d9c7, 0 18px 40px -30px rgba(80, 60, 30, .45);
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] .row { border-bottom-color: #eee6d8; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .row.clickable:hover,
+:root[data-motyw="mgla"][data-engawa="dzien"] .list-item:hover { background: rgba(38, 34, 29, 0.035); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .list-item { border-bottom-color: #eee6d8; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .iconbtn:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .btn { background: #f4ecdd; border-color: #e3d9c7; color: #26221d; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .btn:hover { background: #efe7d9; border-color: #d3c6af; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .btn.primary { background: #b5652a; border-color: #b5652a; color: #fffdf8; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .btn.ghost:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .btn.danger { color: #b3261e; background: rgba(179, 38, 30, .06); border-color: rgba(179, 38, 30, .22); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .field, :root[data-motyw="mgla"][data-engawa="dzien"] select.field,
+:root[data-motyw="mgla"][data-engawa="dzien"] input[type="text"], :root[data-motyw="mgla"][data-engawa="dzien"] input[type="search"] {
+  background-color: #f4ecdd; border-color: #e3d9c7; color: #26221d;
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] select.field {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235a5246' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] .tag { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tag.low { color: #b3261e; background: rgba(179, 38, 30, .08); }
+/* nowa karta: kafelki jak papierowe kartoniki */
+:root[data-motyw="mgla"][data-engawa="dzien"] .tile .glyph { background: #fffdf8; box-shadow: 0 1px 0 #e3d9c7, 0 10px 22px -14px rgba(80, 60, 30, .5); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tile:hover .glyph { background: #fffdf8; box-shadow: 0 1px 0 #d3c6af, 0 14px 26px -12px rgba(80, 60, 30, .55); }
+/* powitanie */
+:root[data-motyw="mgla"][data-engawa="dzien"] body.powitanie { background: radial-gradient(900px 520px at 50% 14%, #fffdf8 0%, var(--bg) 62%); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .row .sub, :root[data-motyw="mgla"][data-engawa="dzien"] .card .hint { color: #8a7f6e; }
+:root[data-motyw="mgla"][data-engawa="dzien"] select, :root[data-motyw="mgla"][data-engawa="dzien"] input:not([type]),
+:root[data-motyw="mgla"][data-engawa="dzien"] input[type="url"] { background-color: #f4ecdd !important; border: 1px solid #e3d9c7 !important; color: #26221d !important; box-shadow: none !important; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .switch .track { background: #e3d9c7; box-shadow: inset 0 0 0 1px #d3c6af; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .switch .thumb { background: #fffdf8; box-shadow: 0 1px 3px rgba(80, 60, 30, .35); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .switch input:checked ~ .track { background: #b5652a; box-shadow: none; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .switch input:checked ~ .thumb { background: #fffdf8; }
+/* kwiat w kolorach sakury */
+
+
+/* ---- ostrzezenie (warning.html): jasna kartka z czerwona/bursztynowa obwodka */
+:root[data-motyw="mgla"][data-engawa="dzien"] .err.danger {
+  --ostrz-rgb: 179, 38, 30;
+  background: linear-gradient(180deg, rgba(var(--ostrz-rgb), 0.06) 0%, transparent 55%), #fffdf8;
+  box-shadow: 0 1px 0 #e3d9c7, 0 28px 60px -32px rgba(80, 60, 30, .45);
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] .err.danger:has(#proceed):not(:has(#details)) { --ostrz-rgb: 168, 98, 12; }
+
+/* ---- podglad PDF i tekstu (pdf.html, textview.html): jasny pasek narzedzi */
+:root[data-motyw="mgla"][data-engawa="dzien"] body { --text-faint: #8a7f6e; }
+:root[data-motyw="mgla"][data-engawa="dzien"] #toolbar {
+  background: rgba(255, 253, 248, 0.92); border-color: #e3d9c7;
+  box-shadow: 0 1px 0 #e3d9c7, 0 14px 32px -20px rgba(80, 60, 30, .45);
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] .sep { background: #e3d9c7; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tbtn:hover { background: rgba(38, 34, 29, 0.06); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tytul-ikona { box-shadow: inset 0 0 0 1px rgba(181, 101, 42, .18); }
+:root[data-motyw="mgla"][data-engawa="dzien"] #code {
+  background: #fffdf8; border-color: #e3d9c7;
+  box-shadow: 0 1px 0 #e3d9c7, 0 18px 40px -30px rgba(80, 60, 30, .45);
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] #lines { border-right-color: #eee6d8; }
+:root[data-motyw="mgla"][data-engawa="dzien"] #hasloPole { background: #f4ecdd; border-color: #e3d9c7; color: #26221d; }
+
+
+
+/* ---- dzien, pasek: gladkie kremowe tlo (bez ciemnej warstwy mgly), przezroczyste pole adresu */
+:root[data-motyw="mgla"][data-engawa="dzien"] body:not(:has(> #chrome)), :root[data-motyw="mgla"][data-engawa="dzien"] #chrome { background-image: none; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .omnibox input { background-color: transparent; border-color: transparent; }
+/* ---- dzien, nowa karta: ogrod w sloncu, pola jak jasne matowe szklo */
+:root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora { background: #cfe6f2 url("engawa-ogrod-dzien.svg") no-repeat center bottom / cover; }
+:root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora::before, :root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora::after, :root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .aurora i { display: none; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .nt-czas { font-weight: 200; color: #241c14; text-shadow: 0 1px 18px rgba(255, 255, 255, .7); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .nt-powitanie { color: #3a2e22; text-shadow: 0 1px 10px rgba(255, 255, 255, .8); }
+:root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .nt-logo { opacity: 1; }
+:root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .nt-logo img { filter: drop-shadow(0 1px 3px rgba(60, 40, 90, .45)); }
+:root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .nt-logo b { color: #3a2e22; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .nt-search, :root[data-motyw="mgla"][data-engawa="dzien"] .nt-search:focus-within {
+  background: rgba(255, 252, 245, .66); border-color: transparent;
+  -webkit-backdrop-filter: blur(22px) saturate(1.2); backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .7), 0 18px 40px -22px rgba(60, 40, 20, .6);
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] .nt-search:focus-within { box-shadow: inset 0 0 0 1px rgba(181, 101, 42, .6), 0 0 0 4px rgba(181, 101, 42, .2), 0 18px 40px -22px rgba(60, 40, 20, .6); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .nt-search input { background-color: transparent; border-color: transparent; color: #26221d; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .nt-search input::placeholder { color: #5a5246; }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tile { color: #2a221a; text-shadow: 0 1px 8px rgba(255, 255, 255, .9); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tile .glyph, :root[data-motyw="mgla"][data-engawa="dzien"] .tile:hover .glyph {
+  background: rgba(255, 255, 255, .66); color: #8a4a1c;
+  -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8), 0 8px 18px -12px rgba(60, 40, 20, .6);
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] .tile:hover .glyph { box-shadow: inset 0 0 0 1px rgba(181, 101, 42, .5), 0 12px 22px -12px rgba(60, 40, 20, .7); }
+:root[data-motyw="mgla"][data-engawa="dzien"] .tile-add .glyph { background: rgba(255, 255, 255, .4); }
+:root[data-motyw="mgla"][data-engawa="dzien"] body.newtab .nt-licznik:not([hidden]) {
+  background: rgba(255, 252, 245, .7); color: #3a2e22;
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .7);
+}
+:root[data-motyw="mgla"][data-engawa="dzien"] .nt-foot .btn { background: rgba(255, 252, 245, .7); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+
+/* =================================================================== NOC */
+:root[data-motyw="mgla"][data-engawa="noc"] {
+  --bg: #08080f; --bg-raised: #0d0d16; --chrome-top: #0a0a12; --chrome-bottom: #08080f;
+  --surface: #11111c; --surface-2: #181826; --surface-3: #212132;
+  --border: rgba(255, 200, 140, 0.08); --border-strong: rgba(255, 200, 140, 0.15);
+  --text: #f6f1ea; --text-dim: #c9c2b8; --text-faint: #8d8798;
+  --danger: #ff7a8a; --ok: #b9d68a; --warn: #f2bf6a; --on-accent: #1a1006; --sel-text: #ffffff;
+  --tint: 255, 225, 190; --sink: 0, 0, 0;
+  --chrome-line: rgba(0, 0, 0, .6); --chrome-glow: rgba(0, 0, 0, .8);
+  --aurora-1: rgba(40, 40, 110, .14); --aurora-2: rgba(0, 0, 0, 0); --aurora-3: rgba(255, 150, 60, .10);
+  --aurora-opacity: .5; --aurora-opacity-3: .4;
+  --glass: rgba(12, 12, 20, .95); --glass-soft: rgba(12, 12, 20, .82);
+  --shadow-float: 0 18px 40px rgba(0, 0, 0, .7); --shadow-panel: 0 22px 50px rgba(0, 0, 0, .8);
+  --accent: #ffb357; --accent-strong: #ffd08a; --accent-dim: rgba(255, 179, 87, .14); --accent-ring: rgba(255, 179, 87, .35);
+  color-scheme: dark;
+}
+:root[data-motyw="mgla"][data-engawa="noc"] body:not(:has(> #chrome)), :root[data-motyw="mgla"][data-engawa="noc"] #chrome { background-color: var(--bg); background-image: none; }
+:root[data-motyw="mgla"][data-engawa="noc"] #chrome { background-color: var(--chrome-top); border-bottom-color: rgba(255, 200, 140, .06); box-shadow: none; }
+:root[data-motyw="mgla"][data-engawa="noc"] ::selection { background: rgba(255, 179, 87, .35); color: #ffffff; }
+:root[data-motyw="mgla"][data-engawa="noc"] .tab:hover { background: rgba(255, 225, 190, .05); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tab.active { background: #1a1a2a; box-shadow: inset 0 0 0 1px rgba(255, 200, 140, .10); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tabs.przewijane .tab-add { background: var(--chrome-top); box-shadow: -10px 0 10px -4px var(--chrome-top); }
+:root[data-motyw="mgla"][data-engawa="noc"] .toolbar { background: #0f0f1a; box-shadow: inset 0 0 0 1px rgba(255, 200, 140, .08); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tool:hover, :root[data-motyw="mgla"][data-engawa="noc"] .bm:hover { background: rgba(255, 225, 190, .06); }
+:root[data-motyw="mgla"][data-engawa="noc"] .omnibox, :root[data-motyw="mgla"][data-engawa="noc"] .omnibox:hover, :root[data-motyw="mgla"][data-engawa="noc"] .omnibox:focus-within { background: #05050a; border-color: rgba(255, 200, 140, .10); }
+:root[data-motyw="mgla"][data-engawa="noc"] .panel { background: rgba(14, 14, 24, .98); border-color: rgba(255, 200, 140, .10); }
+:root[data-motyw="mgla"][data-engawa="noc"] .menu-item:hover, :root[data-motyw="mgla"][data-engawa="noc"] .menu-item.hover { background: rgba(255, 179, 87, .10); }
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-czas { color: #fbf5ec; text-shadow: 0 0 28px rgba(255, 150, 60, .25); }
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-powitanie { color: #c9c2b8; }
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-search, :root[data-motyw="mgla"][data-engawa="noc"] .nt-search:focus-within { background: #10101a; box-shadow: inset 0 0 0 1px rgba(255, 200, 140, .12), 0 16px 34px -20px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-search input, :root[data-motyw="mgla"][data-engawa="noc"] input[type="text"], :root[data-motyw="mgla"][data-engawa="noc"] input[type="search"] { background-color: transparent; color: #f6f1ea; border-color: transparent; }
+:root[data-motyw="mgla"][data-engawa="noc"] .tile .glyph { background: #181826; box-shadow: inset 0 0 0 1px rgba(255, 200, 140, .10), 0 10px 22px -14px rgba(0, 0, 0, .9); color: #ffb357; }
+:root[data-motyw="mgla"][data-engawa="noc"] .tile:hover .glyph { background: #181826; box-shadow: inset 0 0 0 1px rgba(255, 179, 87, .45), 0 0 22px -6px rgba(255, 150, 60, .5); }
+/* czarne ikony stron (GitHub, Spotify...) znikalyby na czerni - delikatna jasna obwodka */
+:root[data-motyw="mgla"][data-engawa="noc"] .tile .glyph img { filter: drop-shadow(0 0 1px rgba(255, 255, 255, .55)) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-licznik:not([hidden]) { background: rgba(255, 200, 140, .05); }
+:root[data-motyw="mgla"][data-engawa="noc"] .page-head { background: linear-gradient(180deg, rgba(8, 8, 15, .95), rgba(8, 8, 15, .75)); }
+:root[data-motyw="mgla"][data-engawa="noc"] .page-head h1 .icon, :root[data-motyw="mgla"][data-engawa="noc"] .card > h2 > .ust-ikona { box-shadow: inset 0 0 0 1px rgba(255, 179, 87, .22); }
+:root[data-motyw="mgla"][data-engawa="noc"] .card { background: #10101a; border-color: rgba(255, 200, 140, .08); box-shadow: 0 18px 40px -28px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-engawa="noc"] .row, :root[data-motyw="mgla"][data-engawa="noc"] .list-item { border-bottom-color: rgba(255, 200, 140, .06); }
+:root[data-motyw="mgla"][data-engawa="noc"] .row.clickable:hover, :root[data-motyw="mgla"][data-engawa="noc"] .list-item:hover { background: rgba(255, 225, 190, .04); }
+:root[data-motyw="mgla"][data-engawa="noc"] .iconbtn:hover { background: rgba(255, 225, 190, .07); }
+:root[data-motyw="mgla"][data-engawa="noc"] .row .sub, :root[data-motyw="mgla"][data-engawa="noc"] .card .hint { color: #8d8798; }
+:root[data-motyw="mgla"][data-engawa="noc"] .btn { background: #191926; border-color: rgba(255, 200, 140, .14); color: #f6f1ea; }
+:root[data-motyw="mgla"][data-engawa="noc"] .btn:hover { background: #232334; border-color: rgba(255, 200, 140, .22); }
+:root[data-motyw="mgla"][data-engawa="noc"] .btn.primary { background: #ffb357; border-color: #ffb357; color: #1a1006; }
+:root[data-motyw="mgla"][data-engawa="noc"] .btn.ghost:hover { background: rgba(255, 225, 190, .07); }
+:root[data-motyw="mgla"][data-engawa="noc"] .btn.danger { color: #ff9aa6; background: rgba(255, 122, 138, .08); border-color: rgba(255, 122, 138, .25); }
+:root[data-motyw="mgla"][data-engawa="noc"] .field, :root[data-motyw="mgla"][data-engawa="noc"] select.field { background-color: #09090f; border-color: rgba(255, 200, 140, .14); color: #f6f1ea; }
+:root[data-motyw="mgla"][data-engawa="noc"] select, :root[data-motyw="mgla"][data-engawa="noc"] input:not([type]), :root[data-motyw="mgla"][data-engawa="noc"] input[type="url"] { background-color: #09090f !important; border: 1px solid rgba(255, 200, 140, .14) !important; color: #f6f1ea !important; }
+:root[data-motyw="mgla"][data-engawa="noc"] select.field { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c2b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>"); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tag { background: rgba(255, 225, 190, .07); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tag.low { color: #ff9aa6; background: rgba(255, 122, 138, .12); }
+:root[data-motyw="mgla"][data-engawa="noc"] .switch .track { background: #2a2a3c; box-shadow: none; }
+:root[data-motyw="mgla"][data-engawa="noc"] .switch .thumb { background: #f6f1ea; box-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
+:root[data-motyw="mgla"][data-engawa="noc"] .switch input:checked ~ .track { background: #ffb357; box-shadow: 0 0 12px -2px rgba(255, 150, 60, .6); }
+:root[data-motyw="mgla"][data-engawa="noc"] .switch input:checked ~ .thumb { background: #fff8ee; }
+:root[data-motyw="mgla"][data-engawa="noc"] body.powitanie { background: radial-gradient(900px 520px at 50% 10%, #15152c 0%, var(--bg) 62%); }
+:root[data-motyw="mgla"][data-engawa="noc"] .err.danger { background: linear-gradient(180deg, rgba(var(--ostrz-rgb), 0.10) 0%, transparent 55%), #10101a; box-shadow: 0 28px 60px -32px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-engawa="noc"] .err.danger { --ostrz-rgb: 255, 122, 138; }
+:root[data-motyw="mgla"][data-engawa="noc"] .err.danger:has(#proceed):not(:has(#details)) { --ostrz-rgb: 242, 191, 106; }
+:root[data-motyw="mgla"][data-engawa="noc"] body { --text-faint: #8d8798; }
+:root[data-motyw="mgla"][data-engawa="noc"] #toolbar { background: rgba(14, 14, 24, .94); border-color: rgba(255, 200, 140, .10); box-shadow: 0 14px 32px -20px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-engawa="noc"] .sep { background: rgba(255, 200, 140, .12); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tbtn:hover { background: rgba(255, 225, 190, .07); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tytul-ikona { box-shadow: inset 0 0 0 1px rgba(255, 179, 87, .22); }
+:root[data-motyw="mgla"][data-engawa="noc"] #code { background: #10101a; border-color: rgba(255, 200, 140, .08); box-shadow: 0 18px 40px -28px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-engawa="noc"] #lines { border-right-color: rgba(255, 200, 140, .08); }
+:root[data-motyw="mgla"][data-engawa="noc"] #hasloPole { background: #09090f; border-color: rgba(255, 200, 140, .14); color: #f6f1ea; }
+
+/* ---- noc, nowa karta: ogrod przy ksiezycu, pola jak ciemne matowe szklo */
+:root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora { background: #08080f url("engawa-ogrod-noc.svg") no-repeat center bottom / cover; }
+:root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora::before, :root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora::after, :root[data-motyw="mgla"][data-engawa="noc"] body.newtab .aurora i { display: none; }
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-czas { font-weight: 200; text-shadow: 0 2px 26px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-powitanie { color: #f6f1ea; opacity: .88; text-shadow: 0 1px 10px #000; }
+:root[data-motyw="mgla"][data-engawa="noc"] body.newtab .nt-logo { opacity: 1; }
+:root[data-motyw="mgla"][data-engawa="noc"] body.newtab .nt-logo b { color: #f6f1ea; text-shadow: 0 1px 14px rgba(0, 0, 0, .9); }
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-search, :root[data-motyw="mgla"][data-engawa="noc"] .nt-search:focus-within {
+  background: rgba(8, 8, 18, .5); border-color: transparent;
+  -webkit-backdrop-filter: blur(22px) saturate(1.3); backdrop-filter: blur(22px) saturate(1.3);
+  box-shadow: inset 0 0 0 1px rgba(255, 225, 190, .17), inset 0 1px 0 rgba(255, 255, 255, .14), 0 18px 44px -20px #000;
+}
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-search:focus-within { box-shadow: inset 0 0 0 1px rgba(255, 179, 87, .6), 0 0 0 4px rgba(255, 179, 87, .22), 0 18px 44px -20px #000; }
+:root[data-motyw="mgla"][data-engawa="noc"] .tile { color: #f6f1ea; text-shadow: 0 1px 8px #000; }
+:root[data-motyw="mgla"][data-engawa="noc"] .tile .glyph, :root[data-motyw="mgla"][data-engawa="noc"] .tile:hover .glyph {
+  background: rgba(8, 8, 18, .5); color: #ffd08a;
+  -webkit-backdrop-filter: blur(18px) saturate(1.3); backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: inset 0 0 0 1px rgba(255, 225, 190, .17), 0 12px 26px -14px #000;
+}
+:root[data-motyw="mgla"][data-engawa="noc"] .tile:hover .glyph { box-shadow: inset 0 0 0 1px rgba(255, 179, 87, .55), 0 0 22px -6px rgba(255, 150, 60, .55); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tile-add .glyph { background: rgba(8, 8, 18, .3); }
+:root[data-motyw="mgla"][data-engawa="noc"] body.newtab .nt-licznik:not([hidden]) {
+  background: rgba(8, 8, 18, .5); color: #f6f1ea;
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  box-shadow: inset 0 0 0 1px rgba(255, 225, 190, .12);
+}
+:root[data-motyw="mgla"][data-engawa="noc"] .nt-foot .btn { background: rgba(8, 8, 18, .5); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+/* ---- noc, pasek: aktywna karta z bursztynowa poswiata i kropka */
+:root[data-motyw="mgla"][data-engawa="noc"] .tab.active { background: rgba(255, 180, 100, .13); box-shadow: inset 0 0 0 1px rgba(255, 190, 120, .32); }
+:root[data-motyw="mgla"][data-engawa="noc"] .tab.active::after { background: #ffb357; box-shadow: 0 0 8px #ffb357; }
+:root[data-motyw="mgla"][data-engawa="noc"] .toolbar { background: rgba(30, 28, 56, .62); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }

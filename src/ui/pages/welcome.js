@@ -43,11 +43,12 @@ const KROKI = [
     tytul: () => powitanieWgPory(),
     opis: 'Kilka małych kroków i Nazuna będzie Twoja. Wszystko da się później zmienić w ustawieniach.',
     tresc: (n) => {
-      const w = cfg.values.wyglad === 'klasyczny' || cfg.values.wyglad === 'washi' ? cfg.values.wyglad : 'mgla';
+      const w = ['klasyczny', 'washi', 'engawa'].includes(cfg.values.wyglad) ? cfg.values.wyglad : 'mgla';
       return `<div class="pw-etykieta">Krok ${n} · Wybierz wygląd</div>
-        <div class="pw-karty trzy">
+        <div class="pw-karty cztery">
           ${karta('wyglad:mgla', 'Lawendowa mgła', 'Miękkie kolory, szklany pasek', 'zdjecie mgla', w === 'mgla')}
           ${karta('wyglad:washi', 'Washi', 'Japoński ogród sakury, za dnia i nocą', 'zdjecie washi', w === 'washi')}
+          ${karta('wyglad:engawa', 'Engawa', 'Japoński ogród widziany z werandy, za dnia i nocą', 'zdjecie engawa', w === 'engawa')}
           ${karta('wyglad:klasyczny', 'Klasyczny', 'Wygląd sprzed zmiany, jasny albo ciemny', 'zdjecie klasyczny', w === 'klasyczny')}
         </div>`;
     }
@@ -56,7 +57,9 @@ const KROKI = [
     tytul: () => 'Dopasuj kolory',
     // Okno prywatne ma zawsze swoje nocne kolory (data-prywatne nadpisuje
     // zestaw tla), wiec obietnica "od razu" tu by nie byla prawdziwa.
-    opis: () => (cfg.values.wyglad === 'washi'
+    opis: () => (cfg.values.wyglad === 'engawa'
+      ? 'Engawa ma dwie pory: ogród w słońcu za dnia i przy księżycu nocą. Automatycznie przełącza się razem ze słońcem i księżycem na pasku.'
+      : cfg.values.wyglad === 'washi'
       ? 'Washi ma dwie pory: jasny papier za dnia i świecącą sakurę nocą. Automatycznie przełącza się razem ze słońcem i księżycem na pasku.'
       : cfg.prywatne && cfg.values.wyglad !== 'klasyczny'
       ? 'Wybierz nastrój. To okno prywatne ma zawsze swoje nocne kolory, więc zmianę zobaczysz w zwykłym oknie.'
@@ -70,6 +73,15 @@ const KROKI = [
             ${karta('washiTryb:dzien', 'Dzień', 'Kremowy papier i pastelowa sakura', 'zdjecie washi-dzien', t === 'dzien')}
             ${karta('washiTryb:noc', 'Noc', 'Głęboka czerń i świecąca sakura', 'zdjecie washi-noc', t === 'noc')}
             ${karta('washiTryb:auto', 'Automatycznie', 'Razem ze słońcem i księżycem na pasku', 'zdjecie washi', t === 'auto')}
+          </div>`;
+      }
+      if (cfg.values.wyglad === 'engawa') {
+        const t = cfg.values.engawaTryb === 'dzien' || cfg.values.engawaTryb === 'noc' ? cfg.values.engawaTryb : 'auto';
+        return `<div class="pw-etykieta">Krok ${n} · Pora dnia</div>
+          <div class="pw-karty trzy">
+            ${karta('engawaTryb:dzien', 'Dzień', 'Ogród w słońcu, jasne drewno', 'zdjecie engawa-dzien', t === 'dzien')}
+            ${karta('engawaTryb:noc', 'Noc', 'Księżyc, lampion i świetliki', 'zdjecie engawa-noc', t === 'noc')}
+            ${karta('engawaTryb:auto', 'Automatycznie', 'Razem ze słońcem i księżycem na pasku', 'zdjecie engawa', t === 'auto')}
           </div>`;
       }
       if (cfg.values.wyglad === 'klasyczny') {

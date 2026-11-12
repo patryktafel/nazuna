@@ -136,6 +136,7 @@ function wyglad() {
     document.documentElement.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
     if (s.values && s.values.wyglad === 'washi' && !s.prywatne) document.documentElement.dataset.washi = s.washiNoc ? 'noc' : 'dzien';
     else delete document.documentElement.dataset.washi;
+    if (s.values && s.values.wyglad === 'engawa' && !s.prywatne) document.documentElement.dataset.engawa = s.engawaNoc ? 'noc' : 'dzien'; else delete document.documentElement.dataset.engawa;
     // Okno prywatne: nocna karta z turkusem (toast.html). Plakietki
     // #privateBadge, po ktorej poznaje je shell.css, tu nie ma.
     if (s.prywatne) document.documentElement.dataset.prywatne = '1';

@@ -76,6 +76,14 @@ function washiNoc() {
   try { return nativeTheme.shouldUseDarkColors; } catch (_) { return false; }
 }
 
+/* Engawa: noc czy dzien, tak samo jak Washi (ustawienie engawaTryb). */
+function engawaNoc() {
+  const t = data.settings.get('engawaTryb', 'auto');
+  if (t === 'noc') return true;
+  if (t === 'dzien') return false;
+  try { return nativeTheme.shouldUseDarkColors; } catch (_) { return false; }
+}
+
 function motywTeraz() {
   return rozstrzygnijMotyw(data.settings.get('theme', 'dark'), data.settings.get('wyglad', 'mgla'));
 }
@@ -95,6 +103,7 @@ function tloOkna(prywatne = false) {
   if (prywatne && motyw === 'mgla') return '#0a0b12';
   // Washi = uklad mgly z papierowymi kolorami (washi.css).
   if (motyw === 'mgla' && data.settings.get('wyglad', 'mgla') === 'washi') return washiNoc() ? TLA.washiNoc.okno : TLA.washi.okno;
+  if (motyw === 'mgla' && data.settings.get('wyglad', 'mgla') === 'engawa') return engawaNoc() ? TLA.engawaNoc.okno : TLA.engawa.okno;
   return TLA[motyw].okno;
 }
 
@@ -2056,6 +2065,7 @@ class AppWindow {
       // Czy strony dostaja teraz ciemny tryb - ikona slonca/ksiezyca na pasku.
       ciemneStrony: (() => { try { return nativeTheme.shouldUseDarkColors; } catch (_) { return false; } })(),
       washiNoc: washiNoc(),
+      engawaNoc: engawaNoc(),
       przeciaganie: !!this.przeciaganieKarty,
       zeton: ZETON,
       viewport: { width: bounds.width, height: bounds.height },
@@ -2670,7 +2680,8 @@ try {
     // Zmiana w Windows: wazna dla motywu Klasyczny 'jak w systemie' i dla stron
     // 'jak w Windows' (ikona slonca/ksiezyca na pasku).
     const washiAuto = data.settings.get('wyglad', 'mgla') === 'washi' && data.settings.get('washiTryb', 'auto') === 'auto';
-    if (!washiAuto && data.settings.get('theme', 'dark') !== 'system' && data.settings.get('motywStron', 'system') !== 'system') return;
+    const engawaAuto = data.settings.get('wyglad', 'mgla') === 'engawa' && data.settings.get('engawaTryb', 'auto') === 'auto';
+    if (!washiAuto && !engawaAuto && data.settings.get('theme', 'dark') !== 'system' && data.settings.get('motywStron', 'system') !== 'system') return;
     repaintTheme();
     for (const w of windows) w.scheduleSync();
     broadcastAll('settings:changed');
@@ -2707,4 +2718,4 @@ function broadcastAll(channel, payload, filtr = null) {
   }
 }
 
-module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, przeladujPoZmianieMotywuStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory, washiNoc };
+module.exports = { AppWindow, createWindow, punktWOknie, kursor, zapamietajSesje, wyrwijKarte, przeniesKarte, oknoPodPunktem, wPasku, startMs, ZETON, zacznijPrzeciaganie, odbierzPrzeciaganie, allWindows, focusedWindow, windows, runContextAction, broadcastAll, repaintTheme, ustawMotywStron, przeladujPoZmianieMotywuStron, NEW_TAB, closedTabs, startTabSleep, tabSleepStatus, startDiagnostics, startMonitory, washiNoc, engawaNoc };

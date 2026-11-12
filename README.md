@@ -7,7 +7,7 @@ Przeglądarka internetowa dla Windows, zbudowana na silniku Chromium (Electron o
 
 ## Co potrafi
 
-- **Trzy wyglądy:** Lawendowa mgła, Washi (japoński ogród sakury, za dnia i nocą) oraz Klasyczny. Nowa karta z zegarem, powitaniem i licznikiem zablokowanych elementów śledzących.
+- **Cztery wyglądy:** Lawendowa mgła, Washi (japoński ogród sakury, za dnia i nocą), Engawa (japoński ogród widziany z werandy, za dnia i nocą) oraz Klasyczny. Nowa karta z zegarem, powitaniem i licznikiem zablokowanych elementów śledzących.
 - **Prywatność od pierwszego uruchomienia:** wbudowany bloker reklam i śledzenia (listy Ghostery, tryb Bezpieczny i Agresywny), osobne ciasteczka dla każdej strony (jak Total Cookie Protection w Firefoksie), DNT i GPC, ochrona WebRTC, DNS przez HTTPS, zaburzanie odcisku przeglądarki (canvas, WebGL, audio), ostrzeżenia przed stronami z wirusami i wyłudzaniem haseł.
 - **Okno prywatne,** które niczego nie zapisuje na dysku.
 - **Serwisy z DRM:** Netflix, HBO Max, Prime Video (podpis VMP castLabs).

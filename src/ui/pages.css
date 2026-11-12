@@ -340,6 +340,7 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
 .pw-etykieta { font-size: 14px; font-weight: 700; color: var(--text); }
 .pw-karty { display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); gap: 16px; justify-content: center; width: 100%; }
 .pw-karty.trzy { grid-template-columns: repeat(3, minmax(0, 250px)); }
+.pw-karty.cztery { grid-template-columns: repeat(4, minmax(0, 210px)); }
 .pw-karta {
   display: flex; flex-direction: column; gap: 8px; padding: 10px 10px 14px; text-align: left; cursor: pointer;
   border-radius: 18px; background: rgba(var(--tint), .05); border: 1px solid var(--border);
@@ -370,6 +371,9 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
 .pw-podglad.zdjecie.washi { background-image: url("podglady/washi.jpg"); }
 .pw-podglad.zdjecie.washi-dzien { background-image: url("podglady/washi-dzien.jpg"); }
 .pw-podglad.zdjecie.washi-noc { background-image: url("podglady/washi-noc.jpg"); }
+.pw-podglad.zdjecie.engawa { background-image: url("podglady/engawa.jpg"); }
+.pw-podglad.zdjecie.engawa-dzien { background-image: url("podglady/engawa-dzien.jpg"); }
+.pw-podglad.zdjecie.engawa-noc { background-image: url("podglady/engawa-noc.jpg"); }
 .pw-podglad.klasyczny, .pw-podglad.ciemny { background: #121419; }
 .pw-podglad.klasyczny i, .pw-podglad.ciemny i { background: #1f222b; }
 .pw-podglad.klasyczny i:nth-child(3), .pw-podglad.ciemny i:nth-child(3) { background: #0d0e12; }
@@ -422,7 +426,7 @@ body.pw-gotowe .pw-srodek { animation: pwPlatek .5s var(--ease) .5s both; }
 .pw-dalej:hover { filter: brightness(1.06); }
 .pw-dalej:active { transform: scale(.97); }
 @media (max-width: 760px) {
-  .pw-karty, .pw-karty.trzy { grid-template-columns: minmax(0, 1fr); max-width: 360px; }
+  .pw-karty, .pw-karty.trzy, .pw-karty.cztery { grid-template-columns: minmax(0, 1fr); max-width: 360px; }
   .pw-tytul { font-size: 34px; }
   .pw-stopka { padding: 16px; }
 }

@@ -75,6 +75,7 @@ function zastosujWyglad(s) {
   root.dataset.mgla = (s.values && s.values.mglaKolory) || 'lawenda';
   // Washi (washi.css) - nie w oknie prywatnym.
   if (s.values && s.values.wyglad === 'washi' && !s.prywatne) root.dataset.washi = s.washiNoc ? 'noc' : 'dzien'; else delete root.dataset.washi;
+  if (s.values && s.values.wyglad === 'engawa' && !s.prywatne) root.dataset.engawa = s.engawaNoc ? 'noc' : 'dzien'; else delete root.dataset.engawa;
   // Okno prywatne: chlodniejsze tlo mgly (pages.css, data-prywatne).
   if (s.prywatne) root.dataset.prywatne = '1'; else delete root.dataset.prywatne;
   // Strony, ktore rysuja cos zaleznego od motywu (np. probki kolorow), musza
