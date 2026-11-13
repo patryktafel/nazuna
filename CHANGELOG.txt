@@ -1,6 +1,15 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.110 - 13 listopada 2026
+---------------------------
+
+Lzejsze tlo nowej karty w Engawie i Satoyamie
+
+- Obrazy ogrodu i wioski na nowej karcie sa teraz gotowymi obrazami zamiast
+  rysunkow wektorowych. Wyglad bez zmian, a przegladarka nie musi przeliczac
+  rysunku przy kazdym otwarciu karty i przy zmianie rozmiaru okna.
+
 0.1.109 - 12 listopada 2026
 ---------------------------
 
