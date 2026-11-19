@@ -68,6 +68,21 @@ const jumplist = require('./jumplist');
 protocolHelper.registerSchemes();
 
 app.setAppUserModelId('com.tafel.nazuna');
+
+/* Zainstalowana Nazuna ignoruje przelaczniki wiersza polecen, ktorymi obcy
+   program (np. podmieniony skrot) moglby przejac przegladarke: zdalne
+   debugowanie daje pelny dostep do kart i ciasteczek, a pozostale pozwalaja
+   podsluchac albo podmienic ruch (serwer posredniczacy, przekierowanie nazw,
+   wylaczenie sprawdzania certyfikatow) lub wczytac obce rozszerzenie.
+   W wersji uruchamianej z kodu (npm start, testy) przelaczniki dzialaja. */
+if (app.isPackaged || process.env.NAZUNA_TEST_BLOKADA_PRZELACZNIKOW === '1') {
+  for (const przelacznik of [
+    'remote-debugging-port', 'remote-debugging-pipe', 'remote-debugging-address', 'remote-allow-origins',
+    'proxy-server', 'proxy-pac-url', 'proxy-bypass-list', 'host-rules', 'host-resolver-rules',
+    'ignore-certificate-errors', 'ignore-certificate-errors-spki-list', 'ignore-urlfetcher-cert-requests',
+    'allow-running-insecure-content', 'disable-web-security', 'load-extension', 'disable-extensions-except'
+  ]) app.commandLine.removeSwitch(przelacznik);
+}
 app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling');
 /* XSLT wylaczone w silniku: strony nie maja XSLTProcessor, a arkusze dolaczone
    przez <?xml-stylesheet?> nie sa stosowane. Odcina to biblioteke libxslt,
