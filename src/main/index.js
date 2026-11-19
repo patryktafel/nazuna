@@ -69,6 +69,13 @@ protocolHelper.registerSchemes();
 
 app.setAppUserModelId('com.tafel.nazuna');
 app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling');
+/* XSLT wylaczone w silniku: strony nie maja XSLTProcessor, a arkusze dolaczone
+   przez <?xml-stylesheet?> nie sa stosowane. Odcina to biblioteke libxslt,
+   w ktorej byla wykorzystywana w atakach luka CVE-2026-125350 (poprawka w
+   Electronie od 44.11.1). Chromium i tak wycofuje XSLT, wiec przelacznik moze
+   zostac takze po aktualizacji silnika. Skutek uboczny: nieliczne strony XML
+   ze stylem XSL (np. niektore kanaly RSS) pokazuja sie jako surowe drzewo XML. */
+app.commandLine.appendSwitch('disable-blink-features', 'XSLT');
 
 // Ustawienia trzeba wczytac zanim aplikacja bedzie gotowa, bo wylaczenie
 // przyspieszenia sprzetowego da sie zrobic tylko na tym etapie.
