@@ -1,6 +1,17 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.112 - 19 listopada 2026
+---------------------------
+
+Blokada niebezpiecznych przelacznikow wiersza polecen
+
+- Zainstalowana Nazuna ignoruje przelaczniki, ktorymi obcy program (np.
+  podmieniony skrot) moglby przejac przegladarke: zdalne debugowanie (pelny
+  dostep do kart i ciasteczek), wymuszony serwer posredniczacy, przekierowanie
+  nazw, wylaczenie sprawdzania certyfikatow i wczytanie obcego rozszerzenia.
+- Budowanie wydan: wersja klienta castLabs EVS jest przypieta.
+
 0.1.111 - 19 listopada 2026
 ---------------------------
 
