@@ -1,6 +1,18 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.111 - 19 listopada 2026
+---------------------------
+
+Zabezpieczenie przed luka w obsludze XSLT
+
+- XSLT jest wylaczone w silniku: strony nie maja dostepu do XSLTProcessor, a
+  arkusze dolaczone przez xml-stylesheet nie sa stosowane. Odcina to biblioteke
+  libxslt, w ktorej jest luka CVE-2026-125350 wykorzystywana w atakach. Pelna
+  poprawka przyjdzie z aktualizacja silnika.
+- Skutek uboczny: nieliczne strony XML ze stylem XSL (np. niektore kanaly RSS)
+  pokazuja sie jako surowe drzewo XML.
+
 0.1.110 - 13 listopada 2026
 ---------------------------
 
