@@ -1,6 +1,22 @@
 Nazuna - dziennik zmian
 =======================
 
+0.1.113 - 24 listopada 2026
+---------------------------
+
+Ochrona sieci lokalnej
+
+- Strona z internetu, ktora probuje polaczyc sie z urzadzeniem w sieci domowej
+  (router, drukarka, kamera) albo z programem na tym komputerze (localhost),
+  musi dostac zgode: pojawia sie pytanie jak przy kamerze czy lokalizacji, z
+  mozliwoscia zapamietania wyboru. Do czasu odpowiedzi nic nie jest wysylane.
+  Dotyczy takze polaczen WebSocket.
+- Nie dotyczy wpisania adresu lokalnego w pasek ani klikniecia linku, stron
+  otwartych z sieci lokalnej, plikow i rozszerzen.
+- Ochrone mozna wylaczyc w Ustawieniach (Bezpieczenstwo).
+- Ograniczenie: decyduje nazwa hosta z adresu. Publiczna nazwa przekierowana
+  przez serwer DNS na adres prywatny nie jest wykrywana.
+
 0.1.112 - 19 listopada 2026
 ---------------------------
 
