@@ -1994,6 +1994,7 @@ function permissionPrompt(payload) {
     geolocation: ['Dostęp do lokalizacji', 'pin'],
     notifications: ['Wysyłanie powiadomień', 'bell'],
     'clipboard-read': ['Odczyt schowka', 'clipboard'],
+    'local-network': ['Łączenie z Twoją siecią lokalną i programami na tym komputerze', 'usb'],
     'display-capture': ['Udostępnianie ekranu', 'screen'],
     midi: ['Dostęp do urządzeń MIDI', 'usb'],
     hid: ['Dostęp do urządzeń HID', 'usb'],
@@ -2012,6 +2013,11 @@ function permissionPrompt(payload) {
          i prosi o dostęp do swoich ciasteczek.</p>
        <p class="sub">Zwykle potrzebne przy logowaniu, płatnościach i weryfikacji dwuetapowej.
          Blokujemy to domyślnie, bo tędy płynie też śledzenie między stronami.</p>`
+    : payload.permission === 'local-network'
+    ? `<p><b>${escapeHtml(payload.origin || 'Ta strona')}</b> próbuje połączyć się z urządzeniem w Twojej sieci domowej
+         albo z programem na tym komputerze.</p>
+       <p class="sub">Bywa potrzebne stronom, które współpracują z zainstalowanym programem (np. podpis elektroniczny,
+         drukarka, odtwarzacz). Jeśli się tego nie spodziewasz, zablokuj: tą drogą atakuje się routery i lokalne usługi.</p>`
     : `<p><b>${escapeHtml(payload.origin || 'Ta strona')}</b> prosi o zgodę.</p>`;
   const node = panel(`<div class="prompt">
       <h3>${iconSvg(icon)} ${escapeHtml(label)}</h3>

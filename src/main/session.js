@@ -6,6 +6,7 @@ const { chromeUserAgent, acceptLanguages, PRELOAD_DIR } = require('./constants')
 const protocolHelper = require('./protocol');
 const adblock = require('./adblock');
 const downloads = require('./downloads');
+const siecLokalna = require('./siecLokalna');
 const data = require('./data');
 const { getDomain } = require('tldts-experimental');
 const extensions = require('./extensions');
@@ -330,6 +331,19 @@ function prepare(ses, efemeryczna) {
   // Usuwamy naglowek, po ktorym niektore strony wyluskuja Electrona, i
   // dopisujemy Do Not Track, gdy uzytkownik go chce.
   ses.webRequest.onBeforeSendHeaders((details, callback) => {
+    /* Ochrona sieci lokalnej (siecLokalna.js): zadanie publicznej strony do
+       adresu lokalnego czeka na zgode uzytkownika albo jest anulowane, zanim
+       cokolwiek zostanie wyslane. Blad w tym sprawdzeniu przepuszcza zadanie. */
+    let wSieci = null;
+    try { wSieci = siecLokalna.sprawdz(ses, efemeryczna, details, permissionPrompt, zgodaZapamietana); } catch (_) { wSieci = null; }
+    if (wSieci === 'blokuj') return callback({ cancel: true });
+    if (wSieci && typeof wSieci.then === 'function') {
+      wSieci.then((w) => (w === 'blokuj' ? callback({ cancel: true }) : naglowki(details, callback)), () => naglowki(details, callback));
+      return;
+    }
+    naglowki(details, callback);
+  });
+  function naglowki(details, callback) {
     // Chromium czeka na ten callback BEZ LIMITU CZASU - jesli cokolwiek tu
     // rzuci wyjatek zanim go wywolamy, to jedno zadanie sieciowe wisi w
     // nieskonczonosc, a jesli trafi to na glowny dokument strony, wyglada to
@@ -369,7 +383,7 @@ function prepare(ses, efemeryczna) {
     } catch (_) {
       callback({});
     }
-  });
+  }
 
   /* Ciasteczko zakladane przez osadzony element trafia do jego sloika dla
      tej strony: dopisujemy Partitioned. Bez tego Chromium by je odrzucil, a

@@ -9,6 +9,7 @@ Przeglądarka internetowa dla Windows, zbudowana na silniku Chromium (Electron o
 
 - **Pięć wyglądów:** Lawendowa mgła, Washi (japoński ogród sakury, za dnia i nocą), Engawa (japoński ogród widziany z werandy, za dnia i nocą), Satoyama (wioska pod górą Fuji, za dnia i w czasie wieczornego festynu) oraz Klasyczny. Nowa karta z zegarem, powitaniem i licznikiem zablokowanych elementów śledzących.
 - **Prywatność od pierwszego uruchomienia:** wbudowany bloker reklam i śledzenia (listy Ghostery, tryb Bezpieczny i Agresywny), osobne ciasteczka dla każdej strony (jak Total Cookie Protection w Firefoksie), DNT i GPC, ochrona WebRTC, DNS przez HTTPS, zaburzanie odcisku przeglądarki (canvas, WebGL, audio), ostrzeżenia przed stronami z wirusami i wyłudzaniem haseł.
+- **Ochrona sieci lokalnej:** strona z internetu musi zapytać o zgodę, zanim połączy się z urządzeniami w sieci domowej albo z programami na komputerze.
 - **Okno prywatne,** które niczego nie zapisuje na dysku.
 - **Serwisy z DRM:** Netflix, HBO Max, Prime Video (podpis VMP castLabs).
 - **Rozszerzenia ze sklepu Chrome,** klucze dostępu (passkeys), podgląd PDF i JSON, przenoszenie zakładek z Chrome, Edge, Brave, Vivaldi, Opery i Firefoksa.

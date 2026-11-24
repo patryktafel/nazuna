@@ -24,6 +24,9 @@ const DEFAULT_SETTINGS = {
   // blockThirdPartyCookies=false u czesci osob nie moze tego wylaczac.
   slojkiCiasteczek: true,
   securityWarningsEnabled: true,
+  // Strona z internetu musi dostac zgode, zanim polaczy sie z siecia lokalna
+  // albo programem na tym komputerze (siecLokalna.js).
+  ochronaSieciLokalnej: true,
   hardwareAcceleration: true,
   // Domyslnie wylaczone: Chromium laduje slownik sprawdzania pisowni do
   // KAZDEJ karty osobno (to osobny, zywy proces), a bez jawnego ustawienia

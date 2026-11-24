@@ -198,6 +198,7 @@ function render() {
 
     <div class="card">
       ${naglowek('alert', 'Bezpieczeństwo')}
+      ${toggleRow('ochronaSieciLokalnej', 'Ochrona sieci lokalnej', 'Strona z internetu musi zapytać o zgodę, zanim połączy się z urządzeniami w Twojej sieci domowej (router, drukarka) albo z programami na tym komputerze')}
       ${toggleRow('securityWarningsEnabled', 'Ostrzeżenia o niebezpiecznych stronach', 'Blokuje znane strony z wirusami i oszustwa wyłudzające hasła oraz ostrzega przed połączeniem bez szyfrowania (http). Wyłączenie usuwa też etykietę "Niezabezpieczona" w pasku adresu')}
       <div class="row">
         <div class="body"><div class="title">Lista złośliwych domen</div><div class="sub" id="securityInfo">sprawdzam...</div></div>
